@@ -1,0 +1,71 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // You will get this URL from Supabase later
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id             String   @id @default(uuid())
+  email          String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  // Physical Profile (Optional at start)
+  nationality    String?  
+  height         Float?   // Stored in cm
+  weight         Float?   // Stored in kg
+  age            Int?
+  gender         String?
+
+  // THE VAULT: Securely stored API Key
+  // We never store the actual key, only the encrypted version
+  encryptedApiKey String? 
+  apiKeyIv        String? // Initialization Vector required for decryption
+
+  // Relations
+  logs           DailyLog[]
+  tasks          Task[]
+}
+
+model DailyLog {
+  id             String   @id @default(uuid())
+  userId         String
+  date           DateTime @default(now())
+  
+  // Natural Language Input
+  rawText        String   @db.Text
+  
+  // AI Analysis (Stored as JSON for flexibility)
+  parsedData     Json?    
+  // Example JSON structure:
+  // { 
+  //   "foods": [{ "name": "Dal", "calories": 150 }], 
+  //   "exercises": [{ "name": "Squats", "sets": 3 }] 
+  // }
+
+  totalCaloriesIn  Int      @default(0)
+  totalCaloriesOut Int      @default(0)
+  
+  // Coach's feedback for this specific log
+  aiFeedback       String?  @db.Text
+
+  user           User     @relation(fields: [userId], references: [id])
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  userId      String
+  title       String
+  isCompleted Boolean  @default(false)
+  isRecurring Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user        User     @relation(fields: [userId], references: [id])
+}
