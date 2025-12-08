@@ -16,6 +16,7 @@ export default function DashboardClient({ user }: { user: any }) {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({ in: 0, out: 0, goal: 2500 });
+  const [waterTotal, setWaterTotal] = useState(0);
   
   // New State for Input
   const [newLogText, setNewLogText] = useState("");
@@ -43,11 +44,36 @@ export default function DashboardClient({ user }: { user: any }) {
   function calculateSummary(logs: any[]) {
     let totalIn = 0;
     let totalOut = 0;
+    let water = 0;
     logs.forEach(log => {
       totalIn += log.totalCaloriesIn;
       totalOut += log.totalCaloriesOut;
+      if (log.waterMl) water += log.waterMl;
     });
     setSummary(prev => ({ ...prev, in: totalIn, out: totalOut }));
+    setWaterTotal(water);
+  }
+
+async function handleAddWater() {
+    try {
+      // Optimistic update: Update the UI immediately before the API responds
+      setWaterTotal(prev => prev + 250);
+      
+      const res = await fetch("/api/log-water", {
+        method: "POST",
+        body: JSON.stringify({
+          userId: USER_ID,
+          amount: 250
+        }),
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        fetchLogs(); // Sync with real database data
+      }
+    } catch (err) {
+      alert("Failed to add water");
+    }
   }
 
   async function handleAddLog() {
@@ -145,6 +171,27 @@ export default function DashboardClient({ user }: { user: any }) {
               <p className="text-xs text-slate-400 mt-1">Current Total</p>
             </CardContent>
           </Card>
+
+          {/* 👇 NEW WATER CARD START */}
+          <Card className="border-blue-100 bg-blue-50 shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-blue-600">Hydration</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-900">
+                {waterTotal} <span className="text-lg font-normal text-blue-600">ml</span>
+              </div>
+              <Button 
+                onClick={handleAddWater} 
+                size="sm" 
+                variant="outline" 
+                className="mt-3 w-full border-blue-200 text-blue-700 hover:bg-blue-100"
+              >
+                + Add Glass (250ml)
+              </Button>
+            </CardContent>
+          </Card>
+          {/* 👆 NEW WATER CARD END */}
         </div>
 
         <section>

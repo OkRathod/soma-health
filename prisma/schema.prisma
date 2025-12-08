@@ -57,6 +57,8 @@ model DailyLog {
   aiFeedback       String?  @db.Text
 
   user           User     @relation(fields: [userId], references: [id])
+
+  waterMl         Int      @default(0)
 }
 
 model Task {
