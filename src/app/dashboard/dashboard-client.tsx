@@ -124,9 +124,6 @@ async function handleAddWater() {
            </div>
            <h1 className="text-2xl font-bold tracking-tight text-slate-800">Soma.</h1>
         </div>
-        <Link href="/settings">
-        <Button variant="outline" className="text-slate-600">Settings</Button>
-        </Link>
       </header>
 
       <main className="max-w-4xl mx-auto space-y-8">
