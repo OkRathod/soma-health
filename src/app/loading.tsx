@@ -32,7 +32,7 @@ export default function Loading() {
       {/* Loading Text */}
       <div className="flex flex-col items-center gap-1">
         <h2 className="text-xl font-bold text-blue-900 tracking-tight">SOMA</h2>
-        <p className="text-xs font-medium text-blue-400 uppercase tracking-widest">Initializing DNA...</p>
+        <p className="text-xs font-medium text-blue-400 uppercase tracking-widest">Initializing System...</p>
       </div>
     </div>
   );
