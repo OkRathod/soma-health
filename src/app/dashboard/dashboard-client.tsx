@@ -45,11 +45,23 @@ export default function DashboardClient({ user }: { user: any }) {
     let totalIn = 0;
     let totalOut = 0;
     let water = 0;
+    
+    // Get "Today" as a simple string (e.g., "12/9/2025")
+    // This uses your computer's local time, so it resets exactly at YOUR midnight.
+    const todayStr = new Date().toLocaleDateString();
+
     logs.forEach(log => {
-      totalIn += log.totalCaloriesIn;
-      totalOut += log.totalCaloriesOut;
-      if (log.waterMl) water += log.waterMl;
+      // Convert the log's date to the same string format
+      const logDateStr = new Date(log.date).toLocaleDateString();
+
+      // 🛑 THE FIX: Only add numbers if the dates match!
+      if (logDateStr === todayStr) {
+        totalIn += log.totalCaloriesIn;
+        totalOut += log.totalCaloriesOut;
+        if (log.waterMl) water += log.waterMl;
+      }
     });
+
     setSummary(prev => ({ ...prev, in: totalIn, out: totalOut }));
     setWaterTotal(water);
   }
