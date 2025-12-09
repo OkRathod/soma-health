@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"; // Ensure you have this or 
 import { Loader2, Send } from "lucide-react";
 import Link from "next/link";
 import WeeklyChart from "@/components/WeeklyChart";
+import Image from "next/image";
 
 // 🔴 KEEP YOUR ID HERE
 export default function DashboardClient({ user }: { user: any }) {
@@ -116,16 +117,6 @@ async function handleAddWater() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
-      <header className="flex justify-between items-center mb-8 max-w-4xl mx-auto">
-        <div className="flex items-center gap-2">
-           {/* Concept 2 Logo: Simple Circle */}
-           <div className="w-8 h-8 rounded-full border-2 border-slate-800 flex items-center justify-center">
-             <div className="w-1 h-4 bg-slate-800 rounded-full"></div>
-           </div>
-           <h1 className="text-2xl font-bold tracking-tight text-slate-800">Soma.</h1>
-        </div>
-      </header>
-
       <main className="max-w-4xl mx-auto space-y-8">
         
         {/* 1. The Input Area (New!) */}
