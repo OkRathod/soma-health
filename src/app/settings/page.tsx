@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { Loader2, CheckCircle, Lock } from "lucide-react";
 import { Info } from "lucide-react";
-import { X , Download, AlertTriangle} from "lucide-react";
+import { X , Download, AlertTriangle, Check} from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { DNALoader } from "@/components/dna-loader";
 
@@ -25,7 +25,14 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [hasKey, setHasKey] = useState(false);
   const { user, isLoaded } = useUser();
-  const [isDeleting, setIsDeleting] = useState(false)
+
+  // 👇 STATE FOR DEACTIVATION MODAL (2-Steps)
+  const [deleteStep, setDeleteStep] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // 👇 NEW: STATE FOR GENERIC SUCCESS/ERROR MODALS
+  // This replaces ugly browser alerts for things like "Settings Saved"
+  const [simpleModal, setSimpleModal] = useState<{ title: string; msg: string; isError?: boolean } | null>(null);
   
   const [form, setForm] = useState({
     nationality: "",
@@ -78,12 +85,12 @@ export default function SettingsPage() {
         const data = await res.json();
         
         if (data.success) {
-          alert("Settings Saved!");
+          setSimpleModal({ title: "Settings Saved", msg: "Your profile has been updated successfully." });
           if (form.apiKey) setHasKey(true);
           setForm(prev => ({ ...prev, apiKey: "" }));
         }
       } catch (err) {
-        alert("Error saving settings");
+        setSimpleModal({ title: "Error", msg: "Could not save settings. Please try again.", isError: true });
       } finally {
         setSaving(false);
       }
@@ -96,30 +103,26 @@ export default function SettingsPage() {
     }
 
 
-    async function handleDeactivateAccount() {
-    const confirmed = window.confirm(
-        "Deactivate Account?\n\nYour data will be kept safe for 15 days. If you sign back in during this time, you can restore your account.\n\nAfter 15 days, it is gone forever."
-    );
-    
-    if (confirmed) {
+  // 👇 FINAL API CALL (Called by the Modal, not the button directly)
+    async function confirmDeactivation() {
       setIsDeleting(true);
       try {
-        const res = await fetch("/api/user/delete", { method: "DELETE" }); // Calls the soft-delete API
+        const res = await fetch("/api/user/delete", { method: "DELETE" });
         const data = await res.json();
         
         if (data.success) {
-          alert("Account deactivated. You have 15 days to reactivate.");
-          window.location.href = "/"; // Send them to home page
+          window.location.href = "/"; 
         } else {
-          alert("Error deactivating account.");
+          setDeleteStep(0);
+          setSimpleModal({ title: "Error", msg: "Could not deactivate account.", isError: true });
+          setIsDeleting(false);
         }
       } catch (err) {
-        alert("Something went wrong.");
-      } finally {
+        setDeleteStep(0);
+        setSimpleModal({ title: "Error", msg: "Something went wrong.", isError: true });
         setIsDeleting(false);
       }
     }
-  }
 
   // 👇 If loading, show the full screen DNA animation instead of the tiny spinner
   if (!isLoaded || loading) return <DNALoader />;
@@ -151,7 +154,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans">
-      <div className="max-w-2xl mx-auto space-y-8">
+      <div className={`max-w-2xl mx-auto space-y-8 transition-all ${deleteStep > 0 || simpleModal ? 'blur-sm scale-[0.98] opacity-80' : ''}`}>
         
         {/* Header */}
         <div>
@@ -159,7 +162,7 @@ export default function SettingsPage() {
            {/* <p className="text-slate-500">Manage your profile and privacy configurations.</p> */}
         </div>
 
-{/* Section 1: Physical Profile */}
+        {/* Section 1: Physical Profile */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -309,7 +312,7 @@ export default function SettingsPage() {
               </div>
               
               <Button 
-                onClick={handleDeactivateAccount}
+                onClick={() => setDeleteStep(1)}
                 disabled={isDeleting}
                 variant="destructive" 
                 className="bg-red-600 hover:bg-red-700 w-full md:w-auto"
@@ -329,6 +332,91 @@ export default function SettingsPage() {
         </div>
 
       </div>
+
+      {/* =================MODALS SECTION================= */}
+
+      {/* 1. THE 2-STEP DEACTIVATION MODAL SYSTEM */}
+      {deleteStep > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
+          
+          {/* STEP 1: INITIAL CONFIRMATION */}
+          {deleteStep === 1 && (
+            <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 text-center space-y-6 animate-in zoom-in-95">
+               <div className="mx-auto bg-red-100 h-12 w-12 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+               </div>
+               <div className="space-y-2">
+                 <h3 className="text-lg font-bold text-slate-900">Are you sure?</h3>
+                 <p className="text-sm text-slate-500">This will begin the process of deactivating your account.</p>
+               </div>
+               <div className="flex gap-3 justify-center">
+                 <Button variant="outline" onClick={() => setDeleteStep(0)} className="w-auto">Cancel</Button>
+                 <Button onClick={() => setDeleteStep(2)} className="w-auto bg-slate-900 hover:bg-slate-800">Continue</Button>
+               </div>
+            </div>
+          )}
+
+          {/* STEP 2: GRACE PERIOD INFO */}
+          {deleteStep === 2 && (
+            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6 animate-in slide-in-from-right-8">
+               <div className="flex items-start gap-4">
+                  <div className="bg-blue-100 p-3 rounded-full shrink-0">
+                    <Info className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div className="space-y-3">
+                    <h3 className="text-lg font-bold text-slate-900">Safety & Grace Period</h3>
+                    <div className="text-sm text-slate-500 leading-relaxed">
+                      <p className="mb-3">We don't want you to lose data by accident.</p>
+                      <ul className="list-disc pl-4 space-y-2 text-slate-700">
+                        <li>Your account will be <strong>hidden immediately</strong>.</li>
+                        <li>You have <strong>15 days</strong> to log back in and restore everything.</li>
+                        <li>After 15 days, your data is <strong>deleted forever</strong>.</li>
+                      </ul>
+                    </div>
+                  </div>
+               </div>
+               <div className="flex gap-3 justify-end pt-2">
+                 <Button variant="ghost" onClick={() => setDeleteStep(1)}>Back</Button>
+                 <Button 
+                   variant="destructive" 
+                   onClick={confirmDeactivation} 
+                   disabled={isDeleting}
+                   className="bg-red-600 hover:bg-red-700 gap-2"
+                 >
+                   {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : null}
+                   Confirm Deactivation
+                 </Button>
+               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 2. GENERIC SUCCESS/ERROR MODAL */}
+      {simpleModal && (
+         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 relative animate-in slide-in-from-bottom-8 md:zoom-in-95">
+                <button onClick={() => setSimpleModal(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+                    <X className="w-5 h-5" />
+                </button>
+                <div className="flex items-start gap-4">
+                    <div className={`p-3 rounded-full shrink-0 ${simpleModal.isError ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                        {simpleModal.isError ? <AlertTriangle className="w-6 h-6"/> : <Check className="w-6 h-6"/>}
+                    </div>
+                    <div className="space-y-1 pt-1">
+                        <h3 className="text-lg font-bold text-slate-900">{simpleModal.title}</h3>
+                        <p className="text-sm text-slate-500">{simpleModal.msg}</p>
+                    </div>
+                </div>
+                <div className="mt-6 flex justify-end">
+                    <Button onClick={() => setSimpleModal(null)} className={simpleModal.isError ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-slate-800'}>
+                        Okay, got it
+                    </Button>
+                </div>
+            </div>
+         </div>
+      )}
+
     </div>
   );
 }

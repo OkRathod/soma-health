@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea"; // Ensure you have this or use standard textarea
-import { Loader2, Send, AlertTriangle } from "lucide-react";
+import { Loader2, Send, AlertTriangle, X, Check} from "lucide-react";
 import Link from "next/link";
 import WeeklyChart from "@/components/WeeklyChart";
 import Image from "next/image";
@@ -19,10 +19,15 @@ export default function DashboardClient({ user }: { user: any }) {
   const [summary, setSummary] = useState({ in: 0, out: 0, goal: 2500 });
   const [waterTotal, setWaterTotal] = useState(0);
   const [isRestoring, setIsRestoring] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
   
   // New State for Input
   const [newLogText, setNewLogText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // 👇 NEW: STATE FOR GENERIC SUCCESS/ERROR MODALS
+  // This replaces ugly browser alerts for things like "Settings Saved"
+  const [simpleModal, setSimpleModal] = useState<{ title: string; msg: string; isError?: boolean } | null>(null);
 
   useEffect(() => {
     fetchLogs();
@@ -44,24 +49,27 @@ export default function DashboardClient({ user }: { user: any }) {
   }
 
   async function handleRestoreAccount() {
-    if(!confirm("Restore your account and cancel deletion?")) return;
-    
-    setIsRestoring(true);
-    try {
-      // We will create this API route in a moment
-      const res = await fetch("/api/user/restore", { method: "POST" });
-      if (res.ok) {
-        alert("Welcome back! Your account is fully restored.");
-        window.location.reload(); // Reload to remove the banner
-      } else {
-        alert("Failed to restore account.");
+      // We close the modal first (if open)
+      setShowRestoreModal(false); 
+      
+      setIsRestoring(true);
+      try {
+        const res = await fetch("/api/user/restore", { method: "POST" });
+        if (res.ok) {
+          setSimpleModal({ title: "Welcome Back!", msg: "Your account is fully active again." });
+          
+          // Slight delay before reload so they can read the success message
+          setTimeout(() => window.location.reload(), 2000);
+        } else {
+          setSimpleModal({ title: "Error", msg: "Failed to restore account.", isError: true });
+        }
+      } catch (e) {
+        console.error(e);
+        setSimpleModal({ title: "Error", msg: "Server error.", isError: true });
+      } finally {
+        setIsRestoring(false);
       }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsRestoring(false);
     }
-  }
 
   function calculateSummary(logs: any[]) {
     let totalIn = 0;
@@ -106,7 +114,7 @@ async function handleAddWater() {
         fetchLogs(); // Sync with real database data
       }
     } catch (err) {
-      alert("Failed to add water");
+      setSimpleModal({ title: "Error", msg: "Failed to add water log.", isError: true });
     }
   }
 
@@ -130,7 +138,7 @@ async function handleAddWater() {
         fetchLogs(); // Refresh data immediately
       }
     } catch (err) {
-      alert("Failed to process log");
+      setSimpleModal({ title: "Error", msg: "Failed to add log.", isError: true });
     } finally {
       setIsProcessing(false);
     }
@@ -157,7 +165,7 @@ async function handleAddWater() {
               </div>
               
               <Button 
-                onClick={handleRestoreAccount} 
+                onClick={() => setShowRestoreModal(true)} 
                 disabled={isRestoring}
                 className="bg-red-600 hover:bg-red-700 text-white w-full md:w-auto shadow-sm"
               >
@@ -292,6 +300,81 @@ async function handleAddWater() {
           )}
         </div>
       </main>
+      {/* 👇 GENERIC SUCCESS/ERROR MODAL */}
+      {simpleModal && (
+         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
+            <div className="bg-white rounded-xl shadow-2xl w-auto max-w-sm p-6 relative animate-in slide-in-from-bottom-8 md:zoom-in-95">
+                
+                {/* Close Button */}
+                <button 
+                  onClick={() => setSimpleModal(null)} 
+                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+                >
+                    <X className="w-5 h-5" />
+                </button>
+
+                {/* Content */}
+                <div className="flex items-start gap-4 pr-6">
+                    <div className={`p-3 rounded-full shrink-0 ${simpleModal.isError ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                        {simpleModal.isError ? <AlertTriangle className="w-6 h-6"/> : <Check className="w-6 h-6"/>}
+                    </div>
+                    <div className="space-y-1 pt-1">
+                        <h3 className="text-lg font-bold text-slate-900 whitespace-nowrap">{simpleModal.title}</h3>
+                        <p className="text-sm text-slate-500">{simpleModal.msg}</p>
+                    </div>
+                </div>
+
+                {/* Action Button */}
+                <div className="mt-6 flex justify-end">
+                    <Button 
+                      onClick={() => setSimpleModal(null)} 
+                      className={simpleModal.isError ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-slate-800'}
+                    >
+                        Okay
+                    </Button>
+                </div>
+            </div>
+         </div>
+      )}
+
+      {/* 👇 RESTORE CONFIRMATION MODAL */}
+      {showRestoreModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-auto p-6 text-center space-y-6 animate-in zoom-in-95">
+             
+             {/* Icon */}
+             <div className="mx-auto bg-blue-100 h-12 w-12 rounded-full flex items-center justify-center">
+                <Check className="h-6 w-6 text-blue-600" />
+             </div>
+
+             {/* Text */}
+             <div className="space-y-2">
+               <h3 className="text-lg font-bold text-slate-900">Restore Account?</h3>
+               <p className="text-sm text-slate-500">
+                 This will cancel the deletion process. Your account will be safe and fully active immediately.
+               </p>
+             </div>
+
+             {/* Buttons */}
+             <div className="flex gap-3 justify-center">
+               <Button 
+                 variant="outline" 
+                 onClick={() => setShowRestoreModal(false)} 
+                 className="w-auto"
+               >
+                 Cancel
+               </Button>
+               <Button 
+                 onClick={handleRestoreAccount} 
+                 className="w-auto bg-slate-900 hover:bg-slate-800"
+               >
+                 Yes, Restore
+               </Button>
+             </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
