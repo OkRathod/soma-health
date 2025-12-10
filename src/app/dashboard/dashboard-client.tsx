@@ -254,52 +254,6 @@ async function handleAddWater() {
         <section>
         <WeeklyChart logs={logs} />
         </section>
-
-        {/* 3. Recent Activity Feed */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-slate-800">Today's Journal</h2>
-          
-          {loading ? (
-            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-muted-foreground"/></div>
-          ) : logs.length === 0 ? (
-            <div className="p-8 text-center border rounded-lg bg-card border-dashed">
-              <p className="text-muted-foreground">No logs yet.</p>
-            </div>
-          ) : (
-            logs.map((log) => (
-              <Card key={log.id} className="overflow-hidden border-border shadow-sm hover:shadow-md transition-shadow">
-                <div className="p-4 flex flex-col md:flex-row gap-4 justify-between items-start">
-                  <div className="space-y-2 flex-1">
-                    <p className="font-medium text-foreground">"{log.rawText}"</p>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                        {new Date(log.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                    </div>
-                    
-                    {log.aiFeedback && (
-                        <div className="bg-blue-50 text-blue-700 text-xs px-3 py-2 rounded-md border border-blue-100 leading-relaxed">
-                        <span className="font-semibold mr-1">Coach:</span> {log.aiFeedback}
-                        </div>
-                    )}
-                  </div>
-
-                  <div className="flex md:flex-col items-center gap-4 md:gap-1 text-sm font-mono text-slate-600 min-w-[80px] md:text-right border-t md:border-t-0 md:border-l border-border pt-2 md:pt-0 pl-0 md:pl-4 mt-2 md:mt-0 w-full md:w-auto justify-end">
-                    <div className="text-foreground">
-                      <span className="font-bold">+{log.totalCaloriesIn}</span> <span className="text-xs text-muted-foreground">in</span>
-                    </div>
-                    
-                    {log.totalCaloriesOut > 0 && (
-                        <div className="text-success">
-                        <span className="font-bold">-{log.totalCaloriesOut}</span> <span className="text-xs text-success/70">out</span>
-                        </div>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </div>
       </main>
       {/* 👇 GENERIC SUCCESS/ERROR MODAL */}
       {simpleModal && (

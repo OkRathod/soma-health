@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation"; //  New hook to check current page
-import { Activity, Settings } from "lucide-react"; //  Import Settings icon
+import { Activity, Settings, History } from "lucide-react"; //  Import Settings icon
 import { motion } from "framer-motion";
 
 export function Navbar() {
@@ -41,7 +41,15 @@ export function Navbar() {
           isActive={pathname === "/dashboard"} // Auto-highlight
         />
 
-        {/* 2. Settings Button (New!) */}
+        {/* 2. History Button (New!) */}
+        <NavItem 
+          href="/history" 
+          icon={<History className="w-6 h-6" />} 
+          label="History" 
+          isActive={pathname === "/history"} 
+        />
+
+        {/* 3. Settings Button (New!) */}
         <NavItem 
           href="/settings" 
           icon={<Settings className="w-6 h-6" />} 
