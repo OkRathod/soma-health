@@ -340,7 +340,7 @@ export default function SettingsPage() {
               <Button 
                 onClick={handleExport}
                 variant="outline" 
-                className="border-border hover:bg-background hover:text-blue-600 gap-2 w-full md:w-auto"
+                className="border-border hover:bg-background hover:text-info gap-2 w-full md:w-auto"
               >
                 <Download className="w-4 h-4" />
                 Download CSV
@@ -352,11 +352,13 @@ export default function SettingsPage() {
 
         {/* 👇 UPDATED: Danger Zone (Deactivate) */}
         <Card className="border-destructive/20 shadow-sm overflow-hidden">
-          <CardHeader className="bg-destructive/10 border-b border-destructive/20 pb-4">
+          
+          <CardHeader className="bg-destructive/10 border-b border-destructive/20 pt-[10px] pb-0">
             <CardTitle className="flex items-center gap-2 text-destructive">
                <AlertTriangle className="w-5 h-5" /> Danger Zone
             </CardTitle>
           </CardHeader>
+
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="space-y-1">
@@ -484,7 +486,7 @@ function InfoPopup({ text }: { text: string }) {
       {/* Icon Trigger */}
       <Info 
         onClick={() => setOpen(!open)} 
-        className="w-4 h-4 text-muted-foreground hover:text-blue-600 cursor-pointer transition-colors"
+        className="w-4 h-4 text-muted-foreground hover:text-info cursor-pointer transition-colors"
       />
 
       {/* The Popup Bubble */}
@@ -495,7 +497,7 @@ function InfoPopup({ text }: { text: string }) {
 
           {/* Bubble Container */}
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50">
-            <div className="relative bg-primary text-popover-foreground text-xs rounded-lg shadow-2xl p-4 pr-10 w-96 animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative bg-primary text-primary-foreground text-xs rounded-lg shadow-2xl p-4 pr-10 w-96 animate-in fade-in zoom-in-95 duration-200">
               
               {/* THE TEXT */}
               <p className="leading-relaxed">
@@ -508,13 +510,13 @@ function InfoPopup({ text }: { text: string }) {
                   e.stopPropagation();
                   setOpen(false);
                 }}
-                className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-white transition-colors"
+                className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-primary-foreground transition-colors"
               >
                 <X className="w-4 h-4" strokeWidth={3} />
               </button>
               
               {/* Arrow */}
-              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
+              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-primary" />
             </div>
           </div>
         </>
