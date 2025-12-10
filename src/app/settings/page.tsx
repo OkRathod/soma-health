@@ -11,6 +11,8 @@ import { Info } from "lucide-react";
 import { X , Download, AlertTriangle, Check} from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { DNALoader } from "@/components/dna-loader";
+import { useTheme } from "next-themes";
+import { Moon, Sun, Monitor } from "lucide-react"; // Icons
 
 
 // Helper functions to convert between metric and imperial
@@ -25,6 +27,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [hasKey, setHasKey] = useState(false);
   const { user, isLoaded } = useUser();
+  const { setTheme, theme } = useTheme();
 
   // 👇 STATE FOR DEACTIVATION MODAL (2-Steps)
   const [deleteStep, setDeleteStep] = useState(0);
@@ -153,13 +156,13 @@ export default function SettingsPage() {
 };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans">
+    <div className="min-h-screen bg-background p-6 md:p-10 font-sans">
       <div className={`max-w-2xl mx-auto space-y-8 transition-all ${deleteStep > 0 || simpleModal ? 'blur-sm scale-[0.98] opacity-80' : ''}`}>
         
         {/* Header */}
         <div>
-           <h1 className="text-3xl font-bold text-slate-900">Settings</h1>
-           {/* <p className="text-slate-500">Manage your profile and privacy configurations.</p> */}
+           <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+           {/* <p className="text-muted-foreground">Manage your profile and privacy configurations.</p> */}
         </div>
 
         {/* Section 1: Physical Profile */}
@@ -172,13 +175,13 @@ export default function SettingsPage() {
               </CardTitle>
               
               {/* 👇 UNIT TOGGLE SWITCH */}
-              <div className="flex items-center bg-slate-100 rounded-lg p-1">
+              <div className="flex items-center bg-muted rounded-lg p-1">
                 <button
                   onClick={() => toggleUnit("metric")}
                   className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
                     form.unitPreference === "metric" 
-                      ? "bg-white text-slate-900 shadow-sm" 
-                      : "text-slate-500 hover:text-slate-700"
+                      ? "bg-background text-foreground shadow-sm" 
+                      : "text-muted-foreground hover:text-slate-700"
                   }`}
                 >
                   Metric
@@ -187,8 +190,8 @@ export default function SettingsPage() {
                   onClick={() => toggleUnit("imperial")}
                   className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
                     form.unitPreference === "imperial" 
-                      ? "bg-white text-slate-900 shadow-sm" 
-                      : "text-slate-500 hover:text-slate-700"
+                      ? "bg-background text-foreground shadow-sm" 
+                      : "text-muted-foreground hover:text-slate-700"
                   }`}
                 >
                   Imperial
@@ -233,8 +236,60 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Section 2: The Vault (API Key) */}
-        <Card className="border-slate-300 shadow-md">
+        {/* Section 2: Appearance */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              Appearance
+              <InfoPopup text="Choose how Soma looks on your device." />
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-4">
+              {/* Light Mode */}
+              <button
+                onClick={() => setTheme("light")}
+                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
+                  theme === "light" 
+                    ? "border-blue-600 bg-blue-50/50 text-blue-700" 
+                    : "border-slate-100 hover:border-slate-200 text-muted-foreground"
+                }`}
+              >
+                <Sun className="w-6 h-6 mb-2" />
+                <span className="text-xs font-medium">Light</span>
+              </button>
+
+              {/* Dark Mode */}
+              <button
+                onClick={() => setTheme("dark")}
+                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
+                  theme === "dark" 
+                    ? "border-blue-600 bg-muted text-white" 
+                    : "border-slate-100 hover:border-slate-200 text-muted-foreground"
+                }`}
+              >
+                <Moon className="w-6 h-6 mb-2" />
+                <span className="text-xs font-medium">Dark</span>
+              </button>
+
+              {/* System Mode */}
+              <button
+                onClick={() => setTheme("system")}
+                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
+                  theme === "system" 
+                    ? "border-blue-600 bg-muted text-foreground" 
+                    : "border-slate-100 hover:border-slate-200 text-muted-foreground"
+                }`}
+              >
+                <Monitor className="w-6 h-6 mb-2" />
+                <span className="text-xs font-medium">System</span>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Section 3: The Vault (API Key) */}
+        <Card className="border-border shadow-md">
           <CardHeader>
             <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -243,7 +298,7 @@ export default function SettingsPage() {
                     <InfoPopup text="Bring your own Gemini API key. It is encrypted using AES-256 before being stored. Soma cannot see your key." />
                 </CardTitle>
                 {hasKey && (
-                    <div className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded-full">
+                    <div className="flex items-center gap-1 text-xs bg-success/10 text-success px-2 py-1 rounded-full">
                         <CheckCircle className="w-3 h-3"/> Key Active
                     </div>
                 )}
@@ -259,14 +314,14 @@ export default function SettingsPage() {
                 value={form.apiKey}
                 onChange={e => setForm({...form, apiKey: e.target.value})}
               />
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted-foreground">
                 Don't have one? <a href="https://aistudio.google.com/app/apikey" target="_blank" className="underline text-blue-600">Get it free here</a>.
               </p>
             </div>
           </CardContent>
         </Card>
 
-        {/* 👇 SECTION 3: DATA MANAGEMENT (New!) */}
+        {/* 👇 SECTION 4: DATA MANAGEMENT (New!) */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -275,17 +330,17 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 border border-slate-300 rounded-lg bg-slate-50/50">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 border border-border rounded-lg bg-background/50">
               <div className="space-y-1">
-                <p className="font-medium text-slate-900">Export Health Data</p>
-                <p className="text-sm text-slate-500">
+                <p className="font-medium text-foreground">Export Health Data</p>
+                <p className="text-sm text-muted-foreground">
                   Get a CSV file containing your entire history.
                 </p>
               </div>
               <Button 
                 onClick={handleExport}
                 variant="outline" 
-                className="border-slate-300 hover:bg-white hover:text-blue-600 gap-2 w-full md:w-auto"
+                className="border-border hover:bg-background hover:text-blue-600 gap-2 w-full md:w-auto"
               >
                 <Download className="w-4 h-4" />
                 Download CSV
@@ -296,17 +351,17 @@ export default function SettingsPage() {
 
 
         {/* 👇 UPDATED: Danger Zone (Deactivate) */}
-        <Card className="border-red-100 shadow-sm overflow-hidden">
-          <CardHeader className="bg-red-50/50 border-b border-red-100 pb-4">
-            <CardTitle className="flex items-center gap-2 text-red-700">
+        <Card className="border-destructive/20 shadow-sm overflow-hidden">
+          <CardHeader className="bg-destructive/10 border-b border-destructive/20 pb-4">
+            <CardTitle className="flex items-center gap-2 text-destructive">
                <AlertTriangle className="w-5 h-5" /> Danger Zone
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="space-y-1">
-                <p className="font-medium text-slate-900">Deactivate Account</p>
-                <p className="text-sm text-slate-500">
+                <p className="font-medium text-foreground">Deactivate Account</p>
+                <p className="text-sm text-muted-foreground">
                   Schedule account for deletion. You have a 15-day grace period to restore it.
                 </p>
               </div>
@@ -315,7 +370,7 @@ export default function SettingsPage() {
                 onClick={() => setDeleteStep(1)}
                 disabled={isDeleting}
                 variant="destructive" 
-                className="bg-red-600 hover:bg-red-700 w-full md:w-auto"
+                className="variant='destructive' variant='destructive' w-full md:w-auto"
               >
                 {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : null}
                 Deactivate Account
@@ -325,7 +380,7 @@ export default function SettingsPage() {
         </Card>
 
         <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={saving} className="bg-slate-900 hover:bg-slate-800">
+            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : null}
                 Save Changes
             </Button>
@@ -341,31 +396,31 @@ export default function SettingsPage() {
           
           {/* STEP 1: INITIAL CONFIRMATION */}
           {deleteStep === 1 && (
-            <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 text-center space-y-6 animate-in zoom-in-95">
+            <div className="bg-background rounded-xl shadow-2xl max-w-sm w-full p-6 text-center space-y-6 animate-in zoom-in-95">
                <div className="mx-auto bg-red-100 h-12 w-12 rounded-full flex items-center justify-center">
                   <AlertTriangle className="h-6 w-6 text-red-600" />
                </div>
                <div className="space-y-2">
-                 <h3 className="text-lg font-bold text-slate-900">Are you sure?</h3>
-                 <p className="text-sm text-slate-500">This will begin the process of deactivating your account.</p>
+                 <h3 className="text-lg font-bold text-foreground">Are you sure?</h3>
+                 <p className="text-sm text-muted-foreground">This will begin the process of deactivating your account.</p>
                </div>
                <div className="flex gap-3 justify-center">
                  <Button variant="outline" onClick={() => setDeleteStep(0)} className="w-auto">Cancel</Button>
-                 <Button onClick={() => setDeleteStep(2)} className="w-auto bg-slate-900 hover:bg-slate-800">Continue</Button>
+                 <Button onClick={() => setDeleteStep(2)} className="w-auto bg-primary hover:bg-primary/90">Continue</Button>
                </div>
             </div>
           )}
 
           {/* STEP 2: GRACE PERIOD INFO */}
           {deleteStep === 2 && (
-            <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6 animate-in slide-in-from-right-8">
+            <div className="bg-background rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6 animate-in slide-in-from-right-8">
                <div className="flex items-start gap-4">
                   <div className="bg-blue-100 p-3 rounded-full shrink-0">
                     <Info className="w-6 h-6 text-blue-600" />
                   </div>
                   <div className="space-y-3">
-                    <h3 className="text-lg font-bold text-slate-900">Safety & Grace Period</h3>
-                    <div className="text-sm text-slate-500 leading-relaxed">
+                    <h3 className="text-lg font-bold text-foreground">Safety & Grace Period</h3>
+                    <div className="text-sm text-muted-foreground leading-relaxed">
                       <p className="mb-3">We don't want you to lose data by accident.</p>
                       <ul className="list-disc pl-4 space-y-2 text-slate-700">
                         <li>Your account will be <strong>hidden immediately</strong>.</li>
@@ -381,7 +436,7 @@ export default function SettingsPage() {
                    variant="destructive" 
                    onClick={confirmDeactivation} 
                    disabled={isDeleting}
-                   className="bg-red-600 hover:bg-red-700 gap-2"
+                   className="variant='destructive' variant='destructive' gap-2"
                  >
                    {isDeleting ? <Loader2 className="w-4 h-4 animate-spin"/> : null}
                    Confirm Deactivation
@@ -395,21 +450,21 @@ export default function SettingsPage() {
       {/* 2. GENERIC SUCCESS/ERROR MODAL */}
       {simpleModal && (
          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 relative animate-in slide-in-from-bottom-8 md:zoom-in-95">
-                <button onClick={() => setSimpleModal(null)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+            <div className="bg-background rounded-xl shadow-2xl max-w-sm w-full p-6 relative animate-in slide-in-from-bottom-8 md:zoom-in-95">
+                <button onClick={() => setSimpleModal(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-slate-600">
                     <X className="w-5 h-5" />
                 </button>
                 <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-full shrink-0 ${simpleModal.isError ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                    <div className={`p-3 rounded-full shrink-0 ${simpleModal.isError ? 'bg-red-100 text-red-600' : 'bg-success/10 text-emerald-600'}`}>
                         {simpleModal.isError ? <AlertTriangle className="w-6 h-6"/> : <Check className="w-6 h-6"/>}
                     </div>
                     <div className="space-y-1 pt-1">
-                        <h3 className="text-lg font-bold text-slate-900">{simpleModal.title}</h3>
-                        <p className="text-sm text-slate-500">{simpleModal.msg}</p>
+                        <h3 className="text-lg font-bold text-foreground">{simpleModal.title}</h3>
+                        <p className="text-sm text-muted-foreground">{simpleModal.msg}</p>
                     </div>
                 </div>
                 <div className="mt-6 flex justify-end">
-                    <Button onClick={() => setSimpleModal(null)} className={simpleModal.isError ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-slate-800'}>
+                    <Button onClick={() => setSimpleModal(null)} className={simpleModal.isError ? 'variant="destructive" variant="destructive"' : 'bg-primary hover:bg-primary/90'}>
                         Okay, got it
                     </Button>
                 </div>
@@ -429,7 +484,7 @@ function InfoPopup({ text }: { text: string }) {
       {/* Icon Trigger */}
       <Info 
         onClick={() => setOpen(!open)} 
-        className="w-4 h-4 text-slate-400 hover:text-blue-600 cursor-pointer transition-colors"
+        className="w-4 h-4 text-muted-foreground hover:text-blue-600 cursor-pointer transition-colors"
       />
 
       {/* The Popup Bubble */}
@@ -440,7 +495,7 @@ function InfoPopup({ text }: { text: string }) {
 
           {/* Bubble Container */}
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50">
-            <div className="relative bg-slate-900 text-slate-100 text-xs rounded-lg shadow-2xl p-4 pr-10 w-96 animate-in fade-in zoom-in-95 duration-200">
+            <div className="relative bg-primary text-popover-foreground text-xs rounded-lg shadow-2xl p-4 pr-10 w-96 animate-in fade-in zoom-in-95 duration-200">
               
               {/* THE TEXT */}
               <p className="leading-relaxed">
@@ -453,7 +508,7 @@ function InfoPopup({ text }: { text: string }) {
                   e.stopPropagation();
                   setOpen(false);
                 }}
-                className="absolute top-2 right-2 p-1 text-slate-400 hover:text-white transition-colors"
+                className="absolute top-2 right-2 p-1 text-muted-foreground hover:text-white transition-colors"
               >
                 <X className="w-4 h-4" strokeWidth={3} />
               </button>

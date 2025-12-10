@@ -145,19 +145,19 @@ async function handleAddWater() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
+    <div className="min-h-screen bg-background p-4 md:p-8 font-sans text-foreground">
       <main className="max-w-4xl mx-auto space-y-8">
         
         {/* 👇 RESTORE BANNER (Only shows if scheduledForDeletion is set) */}
         {user?.scheduledForDeletion && (
           <div className="max-w-4xl mx-auto mb-6">
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+            <div className="bg-destructive/10 border border-red-200 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 bg-red-100 rounded-full flex items-center justify-center text-red-600">
                   <AlertTriangle className="w-5 h-5" />
                 </div>
                 <div>
-                  <p className="font-bold text-red-900">Account Scheduled for Deletion</p>
+                  <p className="font-bold text-destructive">Account Scheduled for Deletion</p>
                   <p className="text-sm text-red-700">
                     You have until <span className="font-semibold">{new Date(user.scheduledForDeletion).toLocaleDateString()}</span> to restore your account.
                   </p>
@@ -167,7 +167,7 @@ async function handleAddWater() {
               <Button 
                 onClick={() => setShowRestoreModal(true)} 
                 disabled={isRestoring}
-                className="bg-red-600 hover:bg-red-700 text-white w-full md:w-auto shadow-sm"
+                className="bg-red-600 hover:bg-red-700 text-primary-foreground w-full md:w-auto shadow-sm"
               >
                 {isRestoring ? "Restoring..." : "Undo Deletion"}
               </Button>
@@ -176,19 +176,19 @@ async function handleAddWater() {
         )}
 
         {/* 1. The Input Area (New!) */}
-        <section className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-          <label className="block text-sm font-medium text-slate-500 mb-2">What did you do or eat?</label>
+        <section className="bg-card p-4 rounded-xl shadow-sm border border-border">
+          <label className="block text-sm font-medium text-muted-foreground mb-2">What did you do or eat?</label>
           <div className="flex gap-2">
             <textarea
               value={newLogText}
               onChange={(e) => setNewLogText(e.target.value)}
               placeholder="e.g. I had a bowl of curd rice and went for a 20 min walk..."
-              className="flex-1 min-h-[60px] p-3 rounded-md border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 resize-none"
+              className="flex-1 min-h-[60px] p-3 rounded-md border border-input text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
             />
             <Button 
               onClick={handleAddLog} 
               disabled={isProcessing || !newLogText.trim()}
-              className="h-auto px-6 bg-slate-900 hover:bg-slate-800"
+              className="h-auto px-6 bg-primary hover:bg-slate-800"
             >
               {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
             </Button>
@@ -197,45 +197,45 @@ async function handleAddWater() {
 
         {/* 2. The Big Numbers */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-slate-200 shadow-sm">
+          <Card className="border-border shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Calories In</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Calories In</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-slate-900">{summary.in}</div>
+              <div className="text-3xl font-bold text-foreground">{summary.in}</div>
               <Progress value={(summary.in / summary.goal) * 100} className="h-2 mt-3 bg-slate-100" />
-              <p className="text-xs text-slate-400 mt-2 text-right">{Math.round((summary.in / summary.goal) * 100)}% of goal</p>
+              <p className="text-xs text-muted-foreground mt-2 text-right">{Math.round((summary.in / summary.goal) * 100)}% of goal</p>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 shadow-sm">
+          <Card className="border-border shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Calories Burned</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Calories Burned</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-emerald-600">{summary.out}</div>
-              <p className="text-xs text-slate-500 mt-1">Active Energy</p>
+              <div className="text-3xl font-bold text-success">{summary.out}</div>
+              <p className="text-xs text-muted-foreground mt-1">Active Energy</p>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 shadow-sm bg-slate-900 text-white">
+          <Card className="border-border shadow-sm bg-primary text-primary-foreground">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Net Balance</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Net Balance</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">{summary.in - summary.out}</div>
-              <p className="text-xs text-slate-400 mt-1">Current Total</p>
+              <p className="text-xs text-muted-foreground mt-1">Current Total</p>
             </CardContent>
           </Card>
 
           {/* 👇 NEW WATER CARD START */}
           <Card className="border-blue-100 bg-blue-50 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-blue-600">Hydration</CardTitle>
+              <CardTitle className="text-sm font-medium text-info">Hydration</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-blue-900">
-                {waterTotal} <span className="text-lg font-normal text-blue-600">ml</span>
+                {waterTotal} <span className="text-lg font-normal text-info">ml</span>
               </div>
               <Button 
                 onClick={handleAddWater} 
@@ -259,19 +259,19 @@ async function handleAddWater() {
           <h2 className="text-lg font-semibold text-slate-800">Today's Journal</h2>
           
           {loading ? (
-            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-slate-400"/></div>
+            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-muted-foreground"/></div>
           ) : logs.length === 0 ? (
-            <div className="p-8 text-center border rounded-lg bg-white border-dashed">
-              <p className="text-slate-500">No logs yet.</p>
+            <div className="p-8 text-center border rounded-lg bg-card border-dashed">
+              <p className="text-muted-foreground">No logs yet.</p>
             </div>
           ) : (
             logs.map((log) => (
-              <Card key={log.id} className="overflow-hidden border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+              <Card key={log.id} className="overflow-hidden border-border shadow-sm hover:shadow-md transition-shadow">
                 <div className="p-4 flex flex-col md:flex-row gap-4 justify-between items-start">
                   <div className="space-y-2 flex-1">
-                    <p className="font-medium text-slate-900">"{log.rawText}"</p>
+                    <p className="font-medium text-foreground">"{log.rawText}"</p>
                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-muted-foreground">
                         {new Date(log.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                     </div>
@@ -283,14 +283,14 @@ async function handleAddWater() {
                     )}
                   </div>
 
-                  <div className="flex md:flex-col items-center gap-4 md:gap-1 text-sm font-mono text-slate-600 min-w-[80px] md:text-right border-t md:border-t-0 md:border-l border-slate-100 pt-2 md:pt-0 pl-0 md:pl-4 mt-2 md:mt-0 w-full md:w-auto justify-end">
-                    <div className="text-slate-900">
-                      <span className="font-bold">+{log.totalCaloriesIn}</span> <span className="text-xs text-slate-400">in</span>
+                  <div className="flex md:flex-col items-center gap-4 md:gap-1 text-sm font-mono text-slate-600 min-w-[80px] md:text-right border-t md:border-t-0 md:border-l border-border pt-2 md:pt-0 pl-0 md:pl-4 mt-2 md:mt-0 w-full md:w-auto justify-end">
+                    <div className="text-foreground">
+                      <span className="font-bold">+{log.totalCaloriesIn}</span> <span className="text-xs text-muted-foreground">in</span>
                     </div>
                     
                     {log.totalCaloriesOut > 0 && (
-                        <div className="text-emerald-600">
-                        <span className="font-bold">-{log.totalCaloriesOut}</span> <span className="text-xs text-emerald-600/70">out</span>
+                        <div className="text-success">
+                        <span className="font-bold">-{log.totalCaloriesOut}</span> <span className="text-xs text-success/70">out</span>
                         </div>
                     )}
                   </div>
@@ -303,24 +303,24 @@ async function handleAddWater() {
       {/* 👇 GENERIC SUCCESS/ERROR MODAL */}
       {simpleModal && (
          <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
-            <div className="bg-white rounded-xl shadow-2xl w-auto max-w-sm p-6 relative animate-in slide-in-from-bottom-8 md:zoom-in-95">
+            <div className="bg-card rounded-xl shadow-2xl w-auto max-w-sm p-6 relative animate-in slide-in-from-bottom-8 md:zoom-in-95">
                 
                 {/* Close Button */}
                 <button 
                   onClick={() => setSimpleModal(null)} 
-                  className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+                  className="absolute top-4 right-4 text-muted-foreground hover:text-slate-600"
                 >
                     <X className="w-5 h-5" />
                 </button>
 
                 {/* Content */}
                 <div className="flex items-start gap-4 pr-6">
-                    <div className={`p-3 rounded-full shrink-0 ${simpleModal.isError ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                    <div className={`p-3 rounded-full shrink-0 ${simpleModal.isError ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-success'}`}>
                         {simpleModal.isError ? <AlertTriangle className="w-6 h-6"/> : <Check className="w-6 h-6"/>}
                     </div>
                     <div className="space-y-1 pt-1">
-                        <h3 className="text-lg font-bold text-slate-900 whitespace-nowrap">{simpleModal.title}</h3>
-                        <p className="text-sm text-slate-500">{simpleModal.msg}</p>
+                        <h3 className="text-lg font-bold text-foreground whitespace-nowrap">{simpleModal.title}</h3>
+                        <p className="text-sm text-muted-foreground">{simpleModal.msg}</p>
                     </div>
                 </div>
 
@@ -328,7 +328,7 @@ async function handleAddWater() {
                 <div className="mt-6 flex justify-end">
                     <Button 
                       onClick={() => setSimpleModal(null)} 
-                      className={simpleModal.isError ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-slate-800'}
+                      className={simpleModal.isError ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-slate-800'}
                     >
                         Okay
                     </Button>
@@ -340,17 +340,17 @@ async function handleAddWater() {
       {/* 👇 RESTORE CONFIRMATION MODAL */}
       {showRestoreModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
-          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-auto p-6 text-center space-y-6 animate-in zoom-in-95">
+          <div className="bg-card rounded-xl shadow-2xl max-w-sm w-auto p-6 text-center space-y-6 animate-in zoom-in-95">
              
              {/* Icon */}
              <div className="mx-auto bg-blue-100 h-12 w-12 rounded-full flex items-center justify-center">
-                <Check className="h-6 w-6 text-blue-600" />
+                <Check className="h-6 w-6 text-info" />
              </div>
 
              {/* Text */}
              <div className="space-y-2">
-               <h3 className="text-lg font-bold text-slate-900">Restore Account?</h3>
-               <p className="text-sm text-slate-500">
+               <h3 className="text-lg font-bold text-foreground">Restore Account?</h3>
+               <p className="text-sm text-muted-foreground">
                  This will cancel the deletion process. Your account will be safe and fully active immediately.
                </p>
              </div>
@@ -366,7 +366,7 @@ async function handleAddWater() {
                </Button>
                <Button 
                  onClick={handleRestoreAccount} 
-                 className="w-auto bg-slate-900 hover:bg-slate-800"
+                 className="w-auto bg-primary hover:bg-slate-800"
                >
                  Yes, Restore
                </Button>

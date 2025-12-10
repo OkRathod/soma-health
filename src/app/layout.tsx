@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/ui/navbar";
 import Image from "next/image";
+import { ThemeProvider } from "@/components/theme-provider"
 
 // 👇 IMPORT THIS
 import { ClerkProvider } from '@clerk/nextjs';
@@ -20,8 +21,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
+        <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
         <ClerkProvider>
 
           {/* 1. The Navbar (Floating Dock) */}
@@ -51,6 +58,8 @@ export default function RootLayout({
           </main>
 
         </ClerkProvider>
+    </ThemeProvider>
+
       </body>
     </html>
   );

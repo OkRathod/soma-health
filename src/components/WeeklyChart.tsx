@@ -20,7 +20,6 @@ export default function WeeklyChart({ logs }: { logs: any[] }) {
   const chartData = processLogs(logs);
 
   function processLogs(logs: any[]) {
-    // Create an empty map for the last 7 days
     const last7Days = new Map();
     const today = new Date();
     
@@ -28,9 +27,9 @@ export default function WeeklyChart({ logs }: { logs: any[] }) {
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(today.getDate() - i);
-      const dateKey = d.toISOString().split('T')[0]; // "2025-12-08"
+      const dateKey = d.toISOString().split('T')[0];
       last7Days.set(dateKey, {
-        day: days[d.getDay()], // "Mon"
+        day: days[d.getDay()],
         in: 0,
         out: 0
       });
@@ -50,47 +49,65 @@ export default function WeeklyChart({ logs }: { logs: any[] }) {
   }
 
   return (
-    <Card className="border-slate-200 shadow-sm">
+    // 1. REPLACED: border-slate-200 -> border-border, added bg-card
+    <Card className="border-border bg-card shadow-sm">
       <CardHeader>
-        <CardTitle className="text-lg font-semibold text-slate-800">Weekly Progress</CardTitle>
+        {/* 2. REPLACED: text-slate-800 -> text-card-foreground */}
+        <CardTitle className="text-lg font-semibold text-card-foreground">Weekly Progress</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+              
+              {/* 3. REPLACED: stroke="#e2e8f0" -> stroke="var(--border)" */}
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+              
               <XAxis 
                 dataKey="day" 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: '#64748b', fontSize: 12 }} 
+                // 4. REPLACED: fill: '#64748b' -> fill: 'var(--muted-foreground)'
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} 
                 dy={10}
               />
               <YAxis 
                 axisLine={false} 
                 tickLine={false} 
-                tick={{ fill: '#64748b', fontSize: 12 }} 
+                // 5. REPLACED: fill: '#64748b' -> fill: 'var(--muted-foreground)'
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} 
               />
+              
               <Tooltip 
-                cursor={{ fill: '#f1f5f9' }}
-                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                // 6. REPLACED: fill: '#f1f5f9' -> fill: 'var(--muted)'
+                cursor={{ fill: 'var(--muted)' }}
+                // We manually set the tooltip background to match the theme
+                contentStyle={{ 
+                    borderRadius: '8px', 
+                    border: '1px solid var(--border)', 
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    backgroundColor: 'var(--card)',
+                    color: 'var(--card-foreground)'
+                }}
               />
               <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }}/>
               
-              {/* Calories In (Dark Blue) */}
+              {/* Calories In (Primary) */}
+              {/* 7. REPLACED: fill="#0f172a" -> fill="var(--primary)" */}
               <Bar 
                 dataKey="in" 
                 name="Calories In" 
-                fill="#0f172a" 
+                fill="var(--primary)" 
                 radius={[4, 4, 0, 0]} 
                 barSize={20}
               />
               
-              {/* Calories Out (Green) */}
+              {/* Calories Out (Success/Green) */}
+              {/* 8. REPLACED: fill="#10b981" -> fill="var(--success)" */}
               <Bar 
                 dataKey="out" 
                 name="Calories Burned" 
-                fill="#10b981" 
+                fill="var(--success)" 
                 radius={[4, 4, 0, 0]} 
                 barSize={20}
               />
