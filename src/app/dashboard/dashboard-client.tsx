@@ -196,8 +196,9 @@ async function handleAddWater() {
         </section>
 
         {/* 2. The Big Numbers */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-border shadow-sm">
+        {/* 👇 CHANGED: lg:grid-cols-4 ensures all 4 cards fit in one row on desktop */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Calories In</CardTitle>
             </CardHeader>
@@ -208,7 +209,7 @@ async function handleAddWater() {
             </CardContent>
           </Card>
 
-          <Card className="border-border shadow-sm">
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Calories Burned</CardTitle>
             </CardHeader>
@@ -218,7 +219,7 @@ async function handleAddWater() {
             </CardContent>
           </Card>
 
-          <Card className="border-border shadow-sm bg-primary text-primary-foreground">
+          <Card className="border-border shadow-sm bg-card text-muted-foreground">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Net Balance</CardTitle>
             </CardHeader>
@@ -229,7 +230,7 @@ async function handleAddWater() {
           </Card>
 
           {/* 👇 NEW WATER CARD START */}
-          <Card className="border-blue-100 bg-blue-50 shadow-sm">
+          <Card className="border-border bg-card shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-info">Hydration</CardTitle>
             </CardHeader>

@@ -21,8 +21,8 @@ export function Navbar() {
         transition={{ duration: 0.5, ease: "easeOut" }}
         
         className="flex items-center justify-center p-2 gap-3
-          bg-white
-          border border-slate-200
+          bg-card
+          border border-border
           shadow-[0_8px_30px_rgb(0,0,0,0.12)]
           rounded-full 
           pointer-events-auto
@@ -66,8 +66,8 @@ function NavItem({ href, icon, label, isActive }: { href: string, icon: any, lab
         className={`
           w-12 h-12 flex items-center justify-center rounded-full relative z-10 transition-colors duration-200
           ${isActive 
-            ? "bg-[#1e293b] text-white shadow-lg" 
-            : "text-slate-400 hover:bg-slate-200"
+            ? "bg-primary text-primary-foreground shadow-lg" 
+            : "text-muted-foreground hover:bg-secondary"
           }
         `}
       >
@@ -76,7 +76,7 @@ function NavItem({ href, icon, label, isActive }: { href: string, icon: any, lab
 
       {/* Tooltip */}
       <div className="absolute left-14 top-1/2 -translate-y-1/2 hidden md:block overflow-hidden pointer-events-none">
-        <span className="block bg-slate-900 text-white text-xs px-2 py-1 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-[-10px] group-hover:translate-x-0">
+        <span className="block bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 translate-x-[-10px] group-hover:translate-x-0">
           {label}
         </span>
       </div>
