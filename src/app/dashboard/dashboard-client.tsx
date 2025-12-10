@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea"; // Ensure you have this or use standard textarea
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import WeeklyChart from "@/components/WeeklyChart";
 import Image from "next/image";
@@ -18,6 +18,7 @@ export default function DashboardClient({ user }: { user: any }) {
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({ in: 0, out: 0, goal: 2500 });
   const [waterTotal, setWaterTotal] = useState(0);
+  const [isRestoring, setIsRestoring] = useState(false);
   
   // New State for Input
   const [newLogText, setNewLogText] = useState("");
@@ -39,6 +40,26 @@ export default function DashboardClient({ user }: { user: any }) {
       console.error("Failed to fetch logs");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleRestoreAccount() {
+    if(!confirm("Restore your account and cancel deletion?")) return;
+    
+    setIsRestoring(true);
+    try {
+      // We will create this API route in a moment
+      const res = await fetch("/api/user/restore", { method: "POST" });
+      if (res.ok) {
+        alert("Welcome back! Your account is fully restored.");
+        window.location.reload(); // Reload to remove the banner
+      } else {
+        alert("Failed to restore account.");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsRestoring(false);
     }
   }
 
@@ -119,6 +140,33 @@ async function handleAddWater() {
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
       <main className="max-w-4xl mx-auto space-y-8">
         
+        {/* 👇 RESTORE BANNER (Only shows if scheduledForDeletion is set) */}
+        {user?.scheduledForDeletion && (
+          <div className="max-w-4xl mx-auto mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 bg-red-100 rounded-full flex items-center justify-center text-red-600">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-bold text-red-900">Account Scheduled for Deletion</p>
+                  <p className="text-sm text-red-700">
+                    You have until <span className="font-semibold">{new Date(user.scheduledForDeletion).toLocaleDateString()}</span> to restore your account.
+                  </p>
+                </div>
+              </div>
+              
+              <Button 
+                onClick={handleRestoreAccount} 
+                disabled={isRestoring}
+                className="bg-red-600 hover:bg-red-700 text-white w-full md:w-auto shadow-sm"
+              >
+                {isRestoring ? "Restoring..." : "Undo Deletion"}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* 1. The Input Area (New!) */}
         <section className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
           <label className="block text-sm font-medium text-slate-500 mb-2">What did you do or eat?</label>
@@ -231,6 +279,7 @@ async function handleAddWater() {
                     <div className="text-slate-900">
                       <span className="font-bold">+{log.totalCaloriesIn}</span> <span className="text-xs text-slate-400">in</span>
                     </div>
+                    
                     {log.totalCaloriesOut > 0 && (
                         <div className="text-emerald-600">
                         <span className="font-bold">-{log.totalCaloriesOut}</span> <span className="text-xs text-emerald-600/70">out</span>

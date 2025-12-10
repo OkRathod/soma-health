@@ -32,6 +32,10 @@ model User {
   // Relations
   logs           DailyLog[]
   tasks          Task[]
+
+  // 👇 ADD THIS: Stores the date when the account will be permanently wiped
+  scheduledForDeletion  DateTime?
+  
 }
 
 model DailyLog {

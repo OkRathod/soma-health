@@ -1,5 +1,7 @@
-export default function Loading() {
-  // We create 12 pairs of dots (base pairs)
+import React from "react";
+
+export function DNALoader() {
+  // We create 12 pairs of dots
   const dots = Array.from({ length: 12 });
 
   return (
@@ -14,7 +16,7 @@ export default function Loading() {
               className="dna-dot h-3 w-3 bg-blue-600 shadow-sm"
               style={{
                 animation: "strand1 2s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite",
-                animationDelay: `${i * 0.15}s`, // Stagger the start time
+                animationDelay: `${i * 0.15}s`,
               }}
             />
             {/* Strand 2 (Light Blue) */}
@@ -30,10 +32,9 @@ export default function Loading() {
       </div>
 
       {/* Loading Text */}
-      <div className="flex flex-col items-center gap-1">
-        {/* <h2 className="text-xl font-bold text-blue-900 tracking-tight">SOMA</h2> */}
-        {/* <p className="text-xs font-medium text-blue-400 uppercase tracking-widest">Initializing System...</p> */}
-      </div>
+      {/* <div className="flex flex-col items-center gap-1">
+        <p className="text-xs font-medium text-blue-400 uppercase tracking-widest">Loading Settings...</p>
+      </div> */}
     </div>
   );
 }
