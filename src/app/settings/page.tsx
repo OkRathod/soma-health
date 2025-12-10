@@ -13,6 +13,13 @@ import { useUser } from "@clerk/nextjs";
 import { DNALoader } from "@/components/dna-loader";
 
 
+// Helper functions to convert between metric and imperial
+const toImperialHeight = (cm: string) => (Number(cm) / 30.48).toFixed(1); // cm -> ft
+const toMetricHeight = (ft: string) => (Number(ft) * 30.48).toFixed(0);   // ft -> cm
+
+const toImperialWeight = (kg: string) => (Number(kg) * 2.20462).toFixed(0); // kg -> lbs
+const toMetricWeight = (lbs: string) => (Number(lbs) / 2.20462).toFixed(1); // lbs -> kg
+
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -24,7 +31,8 @@ export default function SettingsPage() {
     nationality: "",
     height: "",
     weight: "",
-    apiKey: ""
+    apiKey: "",
+    unitPreference: "metric"
   });
 
   // 1. Fetch data ONLY when we have the real User ID
@@ -40,6 +48,7 @@ export default function SettingsPage() {
             nationality: data.data.nationality || "",
             height: data.data.height || "",
             weight: data.data.weight || "",
+            unitPreference: data.data.unitPreference || "metric",
           }));
           setHasKey(data.data.hasKey);
         }
@@ -51,10 +60,20 @@ export default function SettingsPage() {
   async function handleSave() {
       if (!user) return;
       setSaving(true);
+
+      // Create a copy of the data to send
+      let payload = { ...form };
+
+      // If user is in Imperial mode, we must convert BACK to Metric for the database
+      if (form.unitPreference === "imperial") {
+        payload.height = toMetricHeight(form.height);
+        payload.weight = toMetricWeight(form.weight);
+      }
+      
       try {
         const res = await fetch("/api/settings", {
           method: "POST",
-          body: JSON.stringify({ userId: user.id, ...form }), // 👈 Use real user.id
+          body: JSON.stringify({ userId: user.id, ...payload }), // 👈 Use real user.id
         });
         const data = await res.json();
         
@@ -105,6 +124,31 @@ export default function SettingsPage() {
   // 👇 If loading, show the full screen DNA animation instead of the tiny spinner
   if (!isLoaded || loading) return <DNALoader />;
 
+  const toggleUnit = (newUnit: string) => {
+  if (newUnit === form.unitPreference) return; // No change
+
+  setForm(prev => {
+    // If switching TO Imperial (so current data is Metric)
+    if (newUnit === "imperial") {
+      return {
+        ...prev,
+        unitPreference: "imperial",
+        height: prev.height ? toImperialHeight(prev.height) : "",
+        weight: prev.weight ? toImperialWeight(prev.weight) : ""
+      };
+    } 
+    // If switching TO Metric (so current data is Imperial)
+    else {
+      return {
+        ...prev,
+        unitPreference: "metric",
+        height: prev.height ? toMetricHeight(prev.height) : "",
+        weight: prev.weight ? toMetricWeight(prev.weight) : ""
+      };
+    }
+  });
+};
+
   return (
     <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans">
       <div className="max-w-2xl mx-auto space-y-8">
@@ -115,16 +159,42 @@ export default function SettingsPage() {
            {/* <p className="text-slate-500">Manage your profile and privacy configurations.</p> */}
         </div>
 
-        {/* Section 1: Body Profile */}
+{/* Section 1: Physical Profile */}
         <Card>
           <CardHeader>
-            <CardTitle>
-              Physical Profile
-              <InfoPopup text="This data helps the AI calibrate calories specifically for your body and culture." />
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center">
+                Physical Profile
+                <InfoPopup text="This data helps the AI calibrate calories specifically for your body type." />
+              </CardTitle>
+              
+              {/* 👇 UNIT TOGGLE SWITCH */}
+              <div className="flex items-center bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => toggleUnit("metric")}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                    form.unitPreference === "metric" 
+                      ? "bg-white text-slate-900 shadow-sm" 
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Metric
+                </button>
+                <button
+                  onClick={() => toggleUnit("imperial")}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                    form.unitPreference === "imperial" 
+                      ? "bg-white text-slate-900 shadow-sm" 
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  Imperial
+                </button>
+              </div>
+            </div>
           </CardHeader>
+
           <CardContent className="space-y-4">
-            
             <div className="grid gap-2">
               <Label>Nationality / Cultural Background</Label>
               <Input 
@@ -132,28 +202,31 @@ export default function SettingsPage() {
                 onChange={e => setForm({...form, nationality: e.target.value})}
                 placeholder="e.g. Indian, Japanese, Mediterranean" 
               />
-              <p className="text-xs text-slate-400">Used to identify local cuisine types.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Height (cm)</Label>
+                {/* 👇 Dynamic Label: Change based on Unit Preference */}
+                <Label>Height ({form.unitPreference === "metric" ? "cm" : "ft"})</Label>
                 <Input 
-                  type="number" 
-                  value={form.height}
+                  type="text" // Changed to text to allow "5'10" format if needed
+                  value={form.height} 
                   onChange={e => setForm({...form, height: e.target.value})}
+                  placeholder={form.unitPreference === "metric" ? "175" : "5.9"}
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Weight (kg)</Label>
+                {/* 👇 Dynamic Label */}
+                <Label>Weight ({form.unitPreference === "metric" ? "kg" : "lbs"})</Label>
                 <Input 
                   type="number" 
-                  value={form.weight}
+                  value={form.weight} 
                   onChange={e => setForm({...form, weight: e.target.value})}
+                  placeholder={form.unitPreference === "metric" ? "70" : "150"}
                 />
               </div>
             </div>
-
+            
           </CardContent>
         </Card>
 

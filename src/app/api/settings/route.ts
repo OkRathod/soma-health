@@ -5,13 +5,14 @@ import { encryptKey } from '@/lib/crypto'; // We use the encryption tool we buil
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, nationality, height, weight, apiKey } = body;
+    const { userId, nationality, height, weight, apiKey, unitPreference} = body;
 
     // Prepare the update data
     let updateData: any = {
       nationality,
       height: parseFloat(height),
       weight: parseFloat(weight),
+      unitPreference: unitPreference || "metric",
     };
 
     // Only update the API Key if the user typed a new one
@@ -46,7 +47,8 @@ export async function GET(req: Request) {
       nationality: true,
       height: true,
       weight: true,
-      encryptedApiKey: true, // We check IF it exists, but we won't send the key back
+      encryptedApiKey: true,    // We check IF it exists, but we won't send the key back
+      unitPreference: true, 
     }
   });
 
@@ -54,7 +56,8 @@ export async function GET(req: Request) {
     success: true, 
     data: {
       ...user,
-      hasKey: !!user?.encryptedApiKey // Returns true if they have a key saved
+      hasKey: !!user?.encryptedApiKey, // Returns true if they have a key saved
+      unitPreference: user?.unitPreference || "metric"
     }
   });
 }

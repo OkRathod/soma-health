@@ -35,6 +35,9 @@ model User {
 
   // 👇 ADD THIS: Stores the date when the account will be permanently wiped
   scheduledForDeletion  DateTime?
+
+  // 👇 ADD THIS: "metric" or "imperial"
+  unitPreference  String  @default("metric")
   
 }
 
