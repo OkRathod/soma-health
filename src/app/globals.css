@@ -149,3 +149,30 @@
   position: absolute;
   border-radius: 50%;
 }
+
+/* Style the Calendar Dropdowns */
+.rdp-dropdown_year, 
+.rdp-dropdown_month {
+  background-color: transparent;
+  font-weight: 500;
+  font-size: 0.875rem; /* text-sm */
+  border: none;
+  cursor: pointer;
+  outline: none;
+  appearance: none; /* Hides default arrow to look cleaner */
+  padding-right: 0.5rem;
+}
+
+/* Add a subtle hover effect */
+.rdp-dropdown_year:hover, 
+.rdp-dropdown_month:hover {
+  opacity: 0.7;
+}
+
+/* Hide the weird scrollbar in some browsers */
+.rdp-caption_dropdowns {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+}
