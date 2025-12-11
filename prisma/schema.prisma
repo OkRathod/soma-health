@@ -21,8 +21,6 @@ model User {
   nationality    String?  
   height         Float?   // Stored in cm
   weight         Float?   // Stored in kg
-  age            Int?
-  gender         String?
 
   // THE VAULT: Securely stored API Key
   // We never store the actual key, only the encrypted version
@@ -38,6 +36,24 @@ model User {
 
   // 👇 ADD THIS: "metric" or "imperial"
   unitPreference  String  @default("metric")
+
+  // 👇 NEW FIELDS FOR PROFILE
+  age               Int?
+  gender            String?  // "Male", "Female", "Other"
+  activityLevel     String?  // "Sedentary", "Active", etc.
+  jobType           String?  // "Desk Job", "Physical Labor" (Your specific request)
+  dietaryPreferences String? // "Vegan", "Keto", etc.
+  
+  // Goals
+  customPurpose     String?  // "Training for marathon" (Your specific request)
+  weightGoal        String?  // "Lose", "Gain", "Maintain"
+  targetWeight      Float?
+  dailyCalorieGoal  Int      @default(2500)
+  waterGoal         Int      @default(2500)
+  
+  // Membership
+  plan              String   @default("Free") // For future use
+  joinedAt          DateTime @default(now())
   
 }
 
