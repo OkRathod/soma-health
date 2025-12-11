@@ -43,42 +43,55 @@
 }
 
 /* 2. Define the actual colors (Light Mode) */
+/* 2. Define the actual colors (Light Mode - Tuned for Contrast) */
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
+  /* 👇 CHANGE 1: Use 'Slate-50' instead of pure white. 
+     This reduces eye strain and makes white cards stand out. */
+  --background: #f8fafc; 
+  --foreground: #020617; /* Slate-950 (Deepest black for max text contrast) */
 
+  /* Cards stay Pure White to pop against the off-white background */
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #020617;
 
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --popover-foreground: #020617;
 
-  --primary: #0f172a;
+  --primary: #0f172a; 
   --primary-foreground: #f8fafc;
 
-  --secondary: #f1f5f9;
+  /* 👇 CHANGE 2: Darken Secondary from Slate-100 to Slate-200.
+     This makes secondary buttons/badges clearly visible. */
+  --secondary: #e2e8f0; 
   --secondary-foreground: #0f172a;
 
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
+  /* 👇 CHANGE 3: Muted stay light, but text gets darker */
+  --muted: #f1f5f9; 
+  --muted-foreground: #475569; /* Slate-600 (Darker than before for readability) */
 
-  --accent: #f1f5f9;
+  --accent: #e2e8f0; /* Match secondary for hover states */
   --accent-foreground: #0f172a;
 
   --destructive: #ef4444;
   --destructive-foreground: #f8fafc;
 
-  --border: #e2e8f0;
-  --input: #e2e8f0;
+  /* 👇 CHANGE 4: Darker borders (Slate-300) for crisp definition */
+  --border: #cbd5e1; 
+  --input: #cbd5e1;
   --ring: #0f172a;
+  
   --radius: 0.5rem;
 
-  /* 👇 NEW COLORS (Light Mode) */
-  --success: #10b981; /* Emerald 500 */
+  /* Colors */
+  --success: #059669; /* Emerald 600 - slightly darker for white bg */
   --success-foreground: #ffffff;
   
-  --info: #3b82f6;    /* Blue 500 */
+  --info: #2563eb;    /* Blue 600 - slightly darker for white bg */
   --info-foreground: #ffffff;
+
+  /* Shadows - Made slightly stronger for depth */
+  --shadow-cta: 0 10px 30px -10px rgba(2, 6, 23, 0.2);
+  --shadow-card: 0 4px 6px -1px rgba(2, 6, 23, 0.1), 0 2px 4px -1px rgba(2, 6, 23, 0.06);
 }
 
 /* 3. Dark Mode Overrides */
@@ -117,6 +130,16 @@
   
   --info: #2563eb;    /* Blue 600 */
   --info-foreground: #ffffff;
+
+  --gradient-from: var(--primary);
+  --gradient-to: var(--info);
+
+  --glass-surface: color-mix(in srgb, var(--card) 70%, transparent 30%);
+  --overlay: rgba(1,3,8,0.6);
+
+  --shadow-cta: 0 10px 40px rgba(2,6,23,0.36);
+  --shadow-card: 0 6px 22px rgba(0,0,0,0.45);
+
 }
 
 /* 4. Global Reset */

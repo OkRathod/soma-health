@@ -8,6 +8,11 @@ import { motion } from "framer-motion";
 export function Navbar() {
   const pathname = usePathname(); // Get current URL (e.g., "/dashboard" or "/settings")
 
+  // 👇 ADD THIS BLOCK: Hide Navbar on Landing Page & Sign In/Up pages
+  if (pathname === "/" || pathname.startsWith("/sign-")) {
+    return null;
+  }
+
   return (
     <nav className="fixed z-50 
       bottom-8 left-0 right-0 flex justify-center

@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Navbar } from "@/components/ui/navbar";
-import Image from "next/image";
-import { ThemeProvider } from "@/components/theme-provider"
 
-// 👇 IMPORT THIS
+import { ThemeProvider } from "@/components/theme-provider"
 import { ClerkProvider } from '@clerk/nextjs';
+import { MainLayout } from "@/components/main-layout"; // 👈 Import the new wrapper
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,42 +22,20 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-        <ClerkProvider>
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ClerkProvider>
+            
+            {/* 👇 The Client Component handles the conditional UI now */}
+            <MainLayout>
+              {children}
+            </MainLayout>
 
-          {/* 1. The Navbar (Floating Dock) */}
-          <Navbar />
-
-          {/* 2. GLOBAL LOGO */}
-          {/* 👇 CHANGED: 
-              'absolute' -> Scrolls with the page on Mobile (moves up).
-              'md:fixed' -> Stays pinned in the corner on Desktop. 
-          */}
-          <div className="absolute md:fixed top-6 left-6 z-50">
-            <div className="relative w-16 h-16 md:w-24 md:h-24 transition-all duration-300">
-              <Image 
-                src="/logo.png" 
-                alt="Soma Logo" 
-                fill 
-                className="object-contain" 
-                priority
-              />
-            </div>
-          </div>
-
-          {/* 3. Main Content Wrapper */}
-          {/* Keep the 'pt-28' so the logo doesn't cover the text initially */}
-          <main className="min-h-screen pb-24 pt-28 md:pt-8 md:pb-8 md:pl-24">
-            {children}
-          </main>
-
-        </ClerkProvider>
-    </ThemeProvider>
-
+          </ClerkProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
