@@ -33,6 +33,10 @@ export default function HistoryPage() {
     }
   }
 
+  // 1. EXTRACT DATES WITH HISTORY
+  // We map the logs to create an array of Date objects
+  const daysWithHistory = logs.map(log => new Date(log.date));
+
   // Filter logs for the selected date
   const filteredLogs = logs.filter((log) => {
     if (!date) return false;
@@ -66,6 +70,14 @@ export default function HistoryPage() {
                     selected={date}
                     onSelect={setDate}
                     className="rounded-md border-0"
+                    
+                    // 👇 2. TELL CALENDAR WHICH DATES HAVE HISTORY
+                    modifiers={{ hasHistory: daysWithHistory }}
+                    
+                    // 👇 3. STYLE THOSE DATES (Light Circle)
+                    modifiersClassNames={{ 
+                        hasHistory: "bg-primary/10 font-bold text-primary rounded-full transition-all hover:bg-primary/30 hover:scale-110 cursor-pointer aria-selected:!bg-primary aria-selected:!text-primary-foreground aria-selected:hover:!bg-primary/70 aria-selected:hover:!scale-110" 
+                    }}
                 />
             </Card>
             <div className="text-center text-sm text-muted-foreground hidden md:block">

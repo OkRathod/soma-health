@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation"; //  New hook to check current page
-import { Activity, Settings, History } from "lucide-react"; //  Import Settings icon
+import { Activity, Settings, History , House} from "lucide-react"; //  Import Settings icon
 import { motion } from "framer-motion";
 
 export function Navbar() {
@@ -36,8 +36,8 @@ export function Navbar() {
         {/* 1. Health Button */}
         <NavItem 
           href="/dashboard" 
-          icon={<Activity className="w-6 h-6" />} 
-          label="Health" 
+          icon={<House className="w-6 h-6" />} 
+          label="Home" 
           isActive={pathname === "/dashboard"} // Auto-highlight
         />
 
