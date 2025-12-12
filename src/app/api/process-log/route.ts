@@ -2,24 +2,38 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { PrismaClient } from '@prisma/client';
-// import { decryptKey } from '@/lib/crypto';  <-- We don't need this right now
 
-const prisma = new PrismaClient();
+// NOTE: You had 'prisma' imported twice (once from lib, once new Client). 
+// Best practice is to use the singleton from your lib to avoid connection limits.
+import { prisma } from "@/lib/prisma"; 
+import { auth } from "@clerk/nextjs/server";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { userId, userText, userTimezone } = body;
+    
+    const userText = body.userText || body.text;
+
+    // 👇 1. UPDATE: Extract 'date' from the request body
+    const { userId, date } = body;
+
+    // 👇 ADD THIS SAFETY CHECK
+    // This prevents the "id: undefined" crash
+    if (!userId) {
+      console.error("Missing User ID in request");
+      return NextResponse.json({ error: "User ID is required" }, { status: 400 });
+    }
+    
+    if (!userText) return NextResponse.json({ error: "Log text is missing" }, { status: 400 });
 
     // --- TEMPORARY: HARDCODED KEY FOR TESTING ---
-    // 🔴 WARNING: DO NOT COMMIT THIS FILE TO GITHUB WITH YOUR KEY!
     const rawApiKey = process.env.GEMINI_API_KEY || "";
 
     if (!rawApiKey) {
       return NextResponse.json({ error: "Server API Key missing" }, { status: 500 });
     }
 
-    // 1. Fetch User Data (We still need this for context like weight/height)
+    // 2. Fetch User Data
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -28,14 +42,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // 2. Initialize Gemini
+    // 3. Initialize Gemini
     const genAI = new GoogleGenerativeAI(rawApiKey);
+    // Note: Updated model name to one that is widely available if '2.5' isn't yet.
+    // Ensure "gemini-1.5-flash" or your specific model version is correct.
     const model = genAI.getGenerativeModel({ 
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash", 
       generationConfig: { responseMimeType: "application/json" }
     });
 
-    // 3. Construct the Prompt
+    // 4. Construct the Prompt
     const prompt = `
       SYSTEM ROLE:
       You are the "Global Health Architect," a culturally-intelligent fitness engine.
@@ -63,16 +79,18 @@ export async function POST(req: Request) {
       }
     `;
 
-    // 4. Send to AI
+    // 5. Send to AI
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     const aiResponse = JSON.parse(text);
 
-    // 5. Save to Database
+    // 6. Save to Database
     const newLog = await prisma.dailyLog.create({
       data: {
         userId: user.id,
+        // 👇 2. UPDATE: Use passed date or default to Now
+        date: date ? new Date(date) : new Date(), 
         rawText: userText,
         parsedData: aiResponse,
         totalCaloriesIn: aiResponse.total_calories_in || 0,
@@ -84,10 +102,44 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true, log: newLog });
 
   } catch (error: any) {
-    console.error('Processing Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process log', details: error.message },
-      { status: 500 }
-    );
+    console.error('Processing Error:', error.message);
+
+    // 👇 INTELLIGENT ERROR MAPPING
+    // We check the error message string to see what went wrong
+    const msg = error.message || "";
+
+    if (msg.includes("API_KEY_INVALID") || msg.includes("400")) {
+        return NextResponse.json({ 
+            error: "Configuration Error", 
+            details: "The System API Key is invalid or expired. Please contact support." 
+        }, { status: 401 });
+    }
+
+    if (msg.includes("429") || msg.includes("quota")) {
+        return NextResponse.json({ 
+            error: "Traffic Overload", 
+            details: "The AI is receiving too many requests. Please wait 1 minute and try again." 
+        }, { status: 429 });
+    }
+
+    if (msg.includes("AI_INVALID_JSON")) {
+        return NextResponse.json({ 
+            error: "AI Glitch", 
+            details: "The AI returned unreadable data. Please try rephrasing your log." 
+        }, { status: 500 });
+    }
+
+    if (msg.includes("User location is not supported")) {
+        return NextResponse.json({ 
+            error: "Location Not Supported", 
+            details: "The AI model is not available in your current server region." 
+        }, { status: 403 });
+    }
+
+    // Default Fallback
+    return NextResponse.json({ 
+        error: "System Error", 
+        details: "An unexpected error occurred. Please try again." 
+    }, { status: 500 });
   }
 }

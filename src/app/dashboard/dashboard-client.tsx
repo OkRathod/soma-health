@@ -9,6 +9,7 @@ import { Loader2, Send, AlertTriangle, X, Check} from "lucide-react";
 import Link from "next/link";
 import WeeklyChart from "@/components/WeeklyChart";
 import Image from "next/image";
+import {DNALoader} from "@/components/dna-loader";
 
 // 🔴 KEEP YOUR ID HERE
 export default function DashboardClient({ user }: { user: any }) {
@@ -25,6 +26,17 @@ export default function DashboardClient({ user }: { user: any }) {
   const [newLogText, setNewLogText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Data State
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    calories: 0,
+    protein: 0,
+    carbs: 0,
+    fats: 0,
+    water: 0,
+    streak: 0
+  });
+
   // 👇 NEW: STATE FOR GENERIC SUCCESS/ERROR MODALS
   // This replaces ugly browser alerts for things like "Settings Saved"
   const [simpleModal, setSimpleModal] = useState<{ title: string; msg: string; isError?: boolean } | null>(null);
@@ -37,12 +49,25 @@ export default function DashboardClient({ user }: { user: any }) {
     try {
       const res = await fetch(`/api/get-logs?userId=${USER_ID}`);
       const data = await res.json();
-      if (data.success) {
+
+      if (res.ok && data.success) {
         setLogs(data.logs);
         calculateSummary(data.logs);
+      } else {
+        // 👇 HANDLE API ERRORS (e.g. "User not found", "DB Error")
+        setSimpleModal({ 
+          title: "Error Loading Data", 
+          msg: data.error || "Failed to retrieve your history logs.", 
+          isError: true 
+        });
       }
     } catch (error) {
-      console.error("Failed to fetch logs");
+      // 👇 HANDLE NETWORK ERRORS (e.g. Internet disconnected)
+      setSimpleModal({ 
+        title: "Connection Error", 
+        msg: "Could not reach the server. Please check your internet.", 
+        isError: true 
+      });
     } finally {
       setLoading(false);
     }
@@ -142,6 +167,10 @@ async function handleAddWater() {
     } finally {
       setIsProcessing(false);
     }
+  }
+
+  if (loading) {
+    return <DNALoader />;
   }
 
   return (
@@ -257,7 +286,7 @@ async function handleAddWater() {
       </main>
       {/* 👇 GENERIC SUCCESS/ERROR MODAL */}
       {simpleModal && (
-         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
+         <div className="fixed inset-0 z-150 flex items-end md:items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
             <div className="bg-card rounded-xl shadow-2xl w-auto max-w-sm p-6 relative animate-in slide-in-from-bottom-8 md:zoom-in-95">
                 
                 {/* Close Button */}

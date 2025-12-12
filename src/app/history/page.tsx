@@ -5,9 +5,11 @@ import { useUser } from "@clerk/nextjs";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Calendar as CalendarIcon, Clock , Trash2, Check, AlertTriangle, X} from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Clock , Trash2, Check, AlertTriangle, X, Plus, PenLine} from "lucide-react";
 import { DNALoader } from "@/components/dna-loader";
 import { Button } from "@/components/ui/button"; // Import Button
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"; 
+import { Textarea } from "@/components/ui/textarea";
 
 export default function HistoryPage() {
   const { user, isLoaded } = useUser();
@@ -19,6 +21,12 @@ export default function HistoryPage() {
   const [simpleModal, setSimpleModal] = useState<{ title: string; msg: string; isError?: boolean } | null>(null);
   const [logToDelete, setLogToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+// 👇 NEW: ADD LOG STATE
+  const [isAdding, setIsAdding] = useState(false); 
+  const [newLogText, setNewLogText] = useState("");
+  const [isSavingLog, setIsSavingLog] = useState(false);
+
 
   useEffect(() => {
     if (!isLoaded || !user) return;
@@ -36,6 +44,50 @@ export default function HistoryPage() {
       console.error("Failed to fetch logs");
     } finally {
       setLoading(false);
+    }
+  }
+
+  // 👇 NEW: HANDLE ADD LOG (BACKFILL)
+  async function handleAddLog() {
+
+    // 👇 ADD 'user' to this check
+    if (!newLogText.trim() || !date || !user) {
+        return;
+    }
+    
+    setIsSavingLog(true);
+    try {
+        const res = await fetch("/api/process-log", { 
+            method: "POST",
+            body: JSON.stringify({
+                userText: newLogText,
+                userId: user.id,
+                date: date.toISOString() // 👈 IMPORTANT: Sends the selected calendar date
+            })
+        });
+
+        const data = await res.json();
+        
+        if (data.success) {
+            setSimpleModal({ title: "Success", msg: "Entry added successfully!" });
+            setNewLogText("");
+            setIsAdding(false);
+            fetchLogs(); // 👈 Refresh list to show the new card immediately
+        } else {
+            setSimpleModal({ 
+                title: data.error || "Processing Failed", 
+                msg: data.details || "The AI could not process your log. Please try again.", 
+                isError: true 
+            });
+        }
+    } catch (e) {
+        setSimpleModal({ 
+            title: "Connection Error", 
+            msg: "Could not reach the server. Please check your internet connection.", 
+            isError: true 
+        });
+    } finally {
+        setIsSavingLog(false);
     }
   }
 
@@ -87,6 +139,9 @@ export default function HistoryPage() {
 
   if (!isLoaded || loading) return <DNALoader />;
 
+  // Helper: Check if selected date is in the future
+  const isFutureDate = date ? date > new Date() : false;
+
   return (
     <div className="min-h-screen bg-background p-6 md:p-10 font-sans">
       <div className="max-w-6xl mx-auto space-y-8">
@@ -132,43 +187,69 @@ export default function HistoryPage() {
 
           {/* RIGHT: Timeline Feed */}
           <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-foreground border-b border-border pb-2">
-                {date ? format(date, "EEEE, MMMM do") : "Select a Date"}
-            </h2>
 
+            {/* 👇 HEADER WITH ADD BUTTON */}
+            <div className="flex items-center justify-between border-b border-border pb-2">
+                <h2 className="text-xl font-semibold text-foreground">
+                    {date ? format(date, "EEEE, MMMM do") : "Select a Date"}
+                </h2>
+                
+                {/* 👇 FIX: Hide button if no date selected OR if date is in future */}
+                {date && !isFutureDate && (
+                    <Button 
+                        size="sm" 
+                        onClick={() => setIsAdding(true)} 
+                        className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                        <Plus className="w-4 h-4" /> Add Entry
+                    </Button>
+                )}
+
+            </div>
+            {/* LOGS LIST */}
             {filteredLogs.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-border">
                     <CalendarIcon className="w-10 h-10 mb-3 opacity-20" />
-                    <p>No activity recorded for this day.</p>
+                    {/* 👇 CHANGE TEXT BASED ON DATE */}
+                    {isFutureDate ? (
+                        <p>You cannot log activity for the future.</p>
+                    ) : (
+                        <>
+                            <p>No activity recorded for this day.</p>
+                            <Button variant="link" onClick={() => setIsAdding(true)} className="mt-2 text-primary">
+                                Add an entry now
+                            </Button>
+                        </>
+                    )}
                 </div>
             ) : (
                 <div className="space-y-4">
                     {filteredLogs.map((log, index) => (
                         <Card key={log.id} className="bg-card border-border shadow-sm hover:shadow-md transition-all group relative">
-                            <CardContent className="p-5 flex gap-4">
+                             <CardContent className="p-5 flex gap-4">
                                 {/* Time Column */}
                                 <div className="flex flex-col items-center min-w-[60px] border-r border-border pr-4">
                                     <span className="text-sm font-bold text-primary">
                                         {new Date(log.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </span>
-                                    {/* Timeline Line (Visual Only) */}
+                                    {/* Timeline Line (Restored) */}
                                     {index !== filteredLogs.length - 1 && (
                                         <div className="h-full w-[1px] bg-border mt-2" />
                                     )}
                                 </div>
 
                                 {/* Content Column */}
-                                <div className="flex-1 space-y-2">
-                                    <p className="text-foreground text-sm leading-relaxed">"{log.rawText}"</p>
+                                <div className="flex-1 space-y-2 pr-8"> 
+                                    <p className="text-foreground text-sm">"{log.rawText}"</p>
                                     
-                                    {/* AI Feedback Badge */}
+                                    {/* AI Feedback (Restored) */}
                                     {log.aiFeedback && (
                                         <div className="bg-muted/50 text-muted-foreground text-xs px-3 py-2 rounded-md border border-border">
                                             <span className="font-semibold text-primary mr-1">Coach:</span> {log.aiFeedback}
                                         </div>
                                     )}
 
-                                    {/* Metrics Badges */}
+                                    {/* Metrics Badges (Restored) */}
                                     <div className="flex gap-3 pt-1">
                                         <span className="text-xs font-mono font-medium text-foreground bg-secondary px-2 py-1 rounded">
                                             +{log.totalCaloriesIn} <span className="text-muted-foreground">kcal</span>
@@ -186,19 +267,13 @@ export default function HistoryPage() {
                                     </div>
                                 </div>
 
-                                {/* 👇 4. RESPONSIVE TRASH BUTTON */}
-                                {/* opacity-100 on Mobile. opacity-0 on Desktop until Hover. */}
-                                <div className="absolute top-2 right-2 z-10 md:group-hover:opacity-100 transition-opacity">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => askToDelete(log.id)}
-                                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                                    >
-                                       <Trash2 className="h-4 w-4" />
+                                {/* Delete Button (Updated for Mobile) */}
+                                <div className="absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="icon" onClick={() => setLogToDelete(log.id)}>
+                                       <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
                                     </Button>
                                 </div>
-                            </CardContent>
+                             </CardContent>
                         </Card>
                     ))}
                 </div>
@@ -244,9 +319,41 @@ export default function HistoryPage() {
         </div>
       )}
 
+      <Dialog open={isAdding} onOpenChange={setIsAdding}>
+        <DialogContent className="sm:max-w-md bg-card border-border">
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                    <PenLine className="w-5 h-5 text-primary" />
+                    Add Entry for {date ? format(date, "MMM do") : ""}
+                </DialogTitle>
+                {/* 👇 ADD THIS DESCRIPTION COMPONENT */}
+            <DialogDescription>
+                Type what you ate or how you exercised. AI will calculate the stats.
+            </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                <Textarea 
+                    placeholder="E.g. I ate a cheese sandwich and ran 2km..." 
+                    value={newLogText}
+                    onChange={(e) => setNewLogText(e.target.value)}
+                    className="min-h-[100px] resize-none bg-background focus:ring-primary"
+                />
+                <p className="text-xs text-muted-foreground">
+                    This will be processed by AI and added to your history without overwriting existing data.
+                </p>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAdding(false)} disabled={isSavingLog}>Cancel</Button>
+                <Button onClick={handleAddLog} disabled={isSavingLog || !newLogText.trim()}>
+                    {isSavingLog ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : "Save Entry"}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* 6. SUCCESS / ERROR MODAL */}
       {simpleModal && (
-         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+         <div className="fixed inset-0 z-150 flex items-end md:items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-popover text-popover-foreground rounded-xl shadow-2xl max-w-sm w-full p-6 relative animate-in slide-in-from-bottom-8 md:zoom-in-95 border border-border">
                 <button onClick={() => setSimpleModal(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
                     <X className="w-5 h-5" />
