@@ -155,16 +155,20 @@ export async function POST(req: Request) {
   }
 }
 
-// PATCH: Simple Update (Updates only the clicked task)
+// src/app/api/tasks/route.ts
 export async function PATCH(req: Request) {
     const { userId } = await auth();
-    // Safety check again to satisfy Typescript
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
-    const { taskId, isCompleted, subtaskId, subtaskValue, title, description, priority, startTime, isRecurring } = body;
+    const { 
+        taskId, isCompleted, subtaskId, subtaskValue, // Toggle fields
+        title, description, priority, startTime, isRecurring, // Edit fields
+        newSubtasks // 👇 NEW FIELD
+    } = body;
 
     try {
+        // 1. Handle Subtask Updates (Simple Toggle)
         if (subtaskId) {
             await prisma.subTask.update({
                 where: { id: subtaskId },
@@ -173,7 +177,17 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ success: true });
         }
 
+        // 2. Handle Main Task Updates
         if (taskId) {
+            // Check ownership first
+            const existingTask = await prisma.task.findUnique({
+                where: { id: taskId, userId }
+            });
+            
+            if (!existingTask) {
+                return NextResponse.json({ error: "Task not found" }, { status: 404 });
+            }
+
             const updateData: any = {};
             if (title !== undefined) updateData.title = title;
             if (description !== undefined) updateData.description = description;
@@ -182,12 +196,21 @@ export async function PATCH(req: Request) {
             if (isCompleted !== undefined) updateData.isCompleted = isCompleted;
             if (isRecurring !== undefined) updateData.isRecurring = isRecurring;
 
-            // FIX: Ensure userId is not null in the where clause
-            await prisma.task.updateMany({
-                where: { 
-                    id: taskId, 
-                    userId: userId // Since we checked !userId at the top, this is safe
-                },
+            // 👇 NEW: Check if there are new subtasks to add
+            if (newSubtasks && Array.isArray(newSubtasks) && newSubtasks.length > 0) {
+                updateData.subtasks = {
+                    create: newSubtasks.map((st: any) => ({
+                        title: st.title,
+                        targetValue: st.targetValue ? parseInt(st.targetValue) : null,
+                        unit: st.unit
+                    }))
+                };
+            }
+
+            // Perform the update
+            // We use .update() now because we verified ownership above with findUnique
+            await prisma.task.update({
+                where: { id: taskId },
                 data: updateData
             });
             return NextResponse.json({ success: true });
@@ -195,6 +218,7 @@ export async function PATCH(req: Request) {
 
         return NextResponse.json({ error: "Missing ID" }, { status: 400 });
     } catch (e) {
+        console.error("Update error", e);
         return NextResponse.json({ error: "Update failed" }, { status: 500 });
     }
 }

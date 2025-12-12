@@ -82,42 +82,49 @@ export default function TasksPage() {
           priority: task.priority,
           isRecurring: task.priority === "HABIT" || task.isRecurring, 
           startTime: task.startTime ? format(new Date(task.startTime), "HH:mm") : "",
-          subtasks: [] // We don't support editing subtasks in the modal yet to keep it simple
+          // 👇 FIX: Load existing subtasks into the modal so we can see/edit them
+          subtasks: task.subtasks || []
       });
       setIsAdding(true); // Open Modal
   }
 
-// 👇 FIXED: This function now handles the Logic Shift correctly
-  async function handleSaveTask() {
-    // Logic: If user Unchecks "Recurring", force priority out of "HABIT" mode
-    // otherwise it stays stuck in the "Habits" UI section.
+async function handleSaveTask() {
+    // 1. Logic to force priority change if "Recurring" is unchecked
     let finalPriority = newTask.priority;
     if (!newTask.isRecurring && newTask.priority === "HABIT") {
-        finalPriority = "LOW"; // Default to LOW if converting Habit -> Normal Task
+        finalPriority = "LOW"; 
     } else if (newTask.isRecurring) {
-        finalPriority = "HABIT"; // Force HABIT if Recurring is checked
+        finalPriority = "HABIT";
     }
+
+    // 2. Identify NEW subtasks (the ones you just added in the modal)
+    // Existing subtasks have an 'id'. New ones do not.
+    const newSubtasksToAdd = newTask.subtasks.filter((st: any) => !st.id);
 
     const payload = {
         title: newTask.title,
         description: newTask.description,
-        priority: finalPriority, // Use calculated priority
+        priority: finalPriority,
         isRecurring: newTask.isRecurring,
         date: selectedDate,
         startTime: newTask.startTime ? new Date(`${selectedDate.toDateString()} ${newTask.startTime}`) : null,
-        // Only include subtasks if it's a NEW task
-        subtasks: editingId ? undefined : newTask.subtasks 
+        
+        // 👇 FIX: Send the list of NEW subtasks to the backend
+        newSubtasks: newSubtasksToAdd,
+        
+        // For 'Create' mode, we still send all subtasks as usual
+        subtasks: newTask.subtasks 
     };
 
     let res;
     if (editingId) {
-        // UPDATE Existing
+        // UPDATE
         res = await fetch("/api/tasks", {
             method: "PATCH",
             body: JSON.stringify({ taskId: editingId, ...payload })
         });
     } else {
-        // CREATE New
+        // CREATE
         res = await fetch("/api/tasks", {
             method: "POST",
             body: JSON.stringify(payload)
@@ -170,7 +177,7 @@ export default function TasksPage() {
          };
      }));
 
-     await fetch("/api/tasks", { 
+          await fetch("/api/tasks", { 
         method: "PATCH", 
         body: JSON.stringify({ 
             taskId, // Still needed for auth context usually, but API handles logic
@@ -179,6 +186,28 @@ export default function TasksPage() {
         }) 
     });
   }
+
+// 👇 NEW: Handle Progress Update (e.g. 5/10 reps)
+  async function updateSubtaskProgress(taskId: string, subtaskId: string, newValue: number) {
+     // Optimistic Update
+     setTasks(prev => prev.map(t => {
+         if (t.id !== taskId) return t;
+         return {
+             ...t,
+             subtasks: t.subtasks.map((st: any) => 
+                 st.id === subtaskId ? { ...st, currentValue: newValue } : st
+             )
+         };
+     }));
+
+     // Send to API
+     await fetch("/api/tasks", { 
+        method: "PATCH", 
+        body: JSON.stringify({ taskId, subtaskId, subtaskValue: newValue }) 
+    });
+  }
+
+
 
   async function handleDeleteTask(taskId: string) {
     if (!confirm("Are you sure you want to delete this task?")) return;
@@ -286,26 +315,40 @@ export default function TasksPage() {
                             />
                         </div>
 
-                        {/* Only show Subtasks adder if creating NEW (simplified) */}
-                        {!editingId && (
-                            <div className="bg-secondary/20 p-3 rounded-md space-y-3">
-                                {/* ... Subtask Inputs ... */}
-                                <label className="text-sm font-medium">Subtasks</label>
-                                <div className="flex gap-2">
-                                    <Input 
-                                        placeholder="Name" className="h-8 text-sm"
-                                        value={newSubtask.title}
-                                        onChange={e => setNewSubtask({...newSubtask, title: e.target.value})}
-                                    />
-                                    <Button size="sm" onClick={() => {
-                                        if(!newSubtask.title) return;
-                                        setNewTask({ ...newTask, subtasks: [...newTask.subtasks, { ...newSubtask }] });
-                                        setNewSubtask({ title: "", targetValue: "", unit: "" });
-                                    }}>Add</Button>
-                                </div>
-                                {newTask.subtasks.map((st, i) => <div key={i} className="text-xs">{st.title}</div>)}
+                        {/* 👇 RESTORED: Subtask Editor in Modal */}
+                        <div className="bg-secondary/20 p-3 rounded-md space-y-3">
+                            <label className="text-sm font-medium flex items-center gap-2">
+                                <div className="h-1 w-1 bg-primary rounded-full"/> Subtasks / Checklist
+                            </label>
+                            <div className="flex gap-2">
+                                <Input 
+                                    placeholder="Name (e.g. Pushups)" className="h-8 text-sm"
+                                    value={newSubtask.title}
+                                    onChange={e => setNewSubtask({...newSubtask, title: e.target.value})}
+                                />
+                                <Input 
+                                    placeholder="Target" className="h-8 w-20 text-sm"
+                                    type="number"
+                                    value={newSubtask.targetValue}
+                                    onChange={e => setNewSubtask({...newSubtask, targetValue: e.target.value})}
+                                />
+                                <Button size="sm" onClick={() => {
+                                    if(!newSubtask.title) return;
+                                    setNewTask({ ...newTask, subtasks: [...newTask.subtasks, { ...newSubtask }] });
+                                    setNewSubtask({ title: "", targetValue: "", unit: "" });
+                                }}>Add</Button>
                             </div>
-                        )}
+                            {newTask.subtasks.length > 0 && (
+                                <div className="space-y-1">
+                                    {newTask.subtasks.map((st, i) => (
+                                        <div key={i} className="text-xs flex justify-between bg-background p-2 rounded border">
+                                            <span>{st.title}</span>
+                                            {st.targetValue && <span className="text-muted-foreground">Target: {st.targetValue}</span>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
                         {/* 👇 CRITICAL FIX: Calls handleSaveTask, NOT handleCreateTask */}
                         <Button className="w-full" onClick={handleSaveTask}>
@@ -325,7 +368,7 @@ export default function TasksPage() {
                     <div className="space-y-2">
                         <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Daily Habits</h2>
                         {tasks.filter(t => t.priority === "HABIT").map(task => (
-                            <TaskCard key={task.id} task={task} onToggle={toggleTask} onSubToggle={toggleSubtask} onDelete={handleDeleteTask} onEdit={openEditModal} />
+                            <TaskCard key={task.id} task={task} onToggle={toggleTask} onSubToggle={toggleSubtask}  onDelete={handleDeleteTask} onEdit={openEditModal} onSubProgress={updateSubtaskProgress}/>
                         ))}
                     </div>
                 )}
@@ -339,7 +382,7 @@ export default function TasksPage() {
                          </div>
                      )}
                      {tasks.filter(t => t.priority !== "HABIT").map(task => (
-                            <TaskCard key={task.id} task={task} onToggle={toggleTask} onSubToggle={toggleSubtask} onDelete={handleDeleteTask} onEdit={openEditModal} />
+                            <TaskCard key={task.id} task={task} onToggle={toggleTask} onSubToggle={toggleSubtask} onDelete={handleDeleteTask} onEdit={openEditModal} onSubProgress={updateSubtaskProgress}/>
                      ))}
                 </div>
 
@@ -350,7 +393,7 @@ export default function TasksPage() {
   );
 }
 
-function TaskCard({ task, onToggle, onSubToggle, onDelete, onEdit }: { task: any, onToggle: any, onSubToggle: any, onDelete: any, onEdit: any }) {
+function TaskCard({ task, onToggle, onSubToggle, onSubProgress, onDelete, onEdit }: any) {
     const [expanded, setExpanded] = useState(false);
 
     return (
@@ -434,11 +477,21 @@ function TaskCard({ task, onToggle, onSubToggle, onDelete, onEdit }: { task: any
                                                     onCheckedChange={() => onSubToggle(task.id, st.id, st.isCompleted)}
                                                 />
                                                 <span className={st.isCompleted ? "line-through opacity-50 transition-all" : "transition-all"}>{st.title}</span>
-                                                {st.targetValue && (
-                                                    <span className="ml-auto text-xs font-mono bg-background px-1 rounded border">
-                                                        {st.currentValue || 0}/{st.targetValue} {st.unit}
-                                                    </span>
-                                                )}
+                                                {/* 👇 FIXED: Editable Input for Progress */}
+                                                {st.targetValue ? (
+                                                    <div className="ml-auto flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                                                        <input 
+                                                            type="number"
+                                                            className="w-12 h-6 text-xs border rounded px-1 text-center bg-background focus:ring-1 focus:ring-primary outline-none"
+                                                            value={st.currentValue || 0}
+                                                            onChange={(e) => {
+                                                                const val = parseInt(e.target.value);
+                                                                if (!isNaN(val)) onSubProgress(task.id, st.id, val);
+                                                            }}
+                                                        />
+                                                        <span className="text-xs text-muted-foreground">/ {st.targetValue} {st.unit}</span>
+                                                    </div>
+                                                ) : null}
                                             </div>
                                         ))}
                                     </div>
