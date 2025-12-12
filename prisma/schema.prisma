@@ -85,12 +85,51 @@ model DailyLog {
 }
 
 model Task {
-  id          String   @id @default(uuid())
-  userId      String
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title          String
+  description    String?   @db.Text
+  
+  // Scheduling
+  date           DateTime  // The specific date for this task
+  startTime      DateTime? // Optional: "Actual Time"
+  durationMins   Int?      // Optional: For calendar sync later
+  
+  // Logic
+  isRecurring    Boolean   @default(false)
+  frequency      String?   // "DAILY", "WEEKLY" (For future use)
+  parentId       String?   // If this is a daily copy, this points to the Master ID
+  
+  // Priority & Status
+  priority       String    // "HIGH", "MEDIUM", "LOW", "HABIT"
+  isCompleted    Boolean   @default(false)
+  
+  // Relations
+  subtasks       SubTask[]
+  
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+
+  // 👇 ADD THIS LINE AT THE BOTTOM OF 'model Task'
+  // This ensures a specific habit (parentId) can only appear once per day (date) for a user.
+  @@unique([userId, parentId, date])
+  @@index([userId, date])
+
+}
+
+model SubTask {
+  id          String   @id @default(cuid())
+  taskId      String
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  
   title       String
   isCompleted Boolean  @default(false)
-  isRecurring Boolean  @default(false)
-  createdAt   DateTime @default(now())
-
-  user        User     @relation(fields: [userId], references: [id])
+  
+  // Tracking (Optional)
+  targetValue Int?     // e.g. 10 (reps) or 2 (hours)
+  currentValue Int?    // e.g. 5 (reps done so far)
+  unit        String?  // "reps", "mins", "km", "chapters"
 }
