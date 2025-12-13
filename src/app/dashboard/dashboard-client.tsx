@@ -385,8 +385,9 @@ async function handleAddWater() {
                         <Button 
                             onClick={handleAddWater} 
                             size="sm" 
-                            variant="outline" 
-                            className="mt-3 w-full border-blue-500/20 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-500 group-hover:border-blue-500/40 transition-all"
+                            variant="outline"
+                            disabled={true} 
+                            className="disabled:bg-gray-400 disabled:cursor-not-allowed disabled:opacity-50 mt-3 w-full border-blue-500/20 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-500 group-hover:border-blue-500/40 transition-all"
                         >
                             <Plus className="w-3.5 h-3.5 mr-2" /> Add 250ml
                         </Button>
