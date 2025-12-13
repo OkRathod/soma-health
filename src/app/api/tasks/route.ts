@@ -8,6 +8,33 @@ export async function GET(req: Request) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const url = new URL(req.url);
+  
+  // 👇 NEW: Check if we are asking for a Range (for Charts)
+  const from = url.searchParams.get("from");
+  const to = url.searchParams.get("to");
+
+  if (from && to) {
+    try {
+        const tasks = await prisma.task.findMany({
+            where: {
+                userId,
+                date: {
+                    gte: new Date(from),
+                    lte: new Date(to)
+                }
+            },
+            include: { subtasks: true },
+            orderBy: { date: 'asc' }
+        });
+        // Return immediately. No need to check for rollovers on historical ranges.
+        return NextResponse.json({ success: true, tasks });
+    } catch (e) {
+        return NextResponse.json({ error: "Failed to fetch range" }, { status: 500 });
+    }
+  }
+
+  // --- EXISTING LOGIC STARTS HERE (For Daily Schedule Page) ---
+
   const queryDate = url.searchParams.get("date");
   const date = queryDate ? new Date(queryDate) : new Date();
 
@@ -52,22 +79,19 @@ export async function GET(req: Request) {
                     userId,
                     title: habit.title,
                     description: habit.description,
-                    priority: "HABIT", // Keep it grouped as a habit
+                    priority: "HABIT", 
                     startTime: habit.startTime,
-                    isRecurring: true, // It remains recurring for tomorrow
+                    isRecurring: true, 
                     date: start, // Set to TODAY (Midnight)
-                    
-                    // Reset Status
                     isCompleted: false, 
                     
-                    // Copy Subtasks (Reset them too)
                     subtasks: {
                         create: habit.subtasks.map(st => ({
                             title: st.title,
                             targetValue: st.targetValue,
                             unit: st.unit,
-                            isCompleted: false, // Reset subtask
-                            currentValue: 0     // Reset count
+                            isCompleted: false, 
+                            currentValue: 0
                         }))
                     }
                 }
