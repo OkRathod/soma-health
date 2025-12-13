@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { InstallPWA } from "@/components/install-pwa";
 
 // Initialize the font
 const monoton = Monoton({ 
@@ -242,6 +243,8 @@ export default function LandingPage() {
                     <BookOpen className="w-4 h-4 text-primary" /> Read Protocol
                   </Link>
                 </Button>
+                {/* 👇 3. ADD THE INSTALL BUTTON HERE */}
+                <InstallPWA />
               </div>
             </div>
 
