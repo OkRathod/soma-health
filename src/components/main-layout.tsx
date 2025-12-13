@@ -39,7 +39,7 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
         className={`min-h-screen ${
           isMarketingPage 
             ? "" // LANDING PAGE: No extra padding
-            : "pb-24 pt-28 md:pt-8 md:pb-8 md:pl-24" // DASHBOARD: Padded for Dock/Logo
+            : "pb-24 pt-20 md:pt-0 md:pb-0 md:pl-24" // DASHBOARD: Padded for Dock/Logo
         }`}
       >
         {children}
