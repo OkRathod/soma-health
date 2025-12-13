@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Utensils, ListTodo, Activity } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DayPicker } from "react-day-picker";
+
 
 export default function HistoryPage() {
   const { user, isLoaded } = useUser();

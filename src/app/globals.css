@@ -40,6 +40,8 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
+
+  --font-quote: var(--font-baskervville), serif;
 }
 
 /* 2. Define the actual colors (Light Mode) */
@@ -228,4 +230,24 @@
   gap: 0.5rem;
   align-items: center;
   justify-content: center;
+}
+
+@keyframes fadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }

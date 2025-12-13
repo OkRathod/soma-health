@@ -12,6 +12,8 @@ import Image from "next/image";
 import {DNALoader} from "@/components/dna-loader";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format, subDays, startOfDay, endOfDay, isToday } from "date-fns";
+import { Quote } from "lucide-react";
+
 
 // 🔴 KEEP YOUR ID HERE
 export default function DashboardClient({ user }: { user: any }) {
@@ -27,6 +29,9 @@ export default function DashboardClient({ user }: { user: any }) {
   // 👇 New State for Tasks
   const [allWeeklyTasks, setAllWeeklyTasks] = useState<any[]>([]); 
   const [pendingTasks, setPendingTasks] = useState<any[]>([]); // Derived for sidebar
+
+  // Inside DashboardClient component
+  const [quote, setQuote] = useState({ quote: "Loading motivation...", author: "" });
   
   // New State for Input
   const [newLogText, setNewLogText] = useState("");
@@ -43,13 +48,29 @@ export default function DashboardClient({ user }: { user: any }) {
     streak: 0
   });
 
+
   // 👇 NEW: STATE FOR GENERIC SUCCESS/ERROR MODALS
   // This replaces ugly browser alerts for things like "Settings Saved"
   const [simpleModal, setSimpleModal] = useState<{ title: string; msg: string; isError?: boolean } | null>(null);
 
-useEffect(() => {
-    // 👇 FIX: Call both functions in parallel
-    Promise.all([fetchLogs(), fetchTasks()]).finally(() => setLoading(false));
+  useEffect(() => {
+      // 👇 FIX: Call both functions in parallel
+      Promise.all([fetchLogs(), fetchTasks()]).finally(() => setLoading(false));
+    }, []);
+
+
+  // Inside useEffect or a new useEffect
+  useEffect(() => {
+      async function getQuote() {
+          try {
+              const res = await fetch('/api/quote');
+              const data = await res.json();
+              if (data.quote) setQuote(data);
+          } catch (e) {
+              console.error("Quote error", e);
+          }
+      }
+      getQuote();
   }, []);
 
   async function fetchLogs() {
@@ -262,6 +283,43 @@ async function handleAddWater() {
                 <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
                 <p className="text-muted-foreground mt-1">Here is your daily health overview.</p>
             </div>
+        </div>
+
+
+        {/* QUOTE OF THE DAY BANNER */}
+        <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-blue-500/10 border border-violet-500/20 p-6 flex items-start gap-4 shadow-sm">
+            <div className="absolute -top-4 -right-4 opacity-5">
+                <Quote className="w-24 h-24 rotate-12" />
+            </div>
+            
+            <div className="bg-background/80 p-2 rounded-full shadow-sm border border-border/50 backdrop-blur-sm mt-1">
+                <Quote className="w-5 h-5 text-violet-500" />
+            </div>
+
+            <div className="relative p-6 rounded-xl bg-gradient-to-br from-background to-secondary/20 border border-border/50 shadow-sm overflow-hidden group">
+                {/* Soft Glow Behind Quote */}
+                <div className="absolute inset-0 bg-primary/5 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+
+                {/* Accent Bar */}
+                <div className="absolute left-0 top-0 h-full w-1 bg-primary/60 rounded-r-full opacity-70 group-hover:w-1.5 transition-all duration-500" />
+
+                {/* Quote Text */}
+                <div 
+                    className="space-y-2 relative z-10 animate-[fadeUp_0.8s_ease-out]"
+                >
+                    <p className="text-xl md:text-2xl font-quote text-foreground italic tracking-wide leading-relaxed">
+                        “{quote.quote}”
+                    </p>
+
+                    {/* Optional Author */}
+                    {quote.author && (
+                        <p className="text-sm text-muted-foreground font-semibold font-sans tracking-wide animate-[fadeIn_1s_ease-out_0.4s_forwards] opacity-0">
+                            — {quote.author}
+                        </p>
+                    )}
+                </div>
+            </div>
+
         </div>
 
         {/* RESTORE BANNER */}
