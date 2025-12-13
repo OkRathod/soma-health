@@ -189,7 +189,7 @@ export default function HistoryPage() {
           <div className="space-y-6">
 
             {/* 👇 HEADER WITH ADD BUTTON */}
-            <div className="flex items-center justify-between border-b border-border pb-2">
+            <div className="flex items-center justify-between border-b border-border pb-2 ">
                 <h2 className="text-xl font-semibold text-foreground">
                     {date ? format(date, "EEEE, MMMM do") : "Select a Date"}
                 </h2>
@@ -204,7 +204,6 @@ export default function HistoryPage() {
                         <Plus className="w-4 h-4" /> Add Entry
                     </Button>
                 )}
-
             </div>
             {/* LOGS LIST */}
             {filteredLogs.length === 0 ? (
@@ -223,7 +222,7 @@ export default function HistoryPage() {
                     )}
                 </div>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 scrollbar-thin scrollbar-thumb-rounded scrollbar-thumb-border scrollbar-track-background max-h-[600px] overflow-y-auto pr-1">
                     {filteredLogs.map((log, index) => (
                         <Card key={log.id} className="bg-card border-border shadow-sm hover:shadow-md transition-all group relative">
                              <CardContent className="p-5 flex gap-4">

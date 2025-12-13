@@ -124,7 +124,7 @@ export async function POST(req: Request) {
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { title, description, priority, date, startTime, isRecurring, subtasks } = body;
+  const { title, description, priority, date, startTime, isRecurring, subtasks, duration } = body;
 
   const targetDate = new Date(date);
   const start = startOfDay(targetDate);
@@ -157,6 +157,7 @@ export async function POST(req: Request) {
         date: start, 
         
         startTime: startTime ? new Date(startTime) : null,
+        durationMins: duration ? parseInt(duration) : 60,
         isRecurring: isRecurring || false,
         
         // No parentId needed
@@ -188,7 +189,7 @@ export async function PATCH(req: Request) {
     const { 
         taskId, isCompleted, subtaskId, subtaskValue, // Toggle fields
         title, description, priority, startTime, isRecurring, // Edit fields
-        newSubtasks // 👇 NEW FIELD
+        newSubtasks, duration // 👇 NEW FIELD
     } = body;
 
     try {
@@ -219,7 +220,8 @@ export async function PATCH(req: Request) {
             if (startTime !== undefined) updateData.startTime = startTime ? new Date(startTime) : null;
             if (isCompleted !== undefined) updateData.isCompleted = isCompleted;
             if (isRecurring !== undefined) updateData.isRecurring = isRecurring;
-
+            if (duration !== undefined) updateData.durationMins = parseInt(duration);
+            
             // 👇 NEW: Check if there are new subtasks to add
             if (newSubtasks && Array.isArray(newSubtasks) && newSubtasks.length > 0) {
                 updateData.subtasks = {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { format } from "date-fns";
 import { 
   Plus, Check, Calendar as CalendarIcon, Clock, AlertCircle, 
@@ -24,7 +24,7 @@ export default function TasksPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [newSubtask, setNewSubtask] = useState({ title: "", targetValue: "", unit: "" });
-  const [newTask, setNewTask] = useState({title: "", description: "", priority: "LOW", isRecurring: false, date: format(new Date(), "yyyy-MM-dd"), startTime: "", subtasks: [] as any[] });
+  const [newTask, setNewTask] = useState({title: "", description: "", priority: "LOW", isRecurring: false, date: format(new Date(), "yyyy-MM-dd"), startTime: "", duration: "60", subtasks: [] as any[] });
   const lastFetchedDate = useRef<string | null>(null);
   // 👇 NEW: State to toggle views on mobile (List vs Timeline)
   const [mobileView, setMobileView] = useState<"list" | "timeline">("list");
@@ -83,7 +83,8 @@ export default function TasksPage() {
           priority: "LOW", 
           isRecurring: false, 
           date: format(selectedDate, "yyyy-MM-dd"), 
-          startTime: timeString, // 👈 Pre-fills the specific hour you clicked
+          startTime: timeString,
+          duration: "60",
           subtasks: [] 
       });
       setNewSubtask({ title: "", targetValue: "", unit: "" });
@@ -115,6 +116,7 @@ export default function TasksPage() {
           isRecurring: task.priority === "HABIT" || task.isRecurring, 
           date: task.date ? format(new Date(task.date), "yyyy-MM-dd") : format(new Date(), "yyyy-MM-dd"),
           startTime: task.startTime ? format(new Date(task.startTime), "HH:mm") : "",
+          duration: task.durationMins ? task.durationMins.toString() : "60",
           subtasks: task.subtasks || [] 
       });
       setIsAdding(true);
@@ -142,7 +144,8 @@ export default function TasksPage() {
         
         date: targetDateObj, 
         startTime: startTimeObj,
-        
+        duration: newTask.duration ? parseInt(newTask.duration) : 60,
+
         newSubtasks: newSubtasksToAdd,
         subtasks: newTask.subtasks 
     };
@@ -177,7 +180,8 @@ export default function TasksPage() {
           priority: "LOW", 
           isRecurring: false, 
           date: format(selectedDate, "yyyy-MM-dd"), 
-          startTime: "", 
+          startTime: "",
+          duration: "60", 
           subtasks: [] 
       });
       setNewSubtask({ title: "", targetValue: "", unit: "" });
@@ -231,6 +235,76 @@ export default function TasksPage() {
     setTasks(prev => prev.filter(t => t.id !== taskId));
     await fetch(`/api/tasks?id=${taskId}`, { method: "DELETE" });
   }
+
+
+  // 👇 UPDATED: Smart Layout Engine with Clustering
+  const positionedTasks = useMemo(() => {
+    if (loading || tasks.length === 0) return [];
+
+    // 1. Prepare & Sort by Start Time
+    const validTasks = tasks
+      .filter(t => t.startTime)
+      .map(t => ({
+        ...t,
+        start: new Date(t.startTime).getTime(),
+        end: new Date(t.startTime).getTime() + (t.durationMins || 60) * 60000,
+        duration: t.durationMins || 60
+      }))
+      .sort((a, b) => a.start - b.start);
+
+    // 2. Assign Columns (Greedy Packing)
+    const columns: number[] = [];
+    const withColIndex = validTasks.map(task => {
+      let colIndex = -1;
+      // Find first free column
+      for (let i = 0; i < columns.length; i++) {
+        if (task.start >= columns[i]) {
+          colIndex = i;
+          columns[i] = task.end;
+          break;
+        }
+      }
+      // If no column fits, add new one
+      if (colIndex === -1) {
+        colIndex = columns.length;
+        columns.push(task.end);
+      }
+      return { ...task, colIndex };
+    });
+
+    // 3. Group into Clusters (Connected Components)
+    // This ensures everyone in a group shares the same width
+    const finalTasks: any[] = [];
+    let currentCluster: any[] = [];
+    let clusterEnd = 0;
+
+    withColIndex.forEach((task) => {
+       // If this task starts AFTER the current cluster finishes, the cluster is done.
+       if (currentCluster.length > 0 && task.start >= clusterEnd) {
+           // Finalize previous cluster
+           const maxCol = Math.max(...currentCluster.map(t => t.colIndex));
+           currentCluster.forEach(t => finalTasks.push({ ...t, totalCols: maxCol + 1 }));
+           
+           // Start new cluster
+           currentCluster = [task];
+           clusterEnd = task.end;
+       } else {
+           // Add to current cluster
+           currentCluster.push(task);
+           // Extend the cluster's reach if this task ends later
+           if (task.end > clusterEnd) clusterEnd = task.end;
+       }
+    });
+
+    // Finalize the last cluster
+    if (currentCluster.length > 0) {
+        const maxCol = Math.max(...currentCluster.map(t => t.colIndex));
+        currentCluster.forEach(t => finalTasks.push({ ...t, totalCols: maxCol + 1 }));
+    }
+
+    return finalTasks;
+
+  }, [tasks, loading]);
 
 return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
@@ -366,30 +440,17 @@ return (
                     ))}
 
                     {/* --- TASK BLOCKS RENDERER --- */}
-                    {!loading && tasks.filter(t => t.startTime).map(task => {
-                        // 1. Calculate Vertical Position & Time info
+                    {positionedTasks.map((task: any) => {
+                        // Vertical Position
                         const dateObj = new Date(task.startTime);
-                        const hours = dateObj.getHours(); // We need this for the drop logic
-                        const minutes = dateObj.getMinutes();
-                        const topPosition = (hours * 60) + minutes + 16; // +16px top padding offset
+                        const topPosition = (dateObj.getHours() * 60) + dateObj.getMinutes() + 16;
+                        const height = task.duration;
 
-                        // 2. Overlap Logic
-                        const overlappingTasks = tasks.filter(t => {
-                            if (!t.startTime) return false;
-                            const tDate = new Date(t.startTime);
-                            return tDate.getHours() === hours; 
-                        });
-
-                        // 3. Sort & Calculate Width/Left
-                        const sortedGroup = overlappingTasks.sort((a, b) => a.id.localeCompare(b.id));
-                        const myIndex = sortedGroup.findIndex(t => t.id === task.id);
-                        const totalInGroup = sortedGroup.length;
-
-                        // Dynamic width calculation
-                        const widthVal = `calc((100% - 8rem) / ${totalInGroup})`;
-                        const leftVal = `calc(6rem + ((100% - 8rem) / ${totalInGroup} * ${myIndex}))`;
-
-                        const height = 50; 
+                        // Horizontal Position (Calculated in useMemo)
+                        // Left Padding is 6rem (approx 96px)
+                        // We divide the remaining space (100% - 8rem) by the total columns required
+                        const widthVal = `calc((100% - 8rem) / ${task.totalCols})`;
+                        const leftVal = `calc(6rem + ((100% - 8rem) / ${task.totalCols} * ${task.colIndex}))`;
 
                         return (
                             <div 
@@ -399,11 +460,10 @@ return (
                                     e.stopPropagation(); 
                                     setDraggedTaskId(task.id);
                                 }}
-                                // 👇 NEW: Allow dropping ONTO other tasks to create overlaps
                                 onDragOver={(e) => e.preventDefault()} 
                                 onDrop={(e) => {
-                                    e.stopPropagation(); // Stop it from bubbling to the grid
-                                    handleDropTask(e, hours); // Drop into the SAME hour as this task
+                                    e.stopPropagation(); 
+                                    handleDropTask(e, dateObj.getHours()); 
                                 }}
                                 
                                 className={`absolute rounded-lg border-l-[4px] px-2 py-1 text-xs shadow-sm cursor-move hover:shadow-md hover:z-50 transition-all overflow-hidden
@@ -419,19 +479,19 @@ return (
                                     height: `${height}px`,
                                     width: widthVal, 
                                     left: leftVal,
-                                    zIndex: 10 // Ensure it sits above grid but below modals
+                                    zIndex: 10 + task.colIndex // Higher columns sit on top if forced
                                 }}
                                 onClick={(e) => {
                                     e.stopPropagation(); 
                                     openEditModal(task);
                                 }}
                             >
-                                <div className="flex justify-between items-center h-full gap-1 pointer-events-none">
+                                <div className="flex justify-between items-start h-full gap-1 pointer-events-none">
                                     <div className="font-semibold truncate flex items-center gap-1 min-w-0">
                                         {task.isCompleted && <Check className="w-3 h-3 flex-shrink-0" />}
                                         <span className="truncate">{task.title}</span>
                                     </div>
-                                    {totalInGroup < 3 && (
+                                    {(height > 30 && task.totalCols < 3) && (
                                         <div className="opacity-70 font-mono text-[9px] bg-background/50 px-1 rounded flex-shrink-0">
                                             {format(dateObj, "h:mm")}
                                         </div>
@@ -476,7 +536,7 @@ return (
                 </div>
 
                 {/* Priority + Time Row */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-rows-2 gap-4">
 
                     {/* Priority */}
                     <div className="space-y-1.5">
@@ -499,21 +559,32 @@ return (
 
                     {/* Date + Time */}
                     <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-foreground/80">Time</label>
-                    <div className="flex gap-2">
-                        <Input
-                        type="date"
-                        className="bg-secondary/30 border-transparent focus:border-primary focus:bg-background transition-all flex-1"
-                        value={newTask.date}
-                        onChange={e => setNewTask({ ...newTask, date: e.target.value })}
-                        />
-                        <Input
-                        type="time"
-                        className="bg-secondary/30 border-transparent focus:border-primary focus:bg-background transition-all w-24"
-                        value={newTask.startTime}
-                        onChange={e => setNewTask({ ...newTask, startTime: e.target.value })}
-                        />
-                    </div>
+                        <label className="text-sm font-semibold text-foreground/80">Time</label>
+                        <div className="flex gap-2">
+                            <Input
+                            type="date"
+                            className="bg-secondary/30 border-transparent focus:border-primary focus:bg-background transition-all flex-1"
+                            value={newTask.date}
+                            onChange={e => setNewTask({ ...newTask, date: e.target.value })}
+                            />
+                            <Input
+                            type="time"
+                            className="bg-secondary/30 border-transparent focus:border-primary focus:bg-background transition-all w-24"
+                            value={newTask.startTime}
+                            onChange={e => setNewTask({ ...newTask, startTime: e.target.value })}
+                            />
+                            <div className="flex items-center gap-2 bg-secondary/30 rounded-md px-3 border border-transparent focus-within:border-primary">
+                            
+                            <Input 
+                                className="w-12 h-9 border-none bg-transparent p-0 text-center focus-visible:ring-0"
+                                type="number" 
+                                placeholder="60"
+                                value={newTask.duration} 
+                                onChange={e => setNewTask({...newTask, duration: e.target.value})} 
+                            />
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">min</span>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
