@@ -3,12 +3,13 @@
 import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/ui/navbar";
 import Image from "next/image";
+import Link from "next/link";
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   // Define which pages are "Marketing" pages (No sidebar, no padding)
-  const isMarketingPage = pathname === "/" || pathname?.startsWith("/sign");
+  const isMarketingPage = pathname === "/" || pathname?.startsWith("/sign") || pathname?.startsWith("/guides");
 
   return (
     <>
@@ -19,15 +20,17 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
       {/* 2. GLOBAL LOGO (Only for Dashboard/App pages) */}
       {!isMarketingPage && (
         <div className="absolute md:fixed top-6 left-6 z-50">
-          <div className="relative w-16 h-16 md:w-24 md:h-24 transition-all duration-300">
-            <Image 
-              src="/logo.png" 
-              alt="Soma Logo" 
-              fill 
-              className="object-contain" 
-              priority
-            />
-          </div>
+          <Link href="/">
+            <div className="relative w-20 h-20 cursor-pointer transition-transform hover:scale-105">
+              <Image 
+                src="/logo.png" 
+                alt="Soma Logo" 
+                fill 
+                className="object-contain" 
+                priority
+              />
+            </div>
+          </Link>
         </div>
       )}
 

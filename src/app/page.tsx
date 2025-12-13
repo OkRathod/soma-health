@@ -15,12 +15,19 @@ import {
   ShieldCheck, 
   LineChart, 
   Utensils, 
-  Smartphone 
+  Smartphone,
+  MessageSquarePlus, // New icon
+  CalendarClock,     // New icon
+  TrendingUp,        // New icon
+  Watch,             // New icon
+  Mic,               // New icon
+  Users,              // New icon
+  BookOpen
 } from "lucide-react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-// 2. Initialize the font
+// Initialize the font
 const monoton = Monoton({ 
   weight: "400", 
   subsets: ["latin"] 
@@ -89,10 +96,10 @@ export default function LandingPage() {
             ease: "power2.out",
             scrollTrigger: {
               trigger: card,
-              start: "top 85%", // Start when top of card hits 85% of viewport height
+              start: "top 85%", 
               toggleActions: "play none none reverse",
             },
-            delay: i * 0.1, // Slight manual stagger based on index
+            delay: i * 0.1, 
           }
         );
       });
@@ -113,6 +120,21 @@ export default function LandingPage() {
         }
       );
 
+      // 4. UPCOMING CARDS ANIMATION
+      gsap.fromTo(".upcoming-card",
+        { y: 30, opacity: 0 },
+        {
+          y: 0, 
+          opacity: 1,
+          duration: 0.5,
+          stagger: 0.1,
+          scrollTrigger: {
+            trigger: "#roadmap",
+            start: "top 80%"
+          }
+        }
+      );
+
     }, mainRef);
 
     return () => ctx.revert(); // Cleanup GSAP
@@ -125,21 +147,16 @@ export default function LandingPage() {
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           
           {/* LEFT SIDE: Logo + Name */}
-          <div className="flex items-center gap-3">
-            {/* 👇 FIX: Wrapper div constrains the 'fill' image */}
-            {/* <div className="relative w-20 h-20">
-              <Image 
-                src="/logo.png" 
-                alt="Soma Logo" 
-                fill 
-                className="object-contain" 
-                priority
-              />
-            </div> */}
-            {/* App Name */}
+          <div className="flex items-center gap-8">
             <span className={`${monoton.className} text-3xl text-foreground pt-1`}>
                SOMA
             </span>
+            <Link 
+              href="/guides" 
+              className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+            >
+              <BookOpen className="w-4 h-4" /> Guides
+            </Link>
           </div>
 
           {/* RIGHT SIDE: Buttons */}
@@ -169,15 +186,35 @@ export default function LandingPage() {
         
         {/* 2. MODERN HERO SECTION */}
         <section className="relative pt-20 pb-32 lg:pt-32 overflow-hidden">
-          {/* Background Gradients */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-primary/5 rounded-[100%] blur-[100px] -z-10" />
-          <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-info/5 rounded-[100%] blur-[120px] -z-10" />
+          
+          {/* 👇 NEW: Background Video */}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline // Important for iOS autoplay
+            className="absolute inset-0 w-full h-full object-cover z-10"
+          >
+            <source src="/hero.mp4" type="video/mp4" />
+            {/* Optional: Add a placeholder image if video fails to load */}
+            {/* <img src="/hero-poster.jpg" alt="Hero background" /> */}
+          </video>
 
-          <div className="container mx-auto px-6 flex flex-col lg:flex-row items-center gap-16">
+          {/* 👇 NEW: Dark Overlay (Adjust opacity /60 as needed for readability) */}
+          {/* This sits between the video and the content to ensure text contrast */}
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] -z-10" />
+
+          {/* ❌ REMOVED: Old blurred gradient blobs */}
+          {/* <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-primary/5 rounded-[100%] blur-[100px] -z-10" /> */}
+          {/* <div className="absolute bottom-0 right-0 w-[800px] h-[600px] bg-info/5 rounded-[100%] blur-[120px] -z-10" /> */}
+
+          <div className="container mx-auto px-6 flex flex-col lg:flex-row items-center gap-16 relative z-10">
             
             {/* Left: Text Content */}
-            <div className="flex-1 text-center lg:text-left z-10" ref={heroTextRef}>
-              <div className="hero-text-element inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-secondary text-secondary-foreground text-sm font-medium mb-6">
+            <div className="flex-1 text-center lg:text-left" ref={heroTextRef}>
+              {/* ... keep existing text content ... */}
+              <div className="hero-text-element inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/80 border border-secondary text-secondary-foreground text-sm font-medium mb-6 backdrop-blur-md">
+                 {/* Note: Added bg-secondary/80 and backdrop-blur-md above for better contrast over video */}
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
@@ -200,8 +237,10 @@ export default function LandingPage() {
                 <Button asChild size="lg" className="h-12 px-8 text-base bg-gradient-to-r from-primary to-info hover:opacity-90 transition-opacity shadow-lg shadow-info/20">
                   <Link href="/sign-up">Start Your Journey</Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base border-input bg-background/50 hover:bg-accent hover:text-accent-foreground backdrop-blur-sm">
-                  <Link href="#how-it-works">How it Works</Link>
+                <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base border-input bg-background/50 hover:bg-accent hover:text-accent-foreground backdrop-blur-sm gap-2">
+                  <Link href="/guides/the-soma-protocol">
+                    <BookOpen className="w-4 h-4 text-primary" /> Read Protocol
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -232,7 +271,7 @@ export default function LandingPage() {
                     <div className="h-20 rounded-xl bg-secondary/50" />
                   </div>
                   <div className="w-1/3 space-y-4">
-                     <div className="h-full rounded-xl bg-info/5 border border-info/10" />
+                      <div className="h-full rounded-xl bg-info/5 border border-info/10" />
                   </div>
                 </div>
 
@@ -323,12 +362,12 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 4. HOW IT WORKS (Timeline) */}
+        {/* 4. HOW IT WORKS (UPDATED FLOW) */}
         <section id="how-it-works" className="py-24 how-it-works relative overflow-hidden">
           <div className="container mx-auto px-6 relative z-10">
             <div className="text-center mb-20">
                <h2 className="text-3xl font-bold mb-4">How Soma Works</h2>
-               <p className="text-muted-foreground">From input to insight in seconds.</p>
+               <p className="text-muted-foreground">Three steps to complete health mastery.</p>
             </div>
 
             <div className="relative max-w-4xl mx-auto">
@@ -337,59 +376,62 @@ export default function LandingPage() {
                  <div className="step-line w-full bg-primary origin-top" />
               </div>
 
-              {/* Step 1 */}
-              <div className="relative flex flex-col md:flex-row items-center justify-between mb-16 group">
+              {/* Step 1: Natural AI Logging */}
+              <div className="relative flex flex-col md:flex-row items-center justify-between mb-24 group">
                 <div className="md:w-5/12 text-left md:text-right order-2 md:order-1 pl-12 md:pl-0">
-                  <h3 className="text-xl font-bold text-foreground">1. Log Naturally</h3>
-                  <p className="text-muted-foreground">Don't search databases. Just type "Oatmeal with blueberries".</p>
+                  <h3 className="text-xl font-bold text-foreground">1. Speak or Type Naturally</h3>
+                  <p className="text-muted-foreground">Just tell Soma: "I ate a cheese sandwich and walked 2km." Our AI parses calories, macros, and activity instantly.</p>
                 </div>
-                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-background border-4 border-primary z-10 flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 bg-primary rounded-full" />
+                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-background border-4 border-primary z-10 flex items-center justify-center shadow-lg shadow-primary/20">
+                  <MessageSquarePlus className="w-4 h-4 text-primary" />
                 </div>
                 <div className="md:w-5/12 order-3 pl-12 md:pl-0">
-                   <div className="p-4 bg-secondary/30 rounded-xl border border-border">
+                   <div className="p-4 bg-card rounded-xl border border-border shadow-sm">
                       <div className="flex items-center gap-3 text-sm">
-                        <Utensils className="w-4 h-4 text-muted-foreground" />
-                        <span className="italic text-muted-foreground">"Avocado toast with an egg..."</span>
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <Brain className="w-4 h-4 text-primary" />
+                        </div>
+                        <div>
+                            <p className="font-medium">"Logged!"</p>
+                            <p className="text-xs text-muted-foreground">+350 kcal | -120 kcal burned</p>
+                        </div>
                       </div>
                    </div>
                 </div>
               </div>
 
-               {/* Step 2 */}
-               <div className="relative flex flex-col md:flex-row items-center justify-between mb-16 group">
+               {/* Step 2: Drag & Drop Tasks */}
+               <div className="relative flex flex-col md:flex-row items-center justify-between mb-24 group">
                 <div className="md:w-5/12 order-2 md:order-3 pl-12 md:pl-0">
-                  <h3 className="text-xl font-bold text-foreground">2. AI Analysis</h3>
-                  <p className="text-muted-foreground">Our AI breaks down ingredients, estimates portions, and calculates macros.</p>
+                  <h3 className="text-xl font-bold text-foreground">2. Design Your Perfect Day</h3>
+                  <p className="text-muted-foreground">Use our 24-hour drag-and-drop timeline to schedule meals, workouts, and habits. Visualize your day like a pro.</p>
                 </div>
-                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-background border-4 border-info z-10 flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 bg-info rounded-full" />
+                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-background border-4 border-info z-10 flex items-center justify-center shadow-lg shadow-info/20">
+                  <CalendarClock className="w-4 h-4 text-info" />
                 </div>
                 <div className="md:w-5/12 text-left md:text-right order-3 md:order-1 pl-12 md:pl-0">
-                    <div className="inline-block p-4 bg-info/10 rounded-xl border border-info/20">
-                      <div className="flex items-center gap-2 text-info font-mono text-sm">
-                        <Brain className="w-4 h-4" />
-                        <span>Processing...</span>
-                      </div>
-                   </div>
+                    <div className="inline-flex flex-col gap-2 p-3 bg-card rounded-xl border border-border shadow-sm w-full max-w-[200px] md:ml-auto">
+                        <div className="h-8 bg-blue-500/10 border-l-4 border-blue-500 rounded text-xs flex items-center px-2">Gym 7:00 AM</div>
+                        <div className="h-8 bg-green-500/10 border-l-4 border-green-500 rounded text-xs flex items-center px-2">Breakfast</div>
+                        <div className="h-8 bg-orange-500/10 border-l-4 border-orange-500 rounded text-xs flex items-center px-2">Work Block</div>
+                    </div>
                 </div>
               </div>
 
-               {/* Step 3 */}
+               {/* Step 3: Analytics */}
                <div className="relative flex flex-col md:flex-row items-center justify-between group">
                 <div className="md:w-5/12 text-left md:text-right order-2 md:order-1 pl-12 md:pl-0">
-                  <h3 className="text-xl font-bold text-foreground">3. Actionable Insights</h3>
-                  <p className="text-muted-foreground">Get instant feedback. "That's high protein, but check your sodium."</p>
+                  <h3 className="text-xl font-bold text-foreground">3. Track & Optimize</h3>
+                  <p className="text-muted-foreground">View your Weekly Charts and History Logs. Spot trends, fix caloric imbalances, and stay consistent.</p>
                 </div>
-                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-background border-4 border-success z-10 flex items-center justify-center">
-                  <div className="w-2.5 h-2.5 bg-success rounded-full" />
+                <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-background border-4 border-success z-10 flex items-center justify-center shadow-lg shadow-success/20">
+                  <TrendingUp className="w-4 h-4 text-success" />
                 </div>
                 <div className="md:w-5/12 order-3 pl-12 md:pl-0">
-                   <div className="p-4 bg-success/10 rounded-xl border border-success/20">
-                      <div className="flex items-center gap-2 text-success font-bold text-sm">
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>Goal On Track!</span>
-                      </div>
+                   <div className="p-4 bg-card rounded-xl border border-border shadow-sm flex items-end justify-between gap-1 h-20">
+                      {[30, 50, 45, 80, 60, 90, 75].map((h, i) => (
+                          <div key={i} className="w-full bg-success/80 rounded-t-sm" style={{ height: `${h}%` }}></div>
+                      ))}
                    </div>
                 </div>
               </div>
@@ -398,7 +440,64 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 5. TRUST / PRIVACY */}
+        {/* 5. UPCOMING FEATURES (ROADMAP) */}
+        <section id="roadmap" className="py-24 bg-gradient-to-b from-background to-secondary/20 border-t border-border">
+            <div className="container mx-auto px-6">
+                <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
+                    <div>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-4">
+                            Roadmap
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-bold">The Future of Soma</h2>
+                        <p className="text-muted-foreground mt-2 max-w-lg">
+                            We are just getting started. Here is what we are building next to supercharge your health journey.
+                        </p>
+                    </div>
+                    <Button variant="outline" className="gap-2">
+                        View Full Roadmap <ArrowRight className="w-4 h-4" />
+                    </Button>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    {/* Card 1 */}
+                    <div className="upcoming-card p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-primary/50 transition-colors group">
+                        <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <Watch className="w-6 h-6 text-foreground" />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2">Wearable Sync</h3>
+                        <p className="text-muted-foreground text-sm">
+                            Seamless integration with Apple Health, Google Fit, and Oura Ring to auto-import your workouts and sleep data.
+                        </p>
+                    </div>
+
+                    {/* Card 2 */}
+                    <div className="upcoming-card p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-primary/50 transition-colors group">
+                        <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <Mic className="w-6 h-6 text-foreground" />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2">Soma Voice Mode</h3>
+                        <p className="text-muted-foreground text-sm">
+                            Hands-free logging. Just tap and talk. "Hey Soma, log a 30-minute run and a banana." Done in seconds.
+                        </p>
+                    </div>
+
+                    {/* Card 3 */}
+                    <div className="upcoming-card p-6 rounded-2xl bg-card border border-border shadow-sm hover:border-primary/50 transition-colors group">
+                        <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                            <Users className="w-6 h-6 text-foreground" />
+                        </div>
+                        <h3 className="text-xl font-bold mb-2">Community Challenges</h3>
+                        <p className="text-muted-foreground text-sm">
+                            Compete with friends in step counts, hydration streaks, and consistency leaderboards. Health is better together.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        {/* 6. TRUST / PRIVACY */}
         <section className="py-24 bg-card border-t border-border">
           <div className="container mx-auto px-6 text-center max-w-2xl">
             <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-8">
@@ -409,7 +508,6 @@ export default function LandingPage() {
               We believe health data is the most personal data you possess. Soma is built with privacy-first principles. We don't sell your data, ever.
             </p>
             <div className="flex justify-center gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-               {/* Placeholders for logos if you have them, otherwise simpler trust indicators */}
                <div className="flex items-center gap-2">
                  <ShieldCheck className="w-5 h-5" />
                  <span className="font-semibold">End-to-End Encrypted</span>
@@ -424,11 +522,10 @@ export default function LandingPage() {
 
       </main>
 
-      {/* 6. FOOTER */}
+      {/* 7. FOOTER */}
       <footer className="border-t border-border bg-background py-12">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
-             {/* <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">S</div> */}
              <span className={`${monoton.className} text-xl pt-1`}>
                SOMA
              </span>
