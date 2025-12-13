@@ -100,7 +100,7 @@ export default function TasksPage() {
   async function fetchTasks() {
     setLoading(true);
     try {
-        const res = await fetch(`/api/tasks?date=${selectedDate.toISOString()}`, { cache: 'no-store' });
+        const res = await fetch(`/api/tasks?date=${format(selectedDate, "yyyy-MM-dd")}`);
         const data = await res.json();
         if (data.success) setTasks(data.tasks);
     } catch (e) { console.error(e); }

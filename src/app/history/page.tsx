@@ -35,6 +35,16 @@ export default function HistoryPage() {
   // Inside HistoryPage component, near other state variables
   const [tasks, setTasks] = useState<any[]>([]); // 👈 NEW: Store history tasks
 
+  const filteredHistoryTasks = useMemo(() => {
+    if (!date) return [];
+    const target = format(date, "yyyy-MM-dd");
+
+    return tasks.filter(t =>
+        format(new Date(t.date), "yyyy-MM-dd") === target
+    );
+    }, [tasks, date]);
+
+
 
   useEffect(() => {
       if (!isLoaded || !user) return;
@@ -49,7 +59,7 @@ export default function HistoryPage() {
       try {
           if(!date) return;
           // Reusing your existing Tasks API!
-          const res = await fetch(`/api/tasks?date=${date.toISOString()}`);
+          const res = await fetch(`/api/tasks?date=${format(date, "yyyy-MM-dd")}`);
           const data = await res.json();
           if (data.success) setTasks(data.tasks);
       } catch (e) { console.error("Failed to fetch tasks", e); }
@@ -462,13 +472,13 @@ function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) =>
                       {/* === VIEW 2: TASKS (Corrected Logic) === */}
 
                       <TabsContent value="tasks" className="mt-4 space-y-3 animate-in fade-in slide-in-from-bottom-2">
-                          {tasks.length === 0 ? (
+                          {filteredHistoryTasks.length === 0 ? (
                               <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-xl border border-dashed">
                                   No tasks found for this day.
                               </div>
                           ) : (
                               <div className="max-h-[600px] overflow-y-auto pr-2 custom-scrollbar space-y-3">
-                                  {tasks.map(task => (
+                                  {filteredHistoryTasks.map(task => (
                                       <div 
                                           key={task.id} 
                                           // Added cursor-pointer to the whole card so it feels interactive

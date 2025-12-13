@@ -36,7 +36,9 @@ export async function GET(req: Request) {
   // --- EXISTING LOGIC STARTS HERE (For Daily Schedule Page) ---
 
   const queryDate = url.searchParams.get("date");
-  const date = queryDate ? new Date(queryDate) : new Date();
+  const date = queryDate
+  ? new Date(`${queryDate}T00:00:00`)
+  : new Date();
 
   // Normalize "Today" to Midnight 00:00:00
   const start = startOfDay(date);
