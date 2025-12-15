@@ -189,7 +189,7 @@ export default function LandingPage() {
         <section className="relative pt-20 pb-32 lg:pt-32 overflow-hidden">
           
           {/* 👇 NEW: Background Video */}
-          <video
+          {/* <video
             autoPlay
             loop
             muted
@@ -197,9 +197,9 @@ export default function LandingPage() {
             className="absolute inset-0 w-full h-full object-cover z-10"
           >
             <source src="/hero.mp4" type="video/mp4" />
-            {/* Optional: Add a placeholder image if video fails to load */}
-            {/* <img src="/hero-poster.jpg" alt="Hero background" /> */}
-          </video>
+            Optional: Add a placeholder image if video fails to load
+            <img src="/hero-poster.jpg" alt="Hero background" />
+          </video> */}
 
           {/* 👇 NEW: Dark Overlay (Adjust opacity /60 as needed for readability) */}
           {/* This sits between the video and the content to ensure text contrast */}
