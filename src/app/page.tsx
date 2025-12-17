@@ -4,17 +4,14 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@clerk/nextjs";
-import Image from "next/image";
 import { Monoton } from "next/font/google";
 import { 
-  Activity, 
   ArrowRight, 
   Brain, 
   History, 
   Zap, 
   ShieldCheck, 
   LineChart, 
-  Utensils, 
   Smartphone,
   MessageSquarePlus, // New icon
   CalendarClock,     // New icon
@@ -246,45 +243,6 @@ export default function LandingPage() {
                 {/* 👇 3. ADD THE INSTALL BUTTON HERE */}
                 <InstallPWA />
               </div>
-            </div>
-
-            {/* Right: 3D Dashboard Mockup */}
-            <div className="flex-1 w-full max-w-[600px] perspective-[2000px] z-10">
-              <div 
-                ref={dashboardMockRef}
-                className="relative bg-card border border-border/50 rounded-2xl shadow-2xl overflow-hidden aspect-[4/3] group"
-              >
-                {/* Abstract UI Representation */}
-                <div className="absolute inset-0 bg-gradient-to-br from-card to-secondary/30" />
-                
-                {/* Header Mockup */}
-                <div className="absolute top-0 left-0 right-0 h-12 border-b border-border/50 flex items-center px-4 gap-2">
-                  <div className="w-3 h-3 rounded-full bg-destructive/50" />
-                  <div className="w-3 h-3 rounded-full bg-info/50" />
-                  <div className="w-3 h-3 rounded-full bg-success/50" />
-                </div>
-
-                {/* Content Mockup */}
-                <div className="absolute top-16 left-6 right-6 bottom-6 flex gap-4">
-                  <div className="flex-1 space-y-4">
-                    <div className="h-32 rounded-xl bg-primary/5 border border-primary/10 relative overflow-hidden">
-                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/5 to-transparent skew-x-12 translate-x-[-100%] animate-[shimmer_2s_infinite]" />
-                    </div>
-                    <div className="h-20 rounded-xl bg-secondary/50" />
-                    <div className="h-20 rounded-xl bg-secondary/50" />
-                  </div>
-                  <div className="w-1/3 space-y-4">
-                      <div className="h-full rounded-xl bg-info/5 border border-info/10" />
-                  </div>
-                </div>
-
-                {/* Glass Reflection Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/0 pointer-events-none" />
-              </div>
-
-              {/* Decorative Elements behind mock */}
-              <div className="absolute -top-10 -right-10 w-24 h-24 bg-success/20 rounded-full blur-2xl" />
-              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-info/20 rounded-full blur-2xl" />
             </div>
           </div>
         </section>
