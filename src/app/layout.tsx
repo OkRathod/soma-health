@@ -5,7 +5,8 @@ import "./globals.css";
 
 import { ThemeProvider } from "@/components/theme-provider"
 import { ClerkProvider } from '@clerk/nextjs';
-import { MainLayout } from "@/components/main-layout";
+import { getSomaUser } from "@/lib/prisma"; // 👈 1. Server Import works here!
+import { MainLayoutClient } from "@/components/main-layout-client"; // 👈 2. Import the new Client Component
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,18 +24,21 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#000000", // Matches your manifest theme_color
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false, // Prevents zooming on inputs, giving a native app feel
+  userScalable: false,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // 👇 3. Fetch data safely on the server
+  const user = await getSomaUser();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} ${baskervville.variable} antialiased`}>
@@ -46,10 +50,10 @@ export default function RootLayout({
         >
           <ClerkProvider>
 
-            {/* 👇 The Client Component handles the conditional UI now */}
-            <MainLayout>
+            {/* 👇 4. Pass the data to the client component */}
+            <MainLayoutClient user={user}>
               {children}
-            </MainLayout>
+            </MainLayoutClient>
 
           </ClerkProvider>
         </ThemeProvider>

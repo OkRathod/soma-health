@@ -22,11 +22,11 @@ export default function SomaProtocolPage() {
         <div className="bg-background text-foreground min-h-screen">
             
             {/* 1. BACK BUTTON (Floating) */}
-            <div className="fixed top-6 left-6 z-50">
+            {/* <div className="fixed top-6 left-6 z-50">
                 <Button asChild variant="ghost" size="sm" className="backdrop-blur-md bg-background/30 hover:bg-background/60 border border-border/50">
                     <Link href="/guides"><ArrowLeft className="w-4 h-4 mr-2" /> Back to Guides</Link>
                 </Button>
-            </div>
+            </div> */}
 
             {/* 2. HERO SECTION */}
             <section className="relative min-h-[90vh] flex flex-col items-center justify-center text-center px-6 pt-20">

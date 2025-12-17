@@ -133,3 +133,14 @@ model SubTask {
   currentValue Int?    // e.g. 5 (reps done so far)
   unit        String?  // "reps", "mins", "km", "chapters"
 }
+
+// Tracks completed content
+model UserReadGuide {
+  id        String   @id @default(cuid())
+  userId    String
+  guideSlug String   // Matches the slug in your static guides file
+  readAt    DateTime @default(now())
+
+  // Ensures a user can't read the same guide twice in the DB
+  @@unique([userId, guideSlug])
+}

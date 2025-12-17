@@ -5,104 +5,284 @@ export const guides = [
     description: "The official master guide to high-performance living with Soma.",
     date: "2025-12-14",
     readTime: "Interactive Guide",
+    image:"",
     // Content here is ignored because the page.tsx file overrides it
     content: "" 
   },
-  // {
-  //   slug: "the-soma-protocol-guide", // 👈 This determines the URL: soma.com/guides/the-soma-protocol
-  //   title: "The Soma Protocol: A Master Guide to Peak Performance",
-  //   description: "A blueprint for high-performance living. Learn how to optimize your day using biology, psychology, and the Soma workflow.",
-  //   date: "2025-12-14",
-  //   readTime: "12 min read",
-  //   content: `
-  //     <h2>Phase 0: The Setup (Do This Once)</h2>
-  //     <p>To make Soma an extension of your brain, friction must be zero. The goal is to reduce the "activation energy" required to track your life.</p>
-      
-  //     <h3>1. Install as a PWA</h3>
-  //     <p><strong>Mobile:</strong> Open Soma in Safari (iOS) or Chrome (Android) → Tap Share/Menu → <strong>"Add to Home Screen"</strong>.</p>
-  //     <p><strong>Desktop:</strong> Open in Chrome → Click the Install icon in the address bar.</p>
-  //     <p><em>Why:</em> This removes the browser UI, giving you a full-screen, app-like experience. You are one tap away from logging.</p>
+  {
+  slug: "sleep-protocol", // This matches the folder name we just made
+  title: "Why Sleep Is the Foundation of Human Performance", 
+  description: "A science-backed exploration of how sleep governs memory, hormones, immunity, aging, and lifespan — and why it must come first.",
+  date: "2025-12-17",
+  readTime: "5 min read",
+  image: "/guides/thumbnail/sleep.png",
+  // Content here is ignored because the page.tsx file overrides it
+  content: `
+  <body>
 
-  //     <h3>2. The "Quick Log" Mindset</h3>
-  //     <p>Train yourself to treat the Dashboard as your homepage. It is designed for speed. Don't navigate menus; just log.</p>
+<header>
+    <p>
+        <strong>
+            A science-backed exploration of how sleep governs memory, hormones,
+            immunity, aging, and lifespan — and why it must come first.
+        </strong>
+    </p>
 
-  //     <hr />
+    <p>
+        Inspired by research presented by <strong>Dr. Matthew Walker</strong><br>
+        Source:
+        <a href="https://youtu.be/5MuIMqhT8DM?si=lhf_IWwgpHPW4qcq" target="_blank">
+            TED Talk — Why We Sleep
+        </a>
+    </p>
 
-  //     <h2>Phase 1: The Night Before (Design Your Day)</h2>
-  //     <p>Optimization starts the night before. Decision fatigue is the enemy of productivity. If you wake up asking "What should I do?", you have already lost energy.</p>
+    <hr>
+</header>
 
-  //     <h3>Step 1: The Timeline Construction</h3>
-  //     <p>Go to the <strong>Tasks Page</strong>. Switch to "Time" View.</p>
-  //     <ol>
-  //       <li><strong>Block the Non-Negotiables First (Habits):</strong> Create tasks for Sleep, Gym, and Meals. Set their Priority to <strong>HABIT</strong>. These are the anchors of your biological rhythm.</li>
-  //       <li><strong>Deep Work Blocks (High Priority):</strong> Add your single most important work task. Drag it to your peak energy time (usually 9:00 AM - 11:00 AM). <em>Pro Tip: Use the Duration field to block 90 minutes.</em></li>
-  //       <li><strong>The Shallow Buffer:</strong> Fill gaps with LOW priority tasks like emails or commuting.</li>
-  //     </ol>
-  //     <blockquote>"The Result: You go to sleep knowing exactly what tomorrow looks like."</blockquote>
+<main>
 
-  //     <hr />
+    <section>
+        <p>
+            Let’s begin with an uncomfortable truth — one that most people
+            underestimate, ignore, or postpone until it’s too late.
+        </p>
 
-  //     <h2>Phase 2: Morning Protocol (06:00 - 09:00)</h2>
-      
-  //     <h3>Step 1: The Mindset Primer</h3>
-  //     <p>Open Soma. Read the <strong>Daily Quote</strong> at the top of the Dashboard. <em>Goal:</em> Center your mind before the chaos of the day begins.</p>
+        <p>
+            Sleep is not optional. It is not a lifestyle choice. It is a
+            non-negotiable biological requirement.
+        </p>
+    </section>
 
-  //     <h3>Step 2: Hydration Kickstart</h3>
-  //     <p>Before coffee, drink a large glass of water. Tap the <strong>"Add 250ml"</strong> button on the Dashboard immediately.</p>
-  //     <p><em>Why:</em> You wake up dehydrated. This single button press starts your "Streak" momentum and wakes up your metabolism.</p>
+    <hr>
 
-  //     <h3>Step 3: Log Breakfast (AI Precision)</h3>
-  //     <p>Use the Quick Log input. Speak or Type: <em>"3 scrambled eggs, 2 slices of sourdough toast with butter, black coffee."</em></p>
-  //     <p><strong>The Magic:</strong> The AI calculates the protein and fats instantly. You don't need to search for ingredients individually.</p>
+    <section>
+        <h2>Sleep and Reproductive Health</h2>
 
-  //     <hr />
+        <p>
+            Chronic sleep deprivation has direct and measurable effects on
+            reproductive health in both men and women.
+        </p>
 
-  //     <h2>Phase 3: The Execution Phase (09:00 - 18:00)</h2>
+        <p>
+            Men who sleep only five hours per night have significantly smaller
+            testicles than those who sleep seven hours or more. Those who
+            routinely sleep just four to five hours show testosterone levels
+            comparable to men ten years older.
+        </p>
 
-  //     <h3>Step 1: Live by the Timeline</h3>
-  //     <p>Keep the Tasks Page open. As you finish a task, click the Checkbox. Watching tasks turn green releases dopamine, encouraging you to tackle the next one.</p>
+        <p>
+            In biological terms, insufficient sleep accelerates aging of the
+            reproductive system by nearly a decade. Equivalent impairments are
+            observed in female reproductive health as well.
+        </p>
+    </section>
 
-  //     <h3>Step 2: Adaptive Eating</h3>
-  //     <p><strong>Before Lunch:</strong> Glance at your Dashboard Stats.</p>
-  //     <ul>
-  //       <li><em>Scenario A:</em> If you see you've only eaten 400 calories but burned 200 (Active Energy), you know you need a substantial lunch to prevent an energy crash.</li>
-  //       <li><em>Scenario B:</em> If you had a heavy breakfast, the dashboard will visually show you are near your limit. Opt for a salad.</li>
-  //     </ul>
+    <hr>
 
-  //     <h3>Step 3: Micro-Movements</h3>
-  //     <p>Did you walk to get coffee? Did you take the stairs? Log it: <em>"Walked 15 minutes moderate pace."</em></p>
-  //     <p><em>Why:</em> Soma subtracts these calories from your "Net Balance," earning you more food allowance for dinner.</p>
+    <section>
+        <h2>Sleep and the Ability to Learn</h2>
 
-  //     <hr />
+        <p>
+            Over the past decade, neuroscience has revealed that sleep plays two
+            critical roles in learning — one after learning, and one before it.
+        </p>
 
-  //     <h2>Phase 4: Evening Review (20:00 - 22:00)</h2>
+        <p>
+            After learning, sleep acts like a save button, stabilizing new
+            memories so they are not lost. Before learning, sleep prepares the
+            brain to absorb information, much like a dry sponge ready to soak up
+            water.
+        </p>
 
-  //     <h3>Step 1: Close the Rings</h3>
-  //     <p>Look at your <strong>Net Balance</strong> card. Goal: End the day near 0 (Maintenance) or -300 (Weight Loss). Look at the Hydration card. If you are under, drink water now.</p>
+        <p>
+            Without sleep, the brain’s memory circuits become saturated. New
+            information simply cannot be absorbed.
+        </p>
+    </section>
 
-  //     <h3>Step 2: The History Audit</h3>
-  //     <p>Go to the <strong>History Page</strong>.</p>
-  //     <ul>
-  //       <li><strong>Click "Timeline":</strong> Compare your planned day with your actual day. Did you miss the gym block? Why?</li>
-  //       <li><strong>Click "Diet":</strong> Expand the cards. Read the AI Coach's feedback. Use this info to adjust tomorrow's meals.</li>
-  //     </ul>
+    <hr>
 
-  //     <hr />
+    <section>
+        <h2>The Cost of Pulling an All-Nighter</h2>
 
-  //     <h2>💡 Advanced Optimization Tips</h2>
-      
-  //     <h3>1. The "Context" Hack</h3>
-  //     <p>The AI is smarter than a calculator. Give it context. Instead of "Burger", type <em>"Double cheeseburger from McDonald's and large fries."</em> The AI will find the exact macros.</p>
+        <p>
+            In controlled laboratory studies, participants were divided into two
+            groups: one allowed a full eight hours of sleep, and another kept
+            awake overnight with no caffeine or naps.
+        </p>
 
-  //     <h3>2. Drag & Drop Re-Alignment</h3>
-  //     <p>Life happens. If a meeting runs late, go to Tasks and <strong>drag</strong> your "Gym" block from 5:00 PM to 6:00 PM. The timeline automatically reshuffles. You don't feel like you "failed"; you just "rescheduled."</p>
+        <p>
+            The next day, both groups attempted to learn new information while
+            undergoing brain scans.
+        </p>
 
-  //     <h3>3. Weekly Pattern Recognition</h3>
-  //     <p>On Sundays, look at the <strong>Weekly Chart</strong>. If you consistently miss calorie goals on Thursdays, schedule a "Meal Prep" task for Wednesday nights.</p>
+        <p>
+            The result was stark: a <strong>40 percent reduction</strong> in the
+            ability to form new memories in the sleep-deprived group — the
+            difference between acing an exam and failing it outright.
+        </p>
+    </section>
 
-  //     <p><strong>By following this protocol, Soma stops being just a tracker and becomes your Accountability Partner. You aren't just reacting to the day; you are engineering it.</strong></p>
-  //   `
-  // },
+    <hr>
+
+    <section>
+        <h2>The Hippocampus: A Closed Inbox</h2>
+
+        <p>
+            The hippocampus acts as the brain’s memory inbox, receiving and
+            temporarily storing new experiences.
+        </p>
+
+        <p>
+            In well-rested individuals, this region shows strong learning-related
+            activity. In sleep-deprived individuals, activity is almost entirely
+            absent.
+        </p>
+
+        <p>
+            Sleep deprivation effectively shuts down the brain’s ability to
+            commit new experiences to memory.
+        </p>
+    </section>
+
+    <hr>
+
+    <section>
+        <h2>Deep Sleep and Memory Consolidation</h2>
+
+        <p>
+            During the deepest stages of sleep, the brain produces slow, powerful
+            waves, accompanied by brief bursts of electrical activity known as
+            sleep spindles.
+        </p>
+
+        <p>
+            Together, these waves act as a file-transfer system, moving memories
+            from fragile short-term storage into durable long-term memory.
+        </p>
+    </section>
+
+    <hr>
+
+    <section>
+        <h2>Aging, Dementia, and Alzheimer’s Disease</h2>
+
+        <p>
+            As we age, deep sleep deteriorates. At the same time, memory and
+            learning abilities decline.
+        </p>
+
+        <p>
+            Research now shows these are not coincidental. Disrupted deep sleep
+            is a significant contributor to cognitive decline and Alzheimer’s
+            disease.
+        </p>
+
+        <p>
+            Unlike many other aspects of aging, sleep is modifiable — making it
+            a promising target for intervention.
+        </p>
+    </section>
+
+    <hr>
+
+    <section>
+        <h2>Sleep and the Immune System</h2>
+
+        <p>
+            Natural killer cells act as the immune system’s frontline defense,
+            identifying and destroying cancerous cells.
+        </p>
+
+        <p>
+            After just one night of four hours of sleep, natural killer cell
+            activity drops by nearly <strong>70 percent</strong>.
+        </p>
+
+        <p>
+            Short sleep duration is strongly linked to increased risk of bowel,
+            prostate, and breast cancers. The World Health Organization now
+            classifies night-shift work as a probable carcinogen.
+        </p>
+    </section>
+
+    <hr>
+
+    <section>
+        <h2>Sleep, DNA, and Lifespan</h2>
+
+        <p>
+            Sleep deprivation alters gene expression at a fundamental level.
+        </p>
+
+        <p>
+            In one study, limiting sleep to six hours per night for one week
+            altered the activity of 711 genes. Immune genes were suppressed,
+            while genes linked to cancer, inflammation, stress, and heart disease
+            were activated.
+        </p>
+
+        <blockquote>
+            <p><strong>The shorter your sleep, the shorter your life.</strong></p>
+        </blockquote>
+    </section>
+
+    <hr>
+
+    <section>
+        <h2>Two Rules for Better Sleep</h2>
+
+        <p>
+            First, maintain consistency. Go to bed and wake up at the same time
+            every day, including weekends. Regularity anchors sleep quality.
+        </p>
+
+        <p>
+            Second, keep your environment cool. The body must drop its core
+            temperature to initiate sleep. For most people, around
+            <strong>18°C (65°F)</strong> is ideal.
+        </p>
+    </section>
+
+    <hr>
+
+    <section>
+        <h2>The Final Truth</h2>
+
+        <p>
+            Sleep is not a luxury. It is your life-support system.
+        </p>
+
+        <blockquote>
+            <p>
+                <strong>
+                    Sleep is Mother Nature’s best effort at immortality.
+                </strong>
+            </p>
+        </blockquote>
+
+        <p>
+            Reclaiming sleep is one of the most powerful decisions you can make
+            for long-term health, clarity, and performance.
+        </p>
+    </section>
+
+</main>
+
+<footer>
+    <hr>
+    <p>
+        Source:
+        <a href="https://youtu.be/5MuIMqhT8DM?si=lhf_IWwgpHPW4qcq" target="_blank">
+            TED Talk — Matthew Walker, Why We Sleep
+        </a>
+    </p>
+</footer>
+
+</body>
+
+  `
+},
   // Add more guide objects here later!
 ];
 

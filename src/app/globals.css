@@ -43,106 +43,198 @@
   --radius-lg: var(--radius);
 
   --font-quote: var(--font-baskervville), serif;
+
+  --color-priority-high: var(--priority-high);
+  --color-priority-high-bg: var(--priority-high-bg);
+  
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-medium-bg: var(--priority-medium-bg);
+  
+  --color-priority-habit: var(--priority-habit);
+  --color-priority-habit-bg: var(--priority-habit-bg);
+  
+  --color-priority-low: var(--priority-low);
+  --color-priority-low-bg: var(--priority-low-bg);
 }
 
 /* 2. Define the actual colors (Light Mode) */
 /* 2. Define the actual colors (Light Mode - Tuned for Contrast) */
 :root {
-  /* 👇 CHANGE 1: Use 'Slate-50' instead of pure white. 
-     This reduces eye strain and makes white cards stand out. */
-  --background: #f8fafc; 
-  --foreground: #020617; /* Slate-950 (Deepest black for max text contrast) */
+  /* ===============================
+    BASE SURFACES
+    =============================== */
 
-  /* Cards stay Pure White to pop against the off-white background */
+  /* Softer than pure white, used by Linear / Notion */
+  --background: #f9fafb; /* Slate-50 */
+
+  /* Never pure black — easier on eyes */
+  --foreground: #0f172a; /* Slate-900 */
+
+  /* Cards slightly warmer than bg */
   --card: #ffffff;
-  --card-foreground: #020617;
+  --card-foreground: #0f172a;
 
   --popover: #ffffff;
-  --popover-foreground: #020617;
+  --popover-foreground: #0f172a;
 
-  --primary: #0f172a; 
+  /* ===============================
+    PRIMARY BRAND
+    =============================== */
+
+  /* Dark slate, not black */
+  --primary: #1e293b; /* Slate-800 */
   --primary-foreground: #f8fafc;
 
-  /* 👇 CHANGE 2: Darken Secondary from Slate-100 to Slate-200.
-     This makes secondary buttons/badges clearly visible. */
-  --secondary: #e2e8f0; 
-  --secondary-foreground: #0f172a;
+  /* ===============================
+    SECONDARY / MUTED
+    =============================== */
 
-  /* 👇 CHANGE 3: Muted stay light, but text gets darker */
-  --muted: #f1f5f9; 
-  --muted-foreground: #475569; /* Slate-600 (Darker than before for readability) */
+  /* Used for subtle fills */
+  --secondary: #f1f5f9; /* Slate-100 */
+  --secondary-foreground: #1e293b;
 
-  --accent: #e2e8f0; /* Match secondary for hover states */
-  --accent-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b; /* Slate-500 */
 
-  --destructive: #ef4444;
-  --destructive-foreground: #f8fafc;
+  --accent: #e5e7eb; /* Neutral-200 */
+  --accent-foreground: #1f2937;
 
-  /* 👇 CHANGE 4: Darker borders (Slate-300) for crisp definition */
-  --border: #cbd5e1; 
-  --input: #cbd5e1;
-  --ring: #0f172a;
-  
-  --radius: 0.5rem;
+  /* ===============================
+    FEEDBACK
+    =============================== */
 
-  /* Colors */
-  --success: #059669; /* Emerald 600 - slightly darker for white bg */
+  --destructive: #dc2626; /* Red-600 */
+  --destructive-foreground: #ffffff;
+
+  --success: #16a34a; /* Green-600 */
   --success-foreground: #ffffff;
-  
-  --info: #2563eb;    /* Blue 600 - slightly darker for white bg */
+
+  --info: #2563eb; /* Blue-600 */
   --info-foreground: #ffffff;
 
-  /* Shadows - Made slightly stronger for depth */
-  --shadow-cta: 0 10px 30px -10px rgba(2, 6, 23, 0.2);
-  --shadow-card: 0 4px 6px -1px rgba(2, 6, 23, 0.1), 0 2px 4px -1px rgba(2, 6, 23, 0.06);
+  /* ===============================
+    BORDERS & INPUTS
+    =============================== */
+
+  /* VERY light borders — almost invisible */
+  --border: #e5e7eb; /* Neutral-200 */
+  --input: #e5e7eb;
+  --ring: #2563eb;
+
+  --radius: 0.75rem;
+
+  /* ===============================
+    SHADOWS (key for depth)
+    =============================== */
+
+  --shadow-card: 
+    0 1px 2px rgba(0,0,0,0.04),
+    0 4px 12px rgba(0,0,0,0.06);
+
+  --shadow-cta: 
+    0 8px 24px rgba(37,99,235,0.25);
+
+  /* ===============================
+    QUOTE SYSTEM (toned down)
+    =============================== */
+
+  /* Cooler, calmer quote colors */
+  --quote-bg: #f8fafc;
+  --quote-accent: #e5e7eb;
+  --quote-text: #0f172a;
+  --quote-author: #64748b;
+
+
+  /* Semantic Task Colors */
+  --priority-high: #dc2626;    /* Red-600 */
+  --priority-high-bg: #fee2e2; /* Red-100 */
+  
+  --priority-medium: #ea580c;  /* Orange-600 */
+  --priority-medium-bg: #ffedd5; /* Orange-100 */
+  
+  --priority-habit: #7c3aed;   /* Violet-600 */
+  --priority-habit-bg: #ede9fe; /* Violet-100 */
+  
+  --priority-low: #2563eb;     /* Blue-600 */
+  --priority-low-bg: #dbeafe;  /* Blue-100 */
 }
+
 
 /* 3. Dark Mode Overrides */
 .dark {
-  --background: #020617; /* Slate 950 */
-  --foreground: #f8fafc;
+  /* 1. Base Backgrounds (Kept your Deep Grays) */
+  --background: #1A1A1A; 
+  --foreground: #E5E5E5; 
 
-  --card: #0f172a;       /* Slate 900 */
-  --card-foreground: #f8fafc;
+  /* 2. Cards & Popups (Kept your requested #2A2A2A) */
+  --card: #2A2A2A;
+  --card-foreground: #E5E5E5;
 
-  --popover: #0f172a;
-  --popover-foreground: #f8fafc;
+  --popover: #2A2A2A;
+  --popover-foreground: #E5E5E5;
 
-  --primary: #f8fafc;
-  --primary-foreground: #0f172a;
+  /* 3. Primary Brand Color (Changed to Blue) */
+  --primary: #3B82F6;  /* Vivid Blue */
+  --primary-foreground: #ffffff; /* White text looks best on Blue */
 
-  --secondary: #1e293b;
-  --secondary-foreground: #f8fafc;
+  /* 4. Secondary/Muted Elements (Kept your requested #383838) */
+  --secondary: #383838;
+  --secondary-foreground: #E5E5E5;
 
-  --muted: #1e293b;
-  --muted-foreground: #94a3b8;
+  --muted: #383838;
+  --muted-foreground: #a3a3a3; 
 
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
+  --accent: #383838;
+  --accent-foreground: #3B82F6; /* Blue text when hovering accents */
 
-  --destructive: #e83535;
-  --destructive-foreground: #f8fafc;
+  /* 5. Destructive */
+  --destructive: #7f1d1d; 
+  --destructive-foreground: #E5E5E5;
 
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #cbd5e1;
+  /* 6. Borders & Inputs (Kept your requested #383838) */
+  --border: #383838;
+  --input: #383838;
+  --ring: #3B82F6; /* Focus rings glow Blue */
 
-  /* 👇 NEW COLORS (Dark Mode) */
-  --success: #059669; /* Emerald 600 (Darker for contrast) */
+  /* 7. Status Colors */
+  --success: #059669; 
   --success-foreground: #ffffff;
   
-  --info: #2563eb;    /* Blue 600 */
+  --info: #3B82F6;    /* Matches Primary now */
   --info-foreground: #ffffff;
 
+  /* 8. Visual Effects */
   --gradient-from: var(--primary);
-  --gradient-to: var(--info);
+  --gradient-to: #1d4ed8; /* A darker blue for gradients */
 
-  --glass-surface: color-mix(in srgb, var(--card) 70%, transparent 30%);
-  --overlay: rgba(1,3,8,0.6);
+  --glass-surface: color-mix(in srgb, var(--card) 80%, transparent 20%);
+  --overlay: rgba(0,0,0,0.8);
 
-  --shadow-cta: 0 10px 40px rgba(2,6,23,0.36);
-  --shadow-card: 0 6px 22px rgba(0,0,0,0.45);
+  /* Blue-tinted shadow for buttons */
+  --shadow-cta: 0 10px 40px rgba(59, 130, 246, 0.2); 
+  --shadow-card: 0 6px 22px rgba(0,0,0,0.6);
+  
+  /* Quote Card Specifics */
+  --quote-bg: #2A2A2A; 
+  --quote-accent: #383838;
+  --quote-text: #E5E5E5;
+  --quote-author: #60A5FA; /* A lighter blue for better text readability */
 
+  /* Semantic Task Colors - Dark Mode Adjustment */
+  --priority-high: #fca5a5;      
+  --priority-high-bg: #7f1d1d33; 
+  
+  /* MEDIUM: Pastel Orange Text / 20% Orange Background */
+  --priority-medium: #fdba74;    
+  --priority-medium-bg: #7c2d1233; 
+  
+  /* HABIT: Pastel Violet Text / 20% Violet Background */
+  --priority-habit: #d8b4fe;     
+  --priority-habit-bg: #581c8733; 
+  
+  /* LOW: Pastel Blue Text / 20% Blue Background */
+  --priority-low: #93c5fd;       
+  --priority-low-bg: #1e3a8a33;
 }
 
 /* 4. Global Reset */

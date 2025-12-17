@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 
-// Cache the quote for 24 hours so all users get the same one (mostly)
-// or at least it doesn't spam the API on every refresh.
-export const revalidate = 86400; 
+export const revalidate = 86400; // Cache for 24 hours
 
 export async function GET() {
   const apiKey = process.env.NINJA_API_KEY;
@@ -12,22 +10,28 @@ export async function GET() {
   }
 
   try {
-    // Fetch from API Ninjas
-    const res = await fetch("https://api.api-ninjas.com/v1/quotes?category=success", {
+    const res = await fetch("https://api.api-ninjas.com/v2/quotes?categories=success%2Cwisdom", {
       headers: { 'X-Api-Key': apiKey }
     });
 
-    if (!res.ok) throw new Error("Failed to fetch quote");
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
 
     const data = await res.json();
     
-    // The API returns an array, we just want the first item
+    // FIX: Check if data exists and has items
+    if (!data || data.length === 0) {
+      throw new Error("No quotes found");
+    }
+
     return NextResponse.json(data[0]);
     
   } catch (error) {
+    console.error("Quote fetch error:", error); // Helpful for debugging logs
     return NextResponse.json({ 
       quote: "The only bad workout is the one that didn't happen.", 
       author: "Unknown" 
-    }, { status: 200 }); // Fallback if API fails
+    }, { status: 200 });
   }
 }
