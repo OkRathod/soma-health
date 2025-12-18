@@ -366,7 +366,7 @@ export function Navbar({ user }: { user: any }) {
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute bottom-full right-0 mb-3 bg-popover/95 backdrop-blur-md border border-border rounded-xl shadow-2xl p-1.5 min-w-[150px] flex flex-col gap-1 z-50"
+                    className="absolute bottom-full right-0 mb-3 bg-popover/95 backdrop-blur-md border border-border rounded-xl shadow-2xl p-1.5 min-w-[150px] flex flex-col gap-1 z-[100]"
                   >
                     {/* Profile Link */}
                     <Link 

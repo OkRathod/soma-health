@@ -7,17 +7,53 @@ import { format } from "date-fns";
 
 export function PendingTasksList({ tasks, onToggle, onSubToggle }: { tasks: any[]; onToggle: any; onSubToggle: any }) {
   const pendingCount = tasks.filter(t => !t.isCompleted).length;
+
+    // Inside PendingTasksList function
+    const [activeTab, setActiveTab] = useState("tasks"); // Default to 'tasks'
+
+    const habits = tasks.filter(t => t.priority === 'HABIT');
+    const regularTasks = tasks.filter(t => t.priority !== 'HABIT');
+
+    // Decide what to show based on the tab
+    const displayedTasks = activeTab === "habits" ? habits : regularTasks;
+
   return (
     <div className="h-full">
       <Card className="bg-card border-2 border-border/60 shadow-sm h-full flex flex-col">
-        <CardHeader className="pb-2 border-b border-border/40 bg-secondary/5">
-          <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
-            <span className="flex items-center gap-2"><ListTodo className="w-4 h-4 text-primary" /> Pending Tasks</span>
-            <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-mono">
-                {pendingCount}
-            </span>
-          </CardTitle>
+        <CardHeader className="pb-3 border-b border-border/40 bg-secondary/5 space-y-3">
+            {/* Existing Title */}
+            <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-between">
+                <span className="flex items-center gap-2"><ListTodo className="w-4 h-4 text-primary" /> Pending</span>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-mono">
+                    {pendingCount}
+                </span>
+            </CardTitle>
+
+            {/* 👇 NEW: Toggle Buttons (Segmented Control) */}
+            <div className="flex p-1 bg-secondary/20 rounded-lg border border-border/50">
+                <button 
+                    onClick={() => setActiveTab("tasks")}
+                    className={`flex-1 text-xs font-semibold py-1.5 rounded-md transition-all duration-200 ${
+                        activeTab === "tasks" 
+                        ? "bg-background text-foreground shadow-sm ring-1 ring-border/50" 
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                    Tasks ({regularTasks.length})
+                </button>
+                <button 
+                    onClick={() => setActiveTab("habits")}
+                    className={`flex-1 text-xs font-semibold py-1.5 rounded-md transition-all duration-200 ${
+                        activeTab === "habits" 
+                        ? "bg-background text-foreground shadow-sm ring-1 ring-border/50" 
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                >
+                    Habits ({habits.length})
+                </button>
+            </div>
         </CardHeader>
+
         <CardContent className="p-0 flex-1 min-h-[300px] max-h-[400px] overflow-y-auto custom-scrollbar">
           {tasks.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-muted-foreground/60 p-8">
@@ -26,9 +62,17 @@ export function PendingTasksList({ tasks, onToggle, onSubToggle }: { tasks: any[
             </div>
           ) : (
             <div className="divide-y divide-border/40">
-              {tasks.map((task) => (
-                <DashboardTaskItem key={task.id} task={task} onToggle={onToggle} onSubToggle={onSubToggle} />
-              ))}
+                {/* 👇 Show Empty State for specific tab if needed */}
+                {displayedTasks.length === 0 && (
+                    <div className="py-12 text-center text-xs text-muted-foreground italic">
+                        No pending {activeTab}.
+                    </div>
+                )}
+                
+                {/* 👇 Map the filtered list */}
+                {displayedTasks.map((task) => (
+                    <DashboardTaskItem key={task.id} task={task} onToggle={onToggle} onSubToggle={onSubToggle} />
+                ))}
             </div>
           )}
         </CardContent>
@@ -62,6 +106,12 @@ function DashboardTaskItem({ task, onToggle, onSubToggle }: any) {
                                 {task.title}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
+
+                                <span className="text-[10px] text-muted-foreground flex items-center bg-secondary/50 px-1.5 rounded">
+                                    {/* You can use date-fns relative formatting like 'isToday' or simple formatting */}
+                                    {format(new Date(task.date), "MMM d")}
+                                </span>
+
                                 {task.startTime && (
                                     <span className="text-[10px] text-muted-foreground flex items-center bg-secondary/50 px-1.5 rounded">
                                         <Clock className="w-2.5 h-2.5 mr-1" />

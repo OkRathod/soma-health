@@ -3,106 +3,97 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { startOfDay, endOfDay, subDays } from 'date-fns';
 
+
 export async function GET(req: Request) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
   const url = new URL(req.url);
-  
-  // 👇 NEW: Check if we are asking for a Range (for Charts)
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
+  const queryDate = url.searchParams.get("date");
+  const targetDate = queryDate ? new Date(queryDate) : new Date();
+  const start = startOfDay(targetDate);
+  const end = endOfDay(targetDate);
+
 
   if (from && to) {
     try {
-        const tasks = await prisma.task.findMany({
-            where: {
-                userId,
-                date: {
-                    gte: new Date(from),
-                    lte: new Date(to)
-                }
-            },
-            include: { subtasks: true },
-            orderBy: { date: 'asc' }
-        });
-        // Return immediately. No need to check for rollovers on historical ranges.
-        return NextResponse.json({ success: true, tasks });
+      const tasks = await prisma.task.findMany({
+        where: {
+          userId,
+          date: { gte: new Date(from), lte: new Date(to) }
+        },
+        include: { subtasks: true },
+        orderBy: { date: 'asc' }
+      });
+      return NextResponse.json({ success: true, tasks });
     } catch (e) {
-        return NextResponse.json({ error: "Failed to fetch range" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to fetch range" }, { status: 500 });
     }
   }
 
-  // --- EXISTING LOGIC STARTS HERE (For Daily Schedule Page) ---
-
-  const queryDate = url.searchParams.get("date");
-  const date = queryDate
-  ? new Date(`${queryDate}T00:00:00`)
-  : new Date();
-
-  // Normalize "Today" to Midnight 00:00:00
-  const start = startOfDay(date);
-  const end = endOfDay(date);
-
   try {
-    // 1. CHECK: Do ANY tasks exist for this specific date?
-    const count = await prisma.task.count({
-      where: { userId, date: { gte: start, lte: end } }
+    const lastActiveTask = await prisma.task.findFirst({
+      where: { userId, date: { lt: start } }, 
+      orderBy: { date: 'desc' }
     });
 
-    // 2. ROLLOVER LOGIC: If today is empty, copy habits from the past
-    if (count === 0) {
-      console.log("🌞 New Day Detected! Rolling over habits...");
-      
-      // Find the MOST RECENT day that had tasks
-      const lastActiveTask = await prisma.task.findFirst({
-        where: { userId, date: { lt: start } }, // Any task before today
-        orderBy: { date: 'desc' }
+    if (lastActiveTask) {
+      const startOfLastDay = startOfDay(lastActiveTask.date);
+      const endOfLastDay = endOfDay(lastActiveTask.date);
+      const pastHabits = await prisma.task.findMany({
+          where: {
+              userId,
+              date: { gte: startOfLastDay, lte: endOfLastDay },
+              isRecurring: true 
+          },
+          include: { subtasks: true }
       });
 
-      if (lastActiveTask) {
-        // We found the last active day. Fetch its habits.
-        const startOfLastDay = startOfDay(lastActiveTask.date);
-        const endOfLastDay = endOfDay(lastActiveTask.date);
-
-        const habitsToCopy = await prisma.task.findMany({
+      if (pastHabits.length > 0) {
+        const todaysHabits = await prisma.task.findMany({
             where: {
                 userId,
-                date: { gte: startOfLastDay, lte: endOfLastDay },
-                isRecurring: true // Only copy tasks marked as Recurring
+                date: { gte: start, lte: end },
+                isRecurring: true
             },
-            include: { subtasks: true }
+            select: { title: true } 
         });
 
-        // Copy them to TODAY
-        for (const habit of habitsToCopy) {
-            await prisma.task.create({
-                data: {
-                    userId,
-                    title: habit.title,
-                    description: habit.description,
-                    priority: "HABIT", 
-                    startTime: habit.startTime,
-                    isRecurring: true, 
-                    date: start, // Set to TODAY (Midnight)
-                    isCompleted: false, 
-                    
-                    subtasks: {
-                        create: habit.subtasks.map(st => ({
-                            title: st.title,
-                            targetValue: st.targetValue,
-                            unit: st.unit,
-                            isCompleted: false, 
-                            currentValue: 0
-                        }))
+        const todaysHabitTitles = new Set(todaysHabits.map(t => t.title));
+        const missingHabits = pastHabits.filter(h => !todaysHabitTitles.has(h.title));
+
+        if (missingHabits.length > 0) {
+            console.log(`♻️ Rollover: Creating ${missingHabits.length} missing habits for ${targetDate.toDateString()}`);
+
+            for (const habit of missingHabits) {
+                await prisma.task.create({
+                    data: {
+                        userId,
+                        title: habit.title,
+                        description: habit.description,
+                        priority: "HABIT", 
+                        startTime: habit.startTime,
+                        isRecurring: true, 
+                        date: start, 
+                        isCompleted: false, 
+                        durationMins: habit.durationMins,
+                        
+                        subtasks: {
+                            create: habit.subtasks.map(st => ({
+                                title: st.title,
+                                targetValue: st.targetValue,
+                                unit: st.unit,
+                                isCompleted: false, 
+                                currentValue: 0
+                            }))
+                        }
                     }
-                }
-            });
+                });
+            }
         }
       }
     }
-
-    // 3. FETCH TASKS (Standard Fetch)
     const tasks = await prisma.task.findMany({
       where: {
         userId,
@@ -120,7 +111,7 @@ export async function GET(req: Request) {
   }
 }
 
-// POST: Create a Task (No Master/Parent logic anymore)
+
 export async function POST(req: Request) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -132,7 +123,7 @@ export async function POST(req: Request) {
   const start = startOfDay(targetDate);
   const end = endOfDay(targetDate);
 
-  // Priority Check (Only for Schedule)
+
   if (!isRecurring && priority !== "LOW") {
     const existingCount = await prisma.task.count({
       where: {
@@ -154,15 +145,11 @@ export async function POST(req: Request) {
         title,
         description,
         priority: isRecurring ? "HABIT" : priority,
-        
-        // Normalize date to Midnight
         date: start, 
         
         startTime: startTime ? new Date(startTime) : null,
         durationMins: duration ? parseInt(duration) : 60,
         isRecurring: isRecurring || false,
-        
-        // No parentId needed
         parentId: null,
         
         subtasks: {
@@ -182,20 +169,18 @@ export async function POST(req: Request) {
   }
 }
 
-// src/app/api/tasks/route.ts
 export async function PATCH(req: Request) {
     const { userId } = await auth();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
     const { 
-        taskId, isCompleted, subtaskId, subtaskValue, // Toggle fields
-        title, description, priority, startTime, isRecurring, // Edit fields
-        newSubtasks, duration // 👇 NEW FIELD
+        taskId, isCompleted, subtaskId, subtaskValue, 
+        title, description, priority, startTime, isRecurring, 
+        newSubtasks, duration 
     } = body;
 
     try {
-        // 1. Handle Subtask Updates (Simple Toggle)
         if (subtaskId) {
             await prisma.subTask.update({
                 where: { id: subtaskId },
@@ -204,9 +189,7 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ success: true });
         }
 
-        // 2. Handle Main Task Updates
         if (taskId) {
-            // Check ownership first
             const existingTask = await prisma.task.findUnique({
                 where: { id: taskId, userId }
             });
@@ -224,7 +207,6 @@ export async function PATCH(req: Request) {
             if (isRecurring !== undefined) updateData.isRecurring = isRecurring;
             if (duration !== undefined) updateData.durationMins = parseInt(duration);
             
-            // 👇 NEW: Check if there are new subtasks to add
             if (newSubtasks && Array.isArray(newSubtasks) && newSubtasks.length > 0) {
                 updateData.subtasks = {
                     create: newSubtasks.map((st: any) => ({
@@ -234,9 +216,6 @@ export async function PATCH(req: Request) {
                     }))
                 };
             }
-
-            // Perform the update
-            // We use .update() now because we verified ownership above with findUnique
             await prisma.task.update({
                 where: { id: taskId },
                 data: updateData
@@ -251,7 +230,7 @@ export async function PATCH(req: Request) {
     }
 }
 
-// 👇 FIXED DELETE FUNCTION
+
 export async function DELETE(req: Request) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -264,11 +243,10 @@ export async function DELETE(req: Request) {
   }
 
   try {
-    // FIX: Using deleteMany allows passing 'userId' safely in the where clause
     const result = await prisma.task.deleteMany({ 
         where: { 
             id: taskId, 
-            userId: userId // Safe because of the check above
+            userId: userId 
         } 
     });
     

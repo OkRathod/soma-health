@@ -217,7 +217,7 @@ export default function LandingPage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
                 </span>
-                Soma v1.0 is Live
+                Soma v2.2 is Live
               </div>
 
               <h1 className="hero-text-element text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">

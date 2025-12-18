@@ -42,7 +42,7 @@ export function QuickLog({ value, onChange, onLog, isProcessing }: QuickLogProps
       </div>
 
       {/* Mobile Version: Sticky Bottom */}
-      <div className="md:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border z-50">
+      <div className="md:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border z-45">
         <div className="relative flex items-center gap-2 max-w-md mx-auto">
             <div className="relative flex-1">
                 <input
