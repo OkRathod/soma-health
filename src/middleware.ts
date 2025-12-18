@@ -48,7 +48,9 @@ const isPublicRoute = createRouteMatcher([
   "/api/uploadthing(.*)", // Public APIs (add others if needed)
   "/manifest.json",     // 👈 PWA Critical
   "/sw.js",             // 👈 PWA Critical
-  "/icons(.*)"          // 👈 PWA Assets
+  "/icons(.*)",         // 👈 PWA Assets
+  "/sitemap.xml",       // 👈 CRITICAL FIX FOR GOOGLE
+  "/robots.txt"         // 👈 CRITICAL FIX FOR GOOGLE
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
