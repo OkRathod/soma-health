@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { DNALoader } from "@/components/dna-loader";
 import { LogOut, User, Briefcase, Target, Flame, Trophy, Activity } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
@@ -21,22 +22,15 @@ export default function ProfilePage() {
   const [stats, setStats] = useState({ streak: 0, totalLogs: 0, totalCaloriesBurned: 0, badges: [] });
 
   const [form, setForm] = useState({
-    // Identity
     plan: "Free",
     joinedAt: new Date(),
-    
-    // Physical
     age: "",
     gender: "",
     height: "",
     weight: "",
-    
-    // Lifestyle
     activityLevel: "",
     jobType: "",           // 👈 Your Request
     dietaryPreferences: "",
-
-    // Goals
     customPurpose: "",     // 👈 Your Request
     weightGoal: "",
     targetWeight: "",
@@ -91,13 +85,22 @@ async function fetchData() {
 
   async function handleSave() {
     setSaving(true);
+    const savePromise = fetch("/api/profile", {
+        method: "POST",
+        body: JSON.stringify({ userId: user?.id, ...form })
+    });
+    // Handle the UI with Sonner
+    toast.promise(savePromise, {
+        loading: "Saving changes...",
+        success: "Profile updated successfully!",
+        error: "Failed to save profile. Please try again."
+    });
+
     try {
-        await fetch("/api/profile", {
-            method: "POST",
-            body: JSON.stringify({ userId: user?.id, ...form })
-        });
-        alert("Profile Updated!"); // You can replace with your simpleModal later
-    } catch (e) { alert("Failed to save"); }
+        await savePromise;
+    } catch (e) {
+        // Error handled by toast above
+        }
     finally { setSaving(false); }
   }
 
@@ -105,45 +108,133 @@ async function fetchData() {
 
   return (
     <div className="min-h-screen bg-background p-6 md:p-10 font-sans pb-32">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-10">
         
         {/* 1. HEADER CARD (Identity + Logout) */}
-        <Card className="border-border bg-card shadow-sm">
-            <CardContent className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                    {/* Avatar */}
-                    <div className="h-20 w-20 rounded-full overflow-hidden border-4 border-muted">
-                        <img src={user?.imageUrl} alt="Profile" className="h-full w-full object-cover" />
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-bold text-foreground">{user?.fullName}</h1>
-                        <p className="text-muted-foreground text-sm">{user?.primaryEmailAddress?.emailAddress}</p>
-                        <div className="flex gap-2 mt-2">
-                            <Badge variant="outline" className="border-primary text-primary">
-                                {form.plan} Plan
-                            </Badge>
-                            <span className="text-xs text-muted-foreground flex items-center">
-                                Member since {new Date(form.joinedAt).toLocaleDateString()}
-                            </span>
-                        </div>
-                    </div>
+        <Card className="border-border bg-card shadow-sm rounded-2xl">
+            <CardContent className="p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                
+                {/* LEFT: Identity */}
+                <div className="flex items-center gap-5 min-w-0">
+                
+                {/* Avatar */}
+                <div className="h-18 w-18 md:h-20 md:w-20 rounded-full overflow-hidden border-2 border-border bg-muted shrink-0">
+                    <img
+                    src={user?.imageUrl}
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                    />
                 </div>
 
-                {/* LOGOUT BUTTON (Your Request) */}
-                <Button variant="ghost" onClick={() => signOut()} className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-2">
-                    <LogOut className="w-4 h-4" /> Sign Out
-                </Button>
-            </CardContent>
-        </Card>
+                {/* Name & Meta */}
+                <div className="min-w-0">
+                    <h1 className="text-2xl font-semibold leading-tight text-foreground truncate">
+                    {user?.fullName}
+                    </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <p className="text-sm text-muted-foreground truncate mt-0.5">
+                    {user?.primaryEmailAddress?.emailAddress}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                    <Badge
+                        variant="outline"
+                        className="border-primary/40 text-primary px-2.5 py-0.5 text-xs font-medium"
+                    >
+                        {form.plan} Plan
+                    </Badge>
+
+                    <span className="text-xs text-muted-foreground">
+                        Member since {new Date(form.joinedAt).toLocaleDateString()}
+                    </span>
+                    </div>
+                </div>
+                </div>
+
+                {/* RIGHT: Logout */}
+                <div className="flex md:justify-end justify-center border-2 border-foreground/10 rounded-lg">
+                <Button
+                    variant="ghost"
+                    onClick={() => {
+                    toast("Signed out");
+                    signOut();
+                    }}
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-2 px-4 py-2">
+                    <LogOut className="w-4 h-4" />
+                    <span className="text-sm font-medium">Sign Out</span>
+                </Button>
+                </div>
+
+            </CardContent>
+            </Card>
+
+
+        {/* 👇 2. NEW LOCATION: STATS ROW (Moved to Top & Centered) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
+            {/* STREAK CARD */}
+            <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none shadow-md h-full">
+                <CardContent className="p-6 text-center flex flex-col justify-center h-full items-center">
+                    <Flame className="w-10 h-10 opacity-90 mb-2" />
+                    <div className="text-4xl font-extrabold tracking-tight">{stats.streak}</div>
+                    <p className="text-sm opacity-90 font-medium">Day Streak</p>
+                </CardContent>
+            </Card>
+
+            {/* ALL-TIME STATS CARD */}
+            <Card className="h-full border-border/60 shadow-sm">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">All-Time Activity</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 bg-secondary rounded-full"><Activity className="w-4 h-4 text-primary" /></div>
+                            <span className="text-sm font-medium">Total Logs</span>
+                        </div>
+                        <div className="text-xl font-bold">{stats.totalLogs}</div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                             <div className="p-2 bg-secondary rounded-full"><Flame className="w-4 h-4 text-destructive" /></div>
+                             <span className="text-sm font-medium">Burned</span>
+                        </div>
+                        <div className="text-xl font-bold">{(stats.totalCaloriesBurned / 1000).toFixed(1)}k</div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* BADGES CARD */}
+            <Card className="h-full border-border/60 shadow-sm">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">Earned Badges</CardTitle>
+                </CardHeader>
+                <CardContent className="h-[100px] flex items-center justify-center">
+                    {stats.badges.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 justify-center">
+                            {stats.badges.map(badge => (
+                                <Badge key={badge} variant="secondary" className="px-2 py-1 gap-1">
+                                    <Trophy className="w-3 h-3 text-yellow-600" /> {badge}
+                                </Badge>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center text-muted-foreground">
+                            <Trophy className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                            <p className="text-xs">No badges yet.</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="grid grid-cols-1 gap-10">
             {/* LEFT COLUMN: The "Soma" Core (Inputs) */}
-            <div className="lg:col-span-2 space-y-8">
+            <div className="lg:col-span-2 space-y-10">
                 
                 {/* 2. PHYSICAL STATS */}
                 <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><User className="w-5 h-5 text-primary"/> Physical Stats</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2"><User className="w-5 h-5 text-primary"/> Physical Stats</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="space-y-2">
                             <Label>Age</Label>
@@ -179,7 +270,7 @@ async function fetchData() {
 
                 {/* 3. LIFESTYLE & WORK (Your Job Type Request) */}
                 <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><Briefcase className="w-5 h-5 text-primary"/> Lifestyle & Work</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2"><Briefcase className="w-5 h-5 text-primary"/> Lifestyle & Work</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -219,7 +310,7 @@ async function fetchData() {
 
                 {/* 4. GOALS & PURPOSE */}
                 <Card>
-                    <CardHeader><CardTitle className="flex items-center gap-2"><Target className="w-5 h-5 text-primary"/> Goals & Purpose</CardTitle></CardHeader>
+                    <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2"><Target className="w-5 h-5 text-primary"/> Goals & Purpose</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         {/* CUSTOM PURPOSE (User Request) */}
                         <div className="space-y-2">
@@ -263,67 +354,11 @@ async function fetchData() {
                     </CardContent>
                 </Card>
 
-                <div className="flex justify-end">
-                    <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 w-full md:w-auto">
+                <div className="sticky bottom-0 bg-background/90 backdrop-blur border-t border-border p-4 md:static md:border-none md:p-0 flex justify-end z-20">
+                    <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90 w-full md:w-auto shadow-lg md:shadow-sm">
                         {saving ? "Saving..." : "Save Profile"}
                     </Button>
                 </div>
-            </div>
-
-            {/* RIGHT COLUMN: Gamification & Stats */}
-            <div className="space-y-8">
-                
-                {/* 5. STREAKS CARD */}
-                <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground border-none">
-                    <CardContent className="p-6 text-center space-y-2">
-                        <Flame className="w-12 h-12 mx-auto opacity-90" />
-                        <div className="text-4xl font-bold">{stats.streak} Days</div>
-                        <p className="text-sm opacity-90 font-medium">Current Streak</p>
-                        <p className="text-xs opacity-70">Keep logging to keep the fire alive!</p>
-                    </CardContent>
-                </Card>
-
-                {/* 6. TOTAL STATS */}
-                <Card>
-                    <CardHeader><CardTitle className="text-sm font-medium text-muted-foreground">All-Time Stats</CardTitle></CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-secondary rounded-full">
-                                <Activity className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold">{stats.totalLogs}</div>
-                                <div className="text-xs text-muted-foreground">Total Logs Created</div>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-secondary rounded-full">
-                                <Flame className="w-5 h-5 text-destructive" />
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold">{(stats.totalCaloriesBurned / 1000).toFixed(1)}k</div>
-                                <div className="text-xs text-muted-foreground">Calories Burned</div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* 7. BADGES */}
-                <Card>
-                    <CardHeader><CardTitle className="text-sm font-medium text-muted-foreground">Earned Badges</CardTitle></CardHeader>
-                    <CardContent>
-                        <div className="flex flex-wrap gap-2">
-                            {stats.badges.length > 0 ? stats.badges.map(badge => (
-                                <Badge key={badge} variant="secondary" className="px-3 py-1 gap-1">
-                                    <Trophy className="w-3 h-3 text-yellow-600" /> {badge}
-                                </Badge>
-                            )) : (
-                                <p className="text-sm text-muted-foreground">No badges yet. Start logging!</p>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-
             </div>
         </div>
       </div>

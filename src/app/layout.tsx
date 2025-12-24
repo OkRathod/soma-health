@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ClerkProvider } from '@clerk/nextjs';
 import { getSomaUser } from "@/lib/prisma"; // 👈 1. Server Import works here!
 import { MainLayoutClient } from "@/components/main-layout-client"; // 👈 2. Import the new Client Component
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -64,6 +65,7 @@ export default async function RootLayout({
             {/* 👇 4. Pass the data to the client component */}
             <MainLayoutClient user={user}>
               {children}
+              <Toaster />
             </MainLayoutClient>
 
           </ClerkProvider>

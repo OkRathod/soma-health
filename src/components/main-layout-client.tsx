@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/ui/navbar";
+import { FeedbackPrompt } from "@/components/feedback-prompt";
 
 export function MainLayoutClient({ 
   children, 
@@ -30,6 +31,7 @@ export function MainLayoutClient({
       >
         {children}
       </main>
+      <FeedbackPrompt />
     </>
   );
 }

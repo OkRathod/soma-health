@@ -54,6 +54,8 @@ model User {
   // Membership
   plan              String   @default("Free") // For future use
   joinedAt          DateTime @default(now())
+
+  feedback  Feedback[]
   
 }
 
@@ -143,4 +145,35 @@ model UserReadGuide {
 
   // Ensures a user can't read the same guide twice in the DB
   @@unique([userId, guideSlug])
+}
+
+
+model Feedback {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  rating    Int      // 1-5 Star Rating
+  category  String   // "BUG", "FEATURE", "GENERAL"
+  
+  // We store the specific answers as JSON so we can change questions later without breaking the DB
+  answers   Json     
+  
+  createdAt DateTime @default(now())
+}
+
+
+
+model DailyMetrics {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime // Store as Midnight (00:00:00) to ensure one per day
+  
+  steps       Int      @default(0)
+  stepSource  String   @default("MANUAL") // "MANUAL" or "GOOGLE"
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, date]) // Prevents duplicate rows for the same day
 }
