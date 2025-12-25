@@ -7,15 +7,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // 1. Define your static pages
   const staticRoutes = [
     '',
-    '/dashboard',
-    '/tasks',
-    '/history',
     '/guides',
     '/sign-in',
     '/sign-up',
-    '/profile',
-    '/settings',
-    '/feedback',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
