@@ -15,8 +15,10 @@ import { HistoryTaskList } from "@/components/history/history-task-list";
 import { HistoryTimeline } from "@/components/history/history-timeline";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Input } from "@/components/ui/input";
+import { toast } from "sonner"; // 👈 Add this
+import { Footprints } from "lucide-react"; // 👈 Add Footprints
 import { AddTaskDialog } from "@/components/tasks/add-task-dialog";
+import { getDailySteps } from "@/app/actions/steps"; // 👈 Import the action we made earlier
 
 export default function HistoryPage() {
   const { user, isLoaded } = useUser();
@@ -44,6 +46,7 @@ export default function HistoryPage() {
   // Inside HistoryPage component, near other state variables
   const [tasks, setTasks] = useState<any[]>([]); // 👈 NEW: Store history tasks
   const [newSubtask, setNewSubtask] = useState({ title: "", targetValue: "", unit: "" });
+  const [dailySteps, setDailySteps] = useState(0);
 
   const [newTask, setNewTask] = useState({
       title: "", 
@@ -74,7 +77,7 @@ async function handleAddTask() {
     });
     
     if (res.ok) {
-        setSimpleModal({ title: "Success", msg: "Task added to history." });
+        toast.success("Task added to history");
         // Reset form
         setNewTask({ 
             title: "", description: "", priority: "MEDIUM", isRecurring: false, 
@@ -94,9 +97,9 @@ async function confirmDeleteTask() {
     try {
         await fetch(`/api/tasks?taskId=${taskToDelete}`, { method: "DELETE" });
         setTasks(prev => prev.filter(t => t.id !== taskToDelete));
-        setSimpleModal({ title: "Deleted", msg: "Task removed." });
+        toast.success("Task deleted");
     } catch (e) {
-        setSimpleModal({ title: "Error", msg: "Could not delete task.", isError: true });
+        toast.error("Could not delete task");
     } finally {
         setIsDeleting(false);
         setTaskToDelete(null);
@@ -171,6 +174,29 @@ async function fetchLogs() {
       setLoading(false);
     }
   }
+
+  // 👇 NEW: Helper to fetch steps
+  async function fetchSteps() {
+    if (!date) return;
+    try {
+        // We pass the specific date to your server action
+        // Note: You might need to update getDailySteps to accept a date parameter if it doesn't already
+        // If your getDailySteps only gets "today", you might need to tweak it or use an API route.
+        // Assuming getDailySteps handles the date logic or we pass it:
+        const res = await getDailySteps(date); 
+        setDailySteps(res.steps);
+    } catch (e) {
+        console.error("Failed to fetch steps");
+    }
+  }
+
+  useEffect(() => {
+      if (!isLoaded || !user) return;
+      
+      setLoading(true);
+      // 👇 CHANGED: Add fetchSteps to the parallel execution
+      Promise.all([fetchLogs(), fetchTasks(), fetchSteps()]).finally(() => setLoading(false));
+  }, [isLoaded, user, date]);
 
  
 
@@ -314,23 +340,17 @@ function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) =>
         const data = await res.json();
         
         if (data.success) {
-            setSimpleModal({ title: "Success", msg: "Entry added successfully!" });
+            toast.success("Entry added successfully!");
             setNewLogText("");
             setIsAdding(false);
             fetchLogs(); // 👈 Refresh list to show the new card immediately
         } else {
-            setSimpleModal({ 
-                title: data.error || "Processing Failed", 
-                msg: data.details || "The AI could not process your log. Please try again.", 
-                isError: true 
+            toast.error(data.error || "Processing Failed", {
+                description: data.details
             });
         }
     } catch (e) {
-        setSimpleModal({ 
-            title: "Connection Error", 
-            msg: "Could not reach the server. Please check your internet connection.", 
-            isError: true 
-        });
+        toast.error("Connection Error"); // 👈 Changed
     } finally {
         setIsSavingLog(false);
     }
@@ -354,10 +374,10 @@ function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) =>
         if (data.success) {
           setLogs((prev) => prev.filter((log) => log.id !== logToDelete));
           setLogToDelete(null);
-          setSimpleModal({ title: "Deleted", msg: "Record removed successfully." });
+          toast.success("Record removed successfully");
         } else {
           setLogToDelete(null);
-          setSimpleModal({ title: "Error", msg: "Failed to delete log.", isError: true });
+          toast.error("Failed to delete log");
         }
       } catch (error) {
           setLogToDelete(null);
@@ -402,6 +422,13 @@ function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) =>
 
            {/* 👇 UNIFIED DATE PICKER (Visible on ALL screens) */}
            <div className="flex items-center gap-3">
+                {/* 👇 NEW: Steps Display Badge */}
+                <div className="hidden sm:flex items-center gap-2 bg-orange-500/10 text-orange-600 px-3 py-2 rounded-md border border-orange-500/20">
+                    <Footprints className="w-4 h-4" />
+                    <span className="font-mono font-bold">{dailySteps.toLocaleString()}</span>
+                    <span className="text-xs opacity-80">steps</span>
+                </div>
+
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -535,7 +562,7 @@ function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) =>
         </div>
       )}
 
-      {simpleModal && (
+      {/* {simpleModal && (
          <div className="fixed inset-0 z-150 flex items-end md:items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-popover text-popover-foreground rounded-xl shadow-2xl max-w-sm w-full p-6 relative border border-border">
                 <button onClick={() => setSimpleModal(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
@@ -553,7 +580,7 @@ function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) =>
                 </div>
             </div>
          </div>
-      )}
+      )} */}
 
     {/* Replace old manual Dialog with this Component */}
     <AddTaskDialog 

@@ -14,7 +14,9 @@ import { EnergyRing } from "@/components/dashboard/EnergyRing";
 import { NetBalanceCard } from "@/components/dashboard/NetBalanceCard";
 import { HydrationCard } from "@/components/dashboard/HydrationCard";
 import { PendingTasksList } from "@/components/dashboard/PendingTasksList";
-import { X } from "lucide-react"; 
+import { X } from "lucide-react";
+import { CompleteProfileModal } from "@/components/complete-profile-modal"; // 👈 Import 2
+import { StepTracker } from "@/components/dashboard/step-tracker";
 
 export default function DashboardClient({ user }: { user: any }) {
   // 👇 USE THE REAL ID
@@ -33,6 +35,17 @@ export default function DashboardClient({ user }: { user: any }) {
   // Inside DashboardClient component
   const [quote, setQuote] = useState({ quote: "Loading motivation...", author: "" });
   
+  const [profileStatus, setProfileStatus] = useState<any>(null);
+  useEffect(() => {
+    async function checkProfile() {
+      const res = await fetch("/api/profile-status");
+      const data = await res.json();
+      setProfileStatus(data);
+    }
+    checkProfile();
+  }, []);
+
+
   // New State for Input
   const [newLogText, setNewLogText] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -269,14 +282,19 @@ async function handleAddWater() {
     }
   }
 
-  if (loading) {
-    return <DNALoader />;
-  }
+  
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8 font-sans text-foreground pb-32 md:pb-12">
-      <main className="max-w-6xl mx-auto space-y-6 md:space-y-8 animate-in fade-in duration-500">
-        
+      {profileStatus && !profileStatus.isComplete && (
+        <CompleteProfileModal
+          userId={user.id}
+          missingFields={profileStatus.missing}
+        />
+      )}
+
+      <main className="max-w-6xl mx-auto space-y-6 md:space-y-8">
+        {loading && <DNALoader />}
         {/* 1. Date Header */}
         <div>
             <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground/80">
@@ -286,7 +304,7 @@ async function handleAddWater() {
 
         {/* 👇 RESTORE BANNER (ADD THIS BACK) */}
         {user?.scheduledForDeletion && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 animate-in slide-in-from-top-2 mb-4">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 ">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 bg-destructive/20 rounded-full flex items-center justify-center text-destructive">
                 <AlertTriangle className="w-5 h-5" />
@@ -356,6 +374,7 @@ async function handleAddWater() {
 
                 {/* Hydration */}
                 <HydrationCard total={waterTotal} onAdd={handleAddWater} />
+                <StepTracker />
             </div>
 
             {/* RIGHT: Pending Tasks */}

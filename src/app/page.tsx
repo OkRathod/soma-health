@@ -147,7 +147,7 @@ export default function LandingPage() {
           {/* LEFT SIDE: Logo + Name */}
           <div className="flex items-center gap-8">
             <span className={`${monoton.className} text-3xl text-foreground pt-1`}>
-               SOMA
+               SOMAFIT
             </span>
             <Link 
               href="/guides" 
@@ -217,7 +217,7 @@ export default function LandingPage() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
                 </span>
-                Soma v2.2 is Live
+                Somafit v2.2 is Live
               </div>
 
               <h1 className="hero-text-element text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
@@ -228,7 +228,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="hero-text-element text-xl text-muted-foreground leading-relaxed max-w-2xl mx-auto lg:mx-0 mb-8">
-                Stop guessing. Soma uses AI to analyze your meals, track your workouts, and visualize your metabolic trends—all in one privacy-first dashboard.
+                Stop guessing. Somafit uses AI to analyze your meals, track your workouts, and visualize your metabolic trends—all in one privacy-first dashboard.
               </p>
 
               <div className="hero-buttons flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
@@ -273,7 +273,7 @@ export default function LandingPage() {
                   <div>
                     <h3 className="text-2xl font-bold mb-3">AI-Powered Nutrition Coach</h3>
                     <p className="text-muted-foreground text-lg max-w-md">
-                      Don't calculate macros manually. Just type "I ate chicken and rice" and Soma decodes the nutritional value, calorie count, and quality instantly.
+                      Don't calculate macros manually. Just type "I ate chicken and rice" and Somafit decodes the nutritional value, calorie count, and quality instantly.
                     </p>
                   </div>
                 </div>
@@ -287,7 +287,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-2xl font-bold mb-3">Real-time Metabolic Adaptation</h3>
                 <p className="text-muted-foreground mb-6">
-                  Soma learns. If you consistently burn more than you eat, it adapts your goals to ensure healthy, sustainable progress.
+                  Somafit learns. If you consistently burn more than you eat, it adapts your goals to ensure healthy, sustainable progress.
                 </p>
                 {/* Visual Graphic */}
                 <div className="mt-auto w-full h-32 bg-background rounded-xl border border-border flex items-end justify-between p-4 px-6 overflow-hidden">
@@ -327,7 +327,7 @@ export default function LandingPage() {
         <section id="how-it-works" className="py-24 how-it-works relative overflow-hidden">
           <div className="container mx-auto px-6 relative z-10">
             <div className="text-center mb-20">
-               <h2 className="text-3xl font-bold mb-4">How Soma Works</h2>
+               <h2 className="text-3xl font-bold mb-4">How Somafit Works</h2>
                <p className="text-muted-foreground">Three steps to complete health mastery.</p>
             </div>
 
@@ -341,7 +341,7 @@ export default function LandingPage() {
               <div className="relative flex flex-col md:flex-row items-center justify-between mb-24 group">
                 <div className="md:w-5/12 text-left md:text-right order-2 md:order-1 pl-12 md:pl-0">
                   <h3 className="text-xl font-bold text-foreground">1. Speak or Type Naturally</h3>
-                  <p className="text-muted-foreground">Just tell Soma: "I ate a cheese sandwich and walked 2km." Our AI parses calories, macros, and activity instantly.</p>
+                  <p className="text-muted-foreground">Just tell Somafit: "I ate a cheese sandwich and walked 2km." Our AI parses calories, macros, and activity instantly.</p>
                 </div>
                 <div className="absolute left-4 md:left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-background border-4 border-primary z-10 flex items-center justify-center shadow-lg shadow-primary/20">
                   <MessageSquarePlus className="w-4 h-4 text-primary" />
@@ -409,7 +409,7 @@ export default function LandingPage() {
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider mb-4">
                             Roadmap
                         </div>
-                        <h2 className="text-3xl md:text-4xl font-bold">The Future of Soma</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold">The Future of Somafit</h2>
                         <p className="text-muted-foreground mt-2 max-w-lg">
                             We are just getting started. Here is what we are building next to supercharge your health journey.
                         </p>
@@ -437,9 +437,9 @@ export default function LandingPage() {
                         <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                             <Mic className="w-6 h-6 text-foreground" />
                         </div>
-                        <h3 className="text-xl font-bold mb-2">Soma Voice Mode</h3>
+                        <h3 className="text-xl font-bold mb-2">Somafit Voice Mode</h3>
                         <p className="text-muted-foreground text-sm">
-                            Hands-free logging. Just tap and talk. "Hey Soma, log a 30-minute run and a banana." Done in seconds.
+                            Hands-free logging. Just tap and talk. "Hey Somafit, log a 30-minute run and a banana." Done in seconds.
                         </p>
                     </div>
 
@@ -466,7 +466,7 @@ export default function LandingPage() {
             </div>
             <h2 className="text-3xl font-bold tracking-tight mb-4">Your Data is Yours. Period.</h2>
             <p className="text-xl text-muted-foreground mb-10">
-              We believe health data is the most personal data you possess. Soma is built with privacy-first principles. We don't sell your data, ever.
+              We believe health data is the most personal data you possess. Somafit is built with privacy-first principles. We don't sell your data, ever.
             </p>
             <div className="flex justify-center gap-8 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
                <div className="flex items-center gap-2">
@@ -488,12 +488,12 @@ export default function LandingPage() {
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2">
              <span className={`${monoton.className} text-xl pt-1`}>
-               SOMA
+               SOMAFIT
              </span>
           </div>
           
           <div className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Soma Inc. All rights reserved.
+            © {new Date().getFullYear()} Somafit Inc. All rights reserved.
           </div>
 
           <div className="flex gap-8 text-sm font-medium text-muted-foreground">

@@ -5,8 +5,17 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/api/', '/admin/'], // Hide API routes or admin sections
+      // 👇 CHANGE: Removed trailing slashes to ensure strict blocking
+      disallow: [
+        "/dashboard", 
+        "/settings", 
+        "/history", 
+        "/api", 
+        "/tasks", 
+        "/profile",
+        "/feedback"
+      ],
     },
-    sitemap: 'https://www.somafit.in/sitemap.xml', // 👈 Update domain
+    sitemap: 'https://www.somafit.in/sitemap.xml',
   };
 }

@@ -13,6 +13,8 @@ import { useUser } from "@clerk/nextjs";
 import { DNALoader } from "@/components/dna-loader";
 import { useTheme } from "next-themes";
 import { Moon, Sun, Monitor } from "lucide-react"; // Icons
+import { toast } from "sonner"; // 👈 Add this
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // 👈 Add this
 
 
 // Helper functions to convert between metric and imperial
@@ -88,12 +90,12 @@ export default function SettingsPage() {
         const data = await res.json();
         
         if (data.success) {
-          setSimpleModal({ title: "Settings Saved", msg: "Your profile has been updated successfully." });
+          toast.success("Settings Saved", { description: "Your profile has been updated." });
           if (form.apiKey) setHasKey(true);
           setForm(prev => ({ ...prev, apiKey: "" }));
         }
       } catch (err) {
-        setSimpleModal({ title: "Error", msg: "Could not save settings. Please try again.", isError: true });
+        toast.error("Error", { description: "Could not save settings." });
       } finally {
         setSaving(false);
       }
@@ -117,7 +119,7 @@ export default function SettingsPage() {
           window.location.href = "/"; 
         } else {
           setDeleteStep(0);
-          setSimpleModal({ title: "Error", msg: "Could not deactivate account.", isError: true });
+          toast.error("Failed to Deactivate", { description: "Please try again later." });
           setIsDeleting(false);
         }
       } catch (err) {
@@ -154,242 +156,254 @@ export default function SettingsPage() {
     }
   });
 };
-
-  return (
-    <div className="min-h-screen bg-background p-6 md:p-10 font-sans">
-      <div className={`max-w-2xl mx-auto space-y-8 transition-all ${deleteStep > 0 || simpleModal ? 'blur-sm scale-[0.98] opacity-80' : ''}`}>
-        
-        {/* Header */}
-        <div>
-           <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-           {/* <p className="text-muted-foreground">Manage your profile and privacy configurations.</p> */}
-        </div>
-
-        {/* Section 1: Physical Profile */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center">
-                Physical Profile
-                <InfoPopup text="This data helps the AI calibrate calories specifically for your body type." />
-              </CardTitle>
-              
-              {/* 👇 UNIT TOGGLE SWITCH */}
-              <div className="flex items-center bg-muted rounded-lg p-1">
-                <button
-                  onClick={() => toggleUnit("metric")}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                    form.unitPreference === "metric" 
-                      ? "bg-background text-foreground shadow-sm" 
-                      : "text-muted-foreground hover:text-slate-700"
-                  }`}
-                >
-                  Metric
-                </button>
-                <button
-                  onClick={() => toggleUnit("imperial")}
-                  className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                    form.unitPreference === "imperial" 
-                      ? "bg-background text-foreground shadow-sm" 
-                      : "text-muted-foreground hover:text-slate-700"
-                  }`}
-                >
-                  Imperial
-                </button>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label>Nationality / Cultural Background</Label>
-              <Input 
-                value={form.nationality} 
-                onChange={e => setForm({...form, nationality: e.target.value})}
-                placeholder="e.g. Indian, Japanese, Mediterranean" 
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                {/* 👇 Dynamic Label: Change based on Unit Preference */}
-                <Label>Height ({form.unitPreference === "metric" ? "cm" : "ft"})</Label>
-                <Input 
-                  type="text" // Changed to text to allow "5'10" format if needed
-                  value={form.height} 
-                  onChange={e => setForm({...form, height: e.target.value})}
-                  placeholder={form.unitPreference === "metric" ? "175" : "5.9"}
-                />
-              </div>
-              <div className="grid gap-2">
-                {/* 👇 Dynamic Label */}
-                <Label>Weight ({form.unitPreference === "metric" ? "kg" : "lbs"})</Label>
-                <Input 
-                  type="number" 
-                  value={form.weight} 
-                  onChange={e => setForm({...form, weight: e.target.value})}
-                  placeholder={form.unitPreference === "metric" ? "70" : "150"}
-                />
-              </div>
-            </div>
-            
-          </CardContent>
-        </Card>
-
-        {/* Section 2: Appearance */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              Appearance
-              <InfoPopup text="Choose how Soma looks on your device." />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 gap-4">
-              {/* Light Mode */}
-              <button
-                onClick={() => setTheme("light")}
-                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
-                  theme === "light" 
-                    ? "border-blue-600 bg-blue-50/50 text-blue-700" 
-                    : "border-slate-100 hover:border-slate-200 text-muted-foreground"
-                }`}
-              >
-                <Sun className="w-6 h-6 mb-2" />
-                <span className="text-xs font-medium">Light</span>
-              </button>
-
-              {/* Dark Mode */}
-              <button
-                onClick={() => setTheme("dark")}
-                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
-                  theme === "dark" 
-                    ? "border-blue-600 bg-muted text-white" 
-                    : "border-slate-100 hover:border-slate-200 text-muted-foreground"
-                }`}
-              >
-                <Moon className="w-6 h-6 mb-2" />
-                <span className="text-xs font-medium">Dark</span>
-              </button>
-
-              {/* System Mode */}
-              <button
-                onClick={() => setTheme("system")}
-                className={`flex flex-col items-center justify-center p-4 rounded-lg border-2 transition-all ${
-                  theme === "system" 
-                    ? "border-blue-600 bg-muted text-foreground" 
-                    : "border-slate-100 hover:border-slate-200 text-muted-foreground"
-                }`}
-              >
-                <Monitor className="w-6 h-6 mb-2" />
-                <span className="text-xs font-medium">System</span>
-              </button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Section 3: The Vault (API Key) */}
-        <Card className="border-border shadow-md">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                    <Lock className="w-5 h-5 text-emerald-600"/> 
-                    The Vault (AI Key)
-                    <InfoPopup text="Bring your own Gemini API key. It is encrypted using AES-256 before being stored. Soma cannot see your key." />
-                </CardTitle>
-                {hasKey && (
-                    <div className="flex items-center gap-1 text-xs bg-success/10 text-success px-2 py-1 rounded-full">
-                        <CheckCircle className="w-3 h-3"/> Key Active
-                    </div>
-                )}
-            </div>
-            
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <Label>Google Gemini API Key</Label>
-              <Input 
-                type="password" 
-                placeholder={hasKey ? "••••••••••••••••" : "AIzaSy..."}
-                value={form.apiKey}
-                onChange={e => setForm({...form, apiKey: e.target.value})}
-              />
-              <p className="text-xs text-muted-foreground">
-                Don't have one? <a href="https://aistudio.google.com/app/apikey" target="_blank" className="underline text-blue-600">Get it free here</a>.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 👇 SECTION 4: DATA MANAGEMENT (New!) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              Data Management
-              <InfoPopup text="Download a copy of all your health logs, calories, and history in a format compatible with Excel or Google Sheets." />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 border border-border rounded-lg bg-background/50">
-              <div className="space-y-1">
-                <p className="font-medium text-foreground">Export Health Data</p>
-                <p className="text-sm text-muted-foreground">
-                  Get a CSV file containing your entire history.
-                </p>
-              </div>
-              <Button 
-                onClick={handleExport}
-                variant="outline" 
-                className="border-border hover:bg-background hover:text-info gap-2 w-full md:w-auto"
-              >
-                <Download className="w-4 h-4" />
-                Download CSV
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-
-        {/* 👇 UPDATED: Danger Zone (Deactivate) */}
-        <Card className="border-destructive/20 shadow-sm overflow-hidden">
-          
-          <CardHeader className="bg-destructive/10 border-b border-destructive/20 pt-[10px] pb-0">
-            <CardTitle className="flex items-center gap-2 text-destructive">
-               <AlertTriangle className="w-5 h-5" /> Danger Zone
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className="pt-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="space-y-1">
-                <p className="font-medium text-foreground">Deactivate Account</p>
-                <p className="text-sm text-muted-foreground">
-                  Schedule account for deletion. You have a 15-day grace period to restore it.
-                </p>
-              </div>
-              
-              <Button 
-                onClick={() => setDeleteStep(1)}
-                disabled={isDeleting}
-                variant="destructive" 
-                className="variant='destructive' variant='destructive' w-full md:w-auto"
-              >
-                {isDeleting ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : null}
-                Deactivate Account
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={saving} className="bg-primary hover:bg-primary/90">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : null}
-                Save Changes
-            </Button>
-        </div>
-
+return (
+  <div className="min-h-screen bg-background p-6 md:p-10 font-sans pb-32">
+    <div
+      className={`max-w-4xl mx-auto space-y-8 transition-all ${
+        deleteStep > 0 || simpleModal ? "blur-sm scale-[0.98] opacity-80" : ""
+      }`}
+    >
+      {/* HEADER */}
+      <div className="border-b border-border pb-6">
+        <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+        <p className="text-muted-foreground mt-1">
+          Manage your account preferences and configurations.
+        </p>
       </div>
 
+      {/* TABS */}
+      <Tabs defaultValue="profile" className="space-y-8">
+        <TabsList className="bg-muted/50 p-1 rounded-lg">
+          <TabsTrigger value="profile">Profile & Units</TabsTrigger>
+          <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsTrigger value="data">Data & Privacy</TabsTrigger>
+        </TabsList>
+
+        {/* ================= PROFILE TAB ================= */}
+        <TabsContent value="profile" className="space-y-6">
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center">
+                  Physical Profile
+                  <InfoPopup text="This data helps the AI calibrate calories specifically for your body type." />
+                </CardTitle>
+
+                {/* UNIT TOGGLE */}
+                <div className="flex items-center bg-muted rounded-lg p-1">
+                  <button
+                    onClick={() => toggleUnit("metric")}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                      form.unitPreference === "metric"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    Metric
+                  </button>
+                  <button
+                    onClick={() => toggleUnit("imperial")}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
+                      form.unitPreference === "imperial"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    Imperial
+                  </button>
+                </div>
+              </div>
+              <CardDescription>
+                Calibrate Soma for your body metrics.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label>Nationality / Cultural Background</Label>
+                <Input
+                  value={form.nationality}
+                  onChange={(e) =>
+                    setForm({ ...form, nationality: e.target.value })
+                  }
+                  placeholder="e.g. Indian, Japanese, Mediterranean"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>
+                    Height ({form.unitPreference === "metric" ? "cm" : "ft"})
+                  </Label>
+                  <Input
+                    value={form.height}
+                    onChange={(e) =>
+                      setForm({ ...form, height: e.target.value })
+                    }
+                    placeholder={
+                      form.unitPreference === "metric" ? "175" : "5.9"
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>
+                    Weight ({form.unitPreference === "metric" ? "kg" : "lbs"})
+                  </Label>
+                  <Input
+                    value={form.weight}
+                    onChange={(e) =>
+                      setForm({ ...form, weight: e.target.value })
+                    }
+                    placeholder={
+                      form.unitPreference === "metric" ? "70" : "150"
+                    }
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ================= APPEARANCE TAB ================= */}
+        <TabsContent value="appearance">
+          <Card className="border-border/60">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                Theme Preferences
+                <InfoPopup text="Choose how Soma looks on your device." />
+              </CardTitle>
+              <CardDescription>
+                Light, dark, or system-based appearance.
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent>
+              <div className="grid grid-cols-3 gap-4">
+                <button
+                  onClick={() => setTheme("light")}
+                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                    theme === "light"
+                      ? "border-blue-600 bg-blue-50/50 text-blue-700"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  <Sun className="w-6 h-6 mb-2" />
+                  <span className="text-xs font-medium">Light</span>
+                </button>
+
+                <button
+                  onClick={() => setTheme("dark")}
+                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                    theme === "dark"
+                      ? "border-blue-600 bg-muted text-foreground"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  <Moon className="w-6 h-6 mb-2" />
+                  <span className="text-xs font-medium">Dark</span>
+                </button>
+
+                <button
+                  onClick={() => setTheme("system")}
+                  className={`flex flex-col items-center p-4 rounded-lg border-2 transition-all ${
+                    theme === "system"
+                      ? "border-blue-600 bg-muted text-foreground"
+                      : "border-border text-muted-foreground"
+                  }`}
+                >
+                  <Monitor className="w-6 h-6 mb-2" />
+                  <span className="text-xs font-medium">System</span>
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ================= DATA TAB ================= */}
+        <TabsContent value="data" className="space-y-6">
+          {/* VAULT */}
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Lock className="w-5 h-5 text-emerald-600"/> 
+                                    AI Configuration
+                                </CardTitle>
+                                <CardDescription>Bring your own Gemini API key. Stored with AES-256 encryption.</CardDescription>
+                            </div>
+                            
+                            {/* 👇 RESTORED: Visual Indicator if Key exists */}
+                            {hasKey && (
+                                <div className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium border border-emerald-200">
+                                    <CheckCircle className="w-3 h-3"/> Key Active
+                                </div>
+                            )}
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid gap-2">
+                          <Label>Google Gemini API Key</Label>
+                          <Input 
+                            type="password" 
+                            // 👇 RESTORED: Placeholder logic
+                            placeholder={hasKey ? "••••••••••••••••" : "AIzaSy..."}
+                            value={form.apiKey}
+                            onChange={e => setForm({...form, apiKey: e.target.value})}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Don't have one? <a href="https://aistudio.google.com/app/apikey" target="_blank" className="underline text-primary hover:text-primary/80">Get it free here</a>.
+                          </p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+          {/* EXPORT */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Export Data</CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Download your entire health history as CSV.
+              </p>
+              <Button variant="outline" onClick={handleExport}>
+                <Download className="w-4 h-4 mr-2" />
+                Export
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* DANGER ZONE */}
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="text-destructive">
+                Danger Zone
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                Permanently deactivate your account.
+              </p>
+              <Button
+                variant="destructive"
+                onClick={() => setDeleteStep(1)}
+              >
+                Deactivate
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* STICKY SAVE BAR */}
+      <div className="fixed bottom-20 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border md:static md:bg-transparent md:border-none md:p-0 flex justify-end z-40">
+          <Button onClick={handleSave} disabled={saving} size="lg" className="w-full md:w-auto shadow-lg md:shadow-none">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : null}
+              Save Changes
+          </Button>
+      </div>
+    </div>
       {/* =================MODALS SECTION================= */}
 
       {/* 1. THE 2-STEP DEACTIVATION MODAL SYSTEM */}
@@ -473,9 +487,8 @@ export default function SettingsPage() {
             </div>
          </div>
       )}
-
-    </div>
-  );
+  </div>
+);
 }
 
 function InfoPopup({ text }: { text: string }) {

@@ -67,29 +67,39 @@ export async function GET(req: Request) {
             console.log(`♻️ Rollover: Creating ${missingHabits.length} missing habits for ${targetDate.toDateString()}`);
 
             for (const habit of missingHabits) {
-                await prisma.task.create({
-                    data: {
+                const alreadyExists = await prisma.task.findFirst({
+                    where: {
                         userId,
-                        title: habit.title,
-                        description: habit.description,
-                        priority: "HABIT", 
-                        startTime: habit.startTime,
-                        isRecurring: true, 
                         date: start, 
-                        isCompleted: false, 
-                        durationMins: habit.durationMins,
-                        
-                        subtasks: {
-                            create: habit.subtasks.map(st => ({
-                                title: st.title,
-                                targetValue: st.targetValue,
-                                unit: st.unit,
-                                isCompleted: false, 
-                                currentValue: 0
-                            }))
-                        }
-                    }
+                        title: habit.title 
+                    },
+                    select: { id: true } 
                 });
+
+                if (!alreadyExists) {
+                    await prisma.task.create({
+                        data: {
+                            userId,
+                            title: habit.title,
+                            description: habit.description,
+                            priority: "HABIT",
+                            startTime: habit.startTime,
+                            isRecurring: true,
+                            date: start,
+                            isCompleted: false,
+                            durationMins: habit.durationMins,
+                            subtasks: {
+                                create: habit.subtasks.map(st => ({
+                                    title: st.title,
+                                    targetValue: st.targetValue,
+                                    unit: st.unit,
+                                    isCompleted: false,
+                                    currentValue: 0
+                                }))
+                            }
+                        }
+                    });
+                }
             }
         }
       }
