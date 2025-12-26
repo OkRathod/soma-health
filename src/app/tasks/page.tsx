@@ -32,12 +32,17 @@ export default function TasksPage() {
 // ##################################################################################################################################################
 // FUNCTIONS
 
+// ✅ NEW FIXED CODE
 useEffect(() => {
-      const dateStr = selectedDate.toISOString();
-      if (lastFetchedDate.current === dateStr) return;
-      lastFetchedDate.current = dateStr;
-      fetchTasks();
-  }, [selectedDate]);
+    // 1. Set a timer to fetch data after a short delay
+    const timer = setTimeout(() => {
+        fetchTasks();
+    }, 600); // 300ms debounce
+
+    // 2. If the user leaves the page or the effect runs again (Strict Mode),
+    // this cleanup function runs and CANCELS the previous timer.
+    return () => clearTimeout(timer);
+}, [selectedDate]);
 
 async function handleDropTask(e: React.DragEvent, hour: number) {
       e.preventDefault();
