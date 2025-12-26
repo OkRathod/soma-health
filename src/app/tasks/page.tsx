@@ -11,6 +11,7 @@ import { TimelineView } from "@/components/tasks/timeline-view";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar"; // Ensure you have this component
 import { cn } from "@/lib/utils";
+import { DNALoader } from "@/components/dna-loader";
 
 export default function TasksPage() {
 
@@ -293,7 +294,7 @@ async function handleDropTask(e: React.DragEvent, hour: number) {
 
 return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
-        
+        {loading && <DNALoader/>}
         {/* 1. Header (Cleaned up) */}
         <header className="h-16 border-b border-border/40 bg-background/60 backdrop-blur-sm flex items-center justify-between px-4 md:px-6 shrink-0 z-10 gap-4">
             <div className="flex items-center gap-3 overflow-hidden">
