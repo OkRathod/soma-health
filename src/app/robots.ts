@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
         "/feedback",
         '/sign-in',
         '/sign-up',
+        '/deadlines',
       ],
     },
     sitemap: 'https://www.somafit.in/sitemap.xml',
