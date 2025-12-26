@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Menu,
   X,
-  MessageSquarePlus
+  MessageSquarePlus,
+  ClockFadingIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Monoton } from "next/font/google";
@@ -39,9 +40,10 @@ export function Navbar({ user }: { user: any }) {
     { href: "/dashboard", icon: <House className="w-5 h-5" />, label: "Home" },
     { href: "/tasks", icon: <ListTodo className="w-5 h-5" />, label: "Tasks" },
     { href: "/history", icon: <History className="w-5 h-5" />, label: "History" },
-    { href: "/guides", icon: <BookOpen className="w-5 h-5" />, label: "Guides" },
-    { type: "spacer" }, // Visual separator
+    { href: "/deadlines", icon: <ClockFadingIcon className="w-5 h-5" />, label: "Deadlines" },
     { href: "/profile", icon: <User className="w-5 h-5" />, label: "Profile" },
+    { type: "spacer" }, // Visual separator
+    { href: "/guides", icon: <BookOpen className="w-5 h-5" />, label: "Guides" },
     { href: "/settings", icon: <Settings className="w-5 h-5" />, label: "Settings" },
     { href: "/feedback", icon: <MessageSquarePlus className="w-5 h-5" />, label: "Feedback" },
   ];
@@ -232,6 +234,14 @@ export function Navbar({ user }: { user: any }) {
                         className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-popover-foreground hover:bg-secondary/80 rounded-lg transition-colors"
                     >
                         <MessageSquarePlus className="w-4 h-4" /> Feedback
+                    </Link>
+                    
+                    <Link 
+                        href="/guides" 
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-popover-foreground hover:bg-secondary/80 rounded-lg transition-colors"
+                    >
+                        <BookOpen className="w-4 h-4" /> Guides
                     </Link>
                   </motion.div>
                 </>

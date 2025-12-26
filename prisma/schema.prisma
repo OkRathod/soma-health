@@ -177,3 +177,32 @@ model DailyMetrics {
 
   @@unique([userId, date]) // Prevents duplicate rows for the same day
 }
+
+
+// prisma/schema.prisma
+
+model Deadline {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  
+  startDate   DateTime  @default(now())
+  targetDate  DateTime? // 👈 If null, it's a "No Deadline" task (Open-ended)
+  
+  isCompleted Boolean   @default(false)
+  completedAt DateTime? 
+
+  subtasks    DeadlineSubtask[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model DeadlineSubtask {
+  id          String   @id @default(cuid())
+  title       String
+  isCompleted Boolean  @default(false)
+  
+  deadlineId  String
+  deadline    Deadline @relation(fields: [deadlineId], references: [id], onDelete: Cascade)
+}

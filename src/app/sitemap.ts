@@ -8,13 +8,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticRoutes = [
     '',
     '/guides',
-    '/sign-in',
-    '/sign-up',
   ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: 'daily' as const,
-    priority: 1,
+    priority: route === '' ? 1 : 0.8,
   }));
 
   // 2. Generate dynamic URLs for your guides
