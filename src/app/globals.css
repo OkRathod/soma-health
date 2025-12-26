@@ -43,6 +43,8 @@
   --radius-lg: var(--radius);
 
   --font-quote: var(--font-baskervville), serif;
+  --font-wallpoet: var(--font-wallpoet);
+  --font-bbh-hegarty: var(--font-bbh-hegarty);
 
   --color-priority-high: var(--priority-high);
   --color-priority-high-bg: var(--priority-high-bg);

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Wallpoet } from "next/font/google";
+import localFont from "next/font/local";
 import { Baskervville } from "next/font/google";
 import "./globals.css";
 
@@ -16,6 +17,18 @@ const baskervville = Baskervville({
   subsets: ["latin"],
   style: "normal",
   variable: "--font-baskervville", 
+});
+
+const wallpoet = Wallpoet({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-wallpoet", // 👈 Defines the variable name
+});
+
+const BBH_Hegarty = localFont({
+  src: "/fonts/BBH_Hegarty/BBHHegarty-Regular.ttf", // 👈 Make sure this path matches your file name!
+  variable: "--font-bbh-hegarty",  // 👈 The CSS variable name
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -53,7 +66,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} ${baskervville.variable} antialiased`}>
+      <body className={`${inter.className} ${baskervville.variable} ${BBH_Hegarty.variable} ${wallpoet.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

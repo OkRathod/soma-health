@@ -120,8 +120,8 @@ export function DeadlineCard({ data, onUpdate, isHistory }: any) {
          {data.targetDate && !data.isCompleted && !isOverdue && (
              <div className="text-center py-4 bg-muted/30 rounded-lg border border-border/50">
                  <div className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-1">Time Remaining</div>
-                 <div className="text-3xl font-mono font-bold text-primary tabular-nums tracking-tight">
-                    {timeLeft || "--:--:--"}
+                 <div className="text-4xl font-bbh-bogle font-bold text-foreground tabular-nums tracking-wider">
+                    <span className="uppercase">{timeLeft || "--:--:--"}</span>
                  </div>
              </div>
          )}
