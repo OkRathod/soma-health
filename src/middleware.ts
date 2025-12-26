@@ -18,21 +18,45 @@ export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
   const url = req.nextUrl.pathname;
 
-  if (userId) {
-    if (url === "/" || url.startsWith("/sign-in") || url.startsWith("/sign-up")) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
-    }
+  // 1. ALWAYS ALLOW LANDING PAGE & ASSETS FIRST
+  if (isPublicRoute(req)) {
+     // If user is logged in and visiting Home/Auth, send to dashboard
+     if (userId && (url === "/" || url.startsWith("/sign-in") || url.startsWith("/sign-up"))) {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+     }
+     // Otherwise, let them see the public page
+     return NextResponse.next();
   }
 
+  // 2. PROTECT EVERYTHING ELSE
   if (!userId) {
-    if (!isPublicRoute(req)) {
-      const signInUrl = new URL('/', req.url);
-      signInUrl.searchParams.set('redirect_url', req.url);
-      return NextResponse.redirect(signInUrl);
-    }
+    const signInUrl = new URL('/sign-in', req.url);
+    signInUrl.searchParams.set('redirect_url', req.url);
+    return NextResponse.redirect(signInUrl);
   }
+
   return NextResponse.next();
 });
+
+// export default clerkMiddleware(async (auth, req) => {
+//   const { userId } = await auth();
+//   const url = req.nextUrl.pathname;
+
+//   if (userId) {
+//     if (url === "/" || url.startsWith("/sign-in") || url.startsWith("/sign-up")) {
+//       return NextResponse.redirect(new URL("/dashboard", req.url));
+//     }
+//   }
+
+//   if (!userId) {
+//     if (!isPublicRoute(req)) {
+//       const signInUrl = new URL('/', req.url);
+//       signInUrl.searchParams.set('redirect_url', req.url);
+//       return NextResponse.redirect(signInUrl);
+//     }
+//   }
+//   return NextResponse.next();
+// });
 
 export const config = {
   matcher: [
