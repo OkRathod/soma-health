@@ -16,7 +16,8 @@ import {
   X,
   MessageSquarePlus,
   ClockFadingIcon,
-  FileText
+  FileText,
+  CalendarHeart
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Monoton } from "next/font/google";
@@ -41,10 +42,11 @@ export function Navbar({ user }: { user: any }) {
   const links = [
     { href: "/dashboard", icon: <House className="w-5 h-5" />, label: "Home" },
     { href: "/tasks", icon: <ListTodo className="w-5 h-5" />, label: "Tasks" },
-    { href: "/history", icon: <History className="w-5 h-5" />, label: "History" },
+    { href: "/analysis", icon: <CalendarHeart className="w-5 h-5" />, label: "Analysis" },
     { href: "/deadlines", icon: <ClockFadingIcon className="w-5 h-5" />, label: "Deadlines" },
     { href: "/notes", icon: <FileText className="w-5 h-5" />, label: "Notes" },
     { href: "/profile", icon: <User className="w-5 h-5" />, label: "Profile" },
+    { href: "/history", icon: <History className="w-5 h-5" />, label: "History" },
     { type: "spacer" }, // Visual separator
     { href: "/guides", icon: <BookOpen className="w-5 h-5" />, label: "Guides" },
     { href: "/settings", icon: <Settings className="w-5 h-5" />, label: "Settings" },
@@ -214,6 +216,14 @@ export function Navbar({ user }: { user: any }) {
                     className="absolute bottom-full right-0 mb-3 bg-popover/95 backdrop-blur-md border border-border rounded-xl shadow-2xl p-1.5 min-w-[150px] flex flex-col gap-1 z-[100]"
                   >
                     {/* Profile Link */}
+                    <Link 
+                        href="/history" 
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-popover-foreground hover:bg-secondary/80 rounded-lg transition-colors"
+                    >
+                        <History className="w-4 h-4" /> History
+                    </Link>
+
                     <Link 
                         href="/notes" 
                         onClick={() => setIsMobileMenuOpen(false)}
