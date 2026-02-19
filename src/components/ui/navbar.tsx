@@ -15,11 +15,13 @@ import {
   Menu,
   X,
   MessageSquarePlus,
-  ClockFadingIcon
+  ClockFadingIcon,
+  FileText
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Monoton } from "next/font/google";
 import { cn } from "@/lib/utils"; // Assuming you have a cn utility, or remove if not
+
 const monoton = Monoton({ 
   weight: "400", 
   subsets: ["latin"] 
@@ -41,6 +43,7 @@ export function Navbar({ user }: { user: any }) {
     { href: "/tasks", icon: <ListTodo className="w-5 h-5" />, label: "Tasks" },
     { href: "/history", icon: <History className="w-5 h-5" />, label: "History" },
     { href: "/deadlines", icon: <ClockFadingIcon className="w-5 h-5" />, label: "Deadlines" },
+    { href: "/notes", icon: <FileText className="w-5 h-5" />, label: "Notes" },
     { href: "/profile", icon: <User className="w-5 h-5" />, label: "Profile" },
     { type: "spacer" }, // Visual separator
     { href: "/guides", icon: <BookOpen className="w-5 h-5" />, label: "Guides" },
@@ -211,6 +214,14 @@ export function Navbar({ user }: { user: any }) {
                     className="absolute bottom-full right-0 mb-3 bg-popover/95 backdrop-blur-md border border-border rounded-xl shadow-2xl p-1.5 min-w-[150px] flex flex-col gap-1 z-[100]"
                   >
                     {/* Profile Link */}
+                    <Link 
+                        href="/notes" 
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-popover-foreground hover:bg-secondary/80 rounded-lg transition-colors"
+                    >
+                        <FileText className="w-4 h-4" /> Notes
+                    </Link>
+                    
                     <Link 
                         href="/profile" 
                         onClick={() => setIsMobileMenuOpen(false)}
