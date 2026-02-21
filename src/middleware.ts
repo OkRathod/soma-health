@@ -11,12 +11,22 @@ const isPublicRoute = createRouteMatcher([
   "/icons(.*)",         // 👈 PWA Assets
   "/sitemap.xml",       // 👈 CRITICAL FIX FOR GOOGLE
   "/robots.txt",         // 👈 CRITICAL FIX FOR GOOGLE
-  "/guides(.*)",        // Public Guides
+  "/guides(.*)",        // Public Guides,
+  '/api/cron/notifications',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
   const url = req.nextUrl.pathname;
+  const userAgent = req.headers.get("user-agent")?.toLowerCase() || "";
+  // 👇 NEW: EXPLICIT BOT ALLOWLIST
+  // If it is Googlebot AND the page is Public, let it pass immediately.
+  const isSearchBot = userAgent.includes("googlebot") || userAgent.includes("bingbot");
+  
+  if (isSearchBot && isPublicRoute(req)) {
+     return NextResponse.next();
+  }
+  // 👆 END OF NEW LOGIC
 
   // 1. ALWAYS ALLOW LANDING PAGE & ASSETS FIRST
   if (isPublicRoute(req)) {

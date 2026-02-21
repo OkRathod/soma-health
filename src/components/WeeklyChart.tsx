@@ -36,17 +36,32 @@ const chartConfig = {
     label: "Tasks Pending",
     color: "#eab308", // Yellow/Amber
   },
+  // 👇 NEW: Macro configurations
+  protein: {
+    label: "Protein",
+    color: "#3b82f6", // Blue
+  },
+  carbs: {
+    label: "Carbs",
+    color: "#10b981", // Emerald
+  },
+  fats: {
+    label: "Fats",
+    color: "#f59e0b", // Amber
+  },
 } satisfies ChartConfig;
 
 export default function WeeklyChart({ logs, tasks = [] }: { logs: any[]; tasks?: any[] }) {
-  // 1. View States
-  const [activeView, setActiveView] = React.useState<"calories" | "tasks">("calories");
+  // 1. View States (Added 'macros')
+  const [activeView, setActiveView] = React.useState<"calories" | "macros" | "tasks">("calories");
   
   // Sub-toggles
   const [activeCalorieMetric, setActiveCalorieMetric] = React.useState<"in" | "out">("in");
   const [activeTaskMetric, setActiveTaskMetric] = React.useState<"done" | "pending">("done");
+  // 👇 NEW: Sub-toggle for macros
+  const [activeMacroMetric, setActiveMacroMetric] = React.useState<"protein" | "carbs" | "fats">("protein");
   
-  // 2. Time Range State (Default: 7 Days)
+  // 2. Time Range State
   const [timeRange, setTimeRange] = React.useState<"7d" | "30d" | "90d">("7d");
 
   // 3. Process Data based on Range
@@ -70,6 +85,21 @@ export default function WeeklyChart({ logs, tasks = [] }: { logs: any[]; tasks?:
       const totalIn = dayLogs.reduce((acc, log) => acc + (log.totalCaloriesIn || 0), 0);
       const totalOut = dayLogs.reduce((acc, log) => acc + (log.totalCaloriesOut || 0), 0);
 
+      // 👇 NEW: Extract Macros from foods
+      let dailyProtein = 0;
+      let dailyCarbs = 0;
+      let dailyFats = 0;
+
+      dayLogs.forEach((log) => {
+        if (log.parsedData?.foods && Array.isArray(log.parsedData.foods)) {
+          log.parsedData.foods.forEach((food: any) => {
+            dailyProtein += food.protein || 0;
+            dailyCarbs += food.carbs || 0;
+            dailyFats += food.fats || 0;
+          });
+        }
+      });
+
       // Filter Tasks (Done vs Pending)
       const dayTasks = tasks.filter((task) => {
         const taskDateVal = task.date || task.startTime;
@@ -85,6 +115,9 @@ export default function WeeklyChart({ logs, tasks = [] }: { logs: any[]; tasks?:
         date: dayDate.toISOString(),
         in: totalIn,
         out: totalOut,
+        protein: dailyProtein,
+        carbs: dailyCarbs,
+        fats: dailyFats,
         done: doneCount,
         pending: pendingCount,
       };
@@ -98,12 +131,19 @@ export default function WeeklyChart({ logs, tasks = [] }: { logs: any[]; tasks?:
       out: chartData.reduce((acc, curr) => acc + curr.out, 0),
       done: chartData.reduce((acc, curr) => acc + curr.done, 0),
       pending: chartData.reduce((acc, curr) => acc + curr.pending, 0),
+      // 👇 NEW: Macro totals
+      protein: chartData.reduce((acc, curr) => acc + curr.protein, 0),
+      carbs: chartData.reduce((acc, curr) => acc + curr.carbs, 0),
+      fats: chartData.reduce((acc, curr) => acc + curr.fats, 0),
     }),
     [chartData]
   );
 
   // Helper to determine the active data key for the line
-  const currentDataKey = activeView === 'calories' ? activeCalorieMetric : activeTaskMetric;
+  const currentDataKey = 
+    activeView === 'calories' ? activeCalorieMetric : 
+    activeView === 'macros' ? activeMacroMetric : 
+    activeTaskMetric;
 
   return (
     <Card className="border-border/50 bg-card/50 shadow-sm h-full">
@@ -146,6 +186,46 @@ export default function WeeklyChart({ logs, tasks = [] }: { logs: any[]; tasks?:
                         </span>
                     </button>
                 </>
+            ) : activeView === 'macros' ? (
+                <>
+                    {/* 👇 NEW: Macro Buttons */}
+                    <button
+                        data-active={activeMacroMetric === "protein"}
+                        className="relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-3 py-2 text-left data-[active=true]:bg-muted/50 sm:border-t-0 sm:border-l sm:px-4 sm:py-4 transition-all"
+                        onClick={() => setActiveMacroMetric("protein")}
+                    >
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            {chartConfig.protein.label}
+                        </span>
+                        <span className="text-lg font-bold leading-none sm:text-xl">
+                            {Math.round(total.protein).toLocaleString()}<span className="text-sm text-muted-foreground ml-0.5">g</span>
+                        </span>
+                    </button>
+                    <button
+                        data-active={activeMacroMetric === "carbs"}
+                        className="relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-3 py-2 text-left border-l data-[active=true]:bg-muted/50 sm:border-t-0 sm:px-4 sm:py-4 transition-all"
+                        onClick={() => setActiveMacroMetric("carbs")}
+                    >
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            {chartConfig.carbs.label}
+                        </span>
+                        <span className="text-lg font-bold leading-none sm:text-xl">
+                            {Math.round(total.carbs).toLocaleString()}<span className="text-sm text-muted-foreground ml-0.5">g</span>
+                        </span>
+                    </button>
+                    <button
+                        data-active={activeMacroMetric === "fats"}
+                        className="relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-3 py-2 text-left border-l data-[active=true]:bg-muted/50 sm:border-t-0 sm:px-4 sm:py-4 transition-all"
+                        onClick={() => setActiveMacroMetric("fats")}
+                    >
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                            {chartConfig.fats.label}
+                        </span>
+                        <span className="text-lg font-bold leading-none sm:text-xl">
+                            {Math.round(total.fats).toLocaleString()}<span className="text-sm text-muted-foreground ml-0.5">g</span>
+                        </span>
+                    </button>
+                </>
             ) : (
                 <>
                     <button
@@ -179,7 +259,7 @@ export default function WeeklyChart({ logs, tasks = [] }: { logs: any[]; tasks?:
 
       <CardContent className="px-2 sm:p-4">
         
-        {/* Controls Row: View Type (Left) + Time Range (Right) */}
+        {/* Controls Row */}
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4 px-2">
             
             {/* View Switcher */}
@@ -189,6 +269,13 @@ export default function WeeklyChart({ logs, tasks = [] }: { logs: any[]; tasks?:
                     className={`text-[10px] px-2 py-1 rounded-md transition-all ${activeView === 'calories' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                 >
                     Calories
+                </button>
+                {/* 👇 NEW: Macros Button */}
+                <button 
+                    onClick={() => setActiveView("macros")}
+                    className={`text-[10px] px-2 py-1 rounded-md transition-all ${activeView === 'macros' ? 'bg-background shadow-sm text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                >
+                    Macros
                 </button>
                 <button 
                     onClick={() => setActiveView("tasks")}
@@ -228,12 +315,7 @@ export default function WeeklyChart({ logs, tasks = [] }: { logs: any[]; tasks?:
           <LineChart
             accessibilityLayer
             data={chartData}
-            margin={{
-              left: 0,
-              right: 0,
-              top: 5,
-              bottom: 0
-            }}
+            margin={{ left: 0, right: 0, top: 5, bottom: 0 }}
           >
             <CartesianGrid vertical={false} stroke="var(--border)" opacity={0.4} />
             
@@ -245,11 +327,10 @@ export default function WeeklyChart({ logs, tasks = [] }: { logs: any[]; tasks?:
               minTickGap={32}
               tickFormatter={(value) => {
                 const date = new Date(value);
-                // Adjust label based on range
                 if (timeRange === "7d") {
-                    return date.toLocaleDateString("en-US", { weekday: "short" }); // Mon, Tue
+                    return date.toLocaleDateString("en-US", { weekday: "short" });
                 }
-                return date.toLocaleDateString("en-US", { day: "numeric", month: "short" }); // Jun 1
+                return date.toLocaleDateString("en-US", { day: "numeric", month: "short" });
               }}
               tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
             />
@@ -265,6 +346,14 @@ export default function WeeklyChart({ logs, tasks = [] }: { logs: any[]; tasks?:
                       day: "numeric",
                       year: "numeric",
                     });
+                  }}
+                  // Append 'g' for macros in the tooltip
+                  formatter={(value, name) => {
+                    const suffix = activeView === 'macros' ? 'g' : '';
+                    return [
+                        <span key={name as string} className="font-semibold">{Math.round(value as number)}{suffix}</span>, 
+                        chartConfig[name as keyof typeof chartConfig]?.label || name
+                    ];
                   }}
                 />
               }

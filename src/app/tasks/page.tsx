@@ -33,12 +33,17 @@ export default function TasksPage() {
 // ##################################################################################################################################################
 // FUNCTIONS
 
+// ✅ NEW FIXED CODE
 useEffect(() => {
-      const dateStr = selectedDate.toISOString();
-      if (lastFetchedDate.current === dateStr) return;
-      lastFetchedDate.current = dateStr;
-      fetchTasks();
-  }, [selectedDate]);
+    // 1. Set a timer to fetch data after a short delay
+    const timer = setTimeout(() => {
+        fetchTasks();
+    }, 600); // 300ms debounce
+
+    // 2. If the user leaves the page or the effect runs again (Strict Mode),
+    // this cleanup function runs and CANCELS the previous timer.
+    return () => clearTimeout(timer);
+}, [selectedDate]);
 
 async function handleDropTask(e: React.DragEvent, hour: number) {
       e.preventDefault();
@@ -238,60 +243,6 @@ async function handleDropTask(e: React.DragEvent, hour: number) {
     await fetch(`/api/tasks?id=${taskId}`, { method: "DELETE" });
   }
 
-
-  const positionedTasks = useMemo(() => {
-    if (loading || tasks.length === 0) return [];
-
-    const validTasks = tasks
-      .filter(t => t.startTime)
-      .map(t => ({
-        ...t,
-        start: new Date(t.startTime).getTime(),
-        end: new Date(t.startTime).getTime() + (t.durationMins || 60) * 60000,
-        duration: t.durationMins || 60
-      }))
-      .sort((a, b) => a.start - b.start);
-
-    const columns: number[] = [];
-    const withColIndex = validTasks.map(task => {
-      let colIndex = -1;
-      for (let i = 0; i < columns.length; i++) {
-        if (task.start >= columns[i]) {
-          colIndex = i;
-          columns[i] = task.end;
-          break;
-        }
-      }
-      if (colIndex === -1) {
-        colIndex = columns.length;
-        columns.push(task.end);
-      }
-      return { ...task, colIndex };
-    });
-
-    const finalTasks: any[] = [];
-    let currentCluster: any[] = [];
-    let clusterEnd = 0;
-
-    withColIndex.forEach((task) => {
-       if (currentCluster.length > 0 && task.start >= clusterEnd) {
-           const maxCol = Math.max(...currentCluster.map(t => t.colIndex));
-           currentCluster.forEach(t => finalTasks.push({ ...t, totalCols: maxCol + 1 }));
-           currentCluster = [task];
-           clusterEnd = task.end;
-       } else {
-           currentCluster.push(task);
-           if (task.end > clusterEnd) clusterEnd = task.end;
-       }
-    });
-
-    if (currentCluster.length > 0) {
-        const maxCol = Math.max(...currentCluster.map(t => t.colIndex));
-        currentCluster.forEach(t => finalTasks.push({ ...t, totalCols: maxCol + 1 }));
-    }
-    return finalTasks;
-  }, [tasks, loading]);
-
 return (
     <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
         {loading && <DNALoader/>}
@@ -406,7 +357,7 @@ return (
                 ${mobileView === 'timeline' ? 'flex' : 'hidden md:flex'}
             `}>
                 <TimelineView 
-                    tasks={tasks}
+                    tasks={filteredTasks}
                     loading={loading}
                     onTimeSlotClick={openAddModalAtTime}
                     onDropTask={handleDropTask}
