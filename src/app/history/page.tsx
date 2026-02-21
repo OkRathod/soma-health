@@ -5,7 +5,8 @@ import { useUser } from "@clerk/nextjs";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Calendar as CalendarIcon, Clock , Trash2, Check, AlertTriangle, X, Plus, PenLine, ChevronDown} from "lucide-react";
+import { Loader2, Calendar as CalendarIcon, Clock , Trash2, Check, AlertTriangle, X, Plus, PenLine, ChevronDown, LayoutGrid, List } from "lucide-react";
+import { MessageSquare, Target, Utensils, Activity, Flame, ChevronRight } from "lucide-react";
 import { DNALoader } from "@/components/dna-loader";
 import { Button } from "@/components/ui/button"; // Import Button
 // import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"; 
@@ -58,6 +59,25 @@ export default function HistoryPage() {
       duration: "60", 
       subtasks: [] as any[] 
   });
+
+  // 👇 1. New State for Layout Preference
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [isMounted, setIsMounted] = useState(false);
+
+  // 👇 2. Load saved preference on mount
+  useEffect(() => {
+    const savedView = localStorage.getItem("dietViewMode");
+    if (savedView === "grid" || savedView === "list") {
+      setViewMode(savedView);
+    }
+    setIsMounted(true);
+  }, []);
+
+  // 👇 3. Handle saving the preference
+  const handleViewChange = (mode: "list" | "grid") => {
+    setViewMode(mode);
+    localStorage.setItem("dietViewMode", mode);
+  };
 
 
 async function handleAddTask() {
@@ -201,122 +221,7 @@ async function fetchLogs() {
  
 
   // 👇 NEW COMPONENT: Handles Expand/Collapse Logic
-function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) => void }) {
-    const [expanded, setExpanded] = useState(false);
 
-    return (
-        <Card 
-            className={`bg-card border-border shadow-sm transition-all group relative cursor-pointer ${expanded ? 'ring-1 ring-primary/20' : 'hover:shadow-md'}`}
-            onClick={() => setExpanded(!expanded)}
-        >
-            <CardContent className="flex gap-5 relative group transition-all">
-
-              {/* TIME COLUMN */}
-              <div className="flex flex-col items-center min-w-[70px] pr-5 border-r border-border/40">
-                  {/* Time */}
-                  <div className="text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md shadow-sm">
-                      {new Date(log.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-
-                  {/* Vertical Line */}
-                  <div
-                      className={`
-                          w-[3px] mt-3 rounded-full bg-gradient-to-b from-primary/40 to-primary/10
-                          transition-all duration-300 
-                          ${expanded ? "h-24 opacity-100" : "h-10 opacity-70"}
-                      `}
-                  />
-              </div>
-
-              {/* CONTENT COLUMN */}
-              <div className="flex-1 space-y-3 pr-10">
-                  
-                  {/* Header Metrics */}
-                  <div className="flex justify-between items-start">
-                      
-                      {/* Metric Badges */}
-                      <div className="flex flex-wrap items-center gap-2">
-
-                          {/* Calories In */}
-                          <span className="text-[11px] font-mono font-semibold text-primary bg-primary/10 px-2 py-1 rounded border border-primary/20 shadow-sm">
-                              +{log.totalCaloriesIn}
-                              <span className="text-muted-foreground ml-1">kcal</span>
-                          </span>
-
-                          {/* Calories Out */}
-                          {log.totalCaloriesOut > 0 && (
-                              <span className="text-[11px] font-mono font-semibold text-success bg-success/10 px-2 py-1 rounded border border-success/20 shadow-sm">
-                                  -{log.totalCaloriesOut}
-                              </span>
-                          )}
-
-                          {/* Water */}
-                          {log.waterMl > 0 && (
-                              <span className="text-[11px] font-mono font-semibold text-info bg-info/10 px-2 py-1 rounded border border-info/20 shadow-sm">
-                                  {log.waterMl}ml
-                              </span>
-                          )}
-                      </div>
-
-                      {/* Chevron */}
-                      {/* <button className="transition-transform duration-300 text-muted-foreground">
-                          <ChevronDown className={`w-5 h-5 ${expanded ? "rotate-180" : ""}`} />
-                      </button> */}
-                  </div>
-
-                  {/* COLLAPSED PREVIEW */}
-                  {!expanded && (
-                      <p className="text-sm text-foreground/80 line-clamp-1 italic">
-                          "{log.rawText}"
-                      </p>
-                  )}
-
-                  {/* EXPANDED SECTION */}
-                  {expanded && (
-                      <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                          
-                          {/* Main text */}
-                          <div className="bg-secondary/20 p-3 rounded-lg border border-border/40 text-sm leading-relaxed shadow-sm">
-                              "{log.rawText}"
-                          </div>
-
-                          {/* AI Feedback */}
-                          {log.aiFeedback && (
-                              <div className="bg-primary/5 px-3 py-2 rounded-lg border border-primary/10 text-xs italic text-muted-foreground shadow-sm">
-                                  <span className="font-semibold text-primary not-italic mr-1">Coach:</span>
-                                  {log.aiFeedback}
-                              </div>
-                          )}
-
-                      </div>
-                  )}
-              </div>
-
-              {/* DELETE BUTTON */}
-              <div
-                  className={`
-                      absolute top-3 right-3 transition-opacity duration-200
-                      ${expanded ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
-                  `}
-              >
-                  <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 shadow-sm"
-                      onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(log.id);
-                      }}
-                  >
-                      <Trash2 className="w-4 h-4" />
-                  </Button>
-              </div>
-
-          </CardContent>
-
-        </Card>
-    );
-}
 
   // 👇 NEW: HANDLE ADD LOG (BACKFILL)
   async function handleAddLog() {
@@ -402,7 +307,7 @@ function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) =>
     return logDate === selectedDate;
   }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()); // Sort Morning -> Night
 
-  if (!isLoaded || loading) return <DNALoader />;
+if (!isLoaded || loading || !isMounted) return <DNALoader />;
 
   // Helper: Check if selected date is in the future
   const isFutureDate = date ? date > new Date() : false;
@@ -512,10 +417,39 @@ function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) =>
                             <p>No activity recorded.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {filteredLogs.map((log) => (
-                                <HistoryLogCard key={log.id} log={log} onDelete={(id) => setLogToDelete(id)} />
-                            ))}
+                        <div className="space-y-4">
+                            {/* 👇 THE TOGGLE SWITCH (Only shows on md screens and up) */}
+                            <div className="hidden md:flex justify-end">
+                                <div className="flex items-center bg-muted/30 p-1 rounded-lg border border-border/50">
+                                    <Button
+                                        variant={viewMode === "list" ? "secondary" : "ghost"}
+                                        size="sm"
+                                        className={`h-8 px-3 gap-2 ${viewMode === "list" ? 'shadow-sm' : 'text-muted-foreground'}`}
+                                        onClick={() => handleViewChange("list")}
+                                    >
+                                        <List className="w-4 h-4" /> List
+                                    </Button>
+                                    <Button
+                                        variant={viewMode === "grid" ? "secondary" : "ghost"}
+                                        size="sm"
+                                        className={`h-8 px-3 gap-2 ${viewMode === "grid" ? 'shadow-sm' : 'text-muted-foreground'}`}
+                                        onClick={() => handleViewChange("grid")}
+                                    >
+                                        <LayoutGrid className="w-4 h-4" /> Grid
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* 👇 DYNAMIC LAYOUT CLASSES */}
+                            <div className={
+                                viewMode === "list" 
+                                ? "flex flex-col gap-4 w-full" 
+                                : "grid grid-cols-1 md:grid-cols-2 gap-4 w-full"
+                            }>
+                                {filteredLogs.map((log) => (
+                                    <HistoryLogCard key={log.id} log={log} onDelete={(id) => setLogToDelete(id)} />
+                                ))}
+                            </div>
                         </div>
                     )}
                 </TabsContent>
@@ -627,5 +561,220 @@ function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) =>
 
     </div>
   );
+}
+
+
+function HistoryLogCard({ log, onDelete }: { log: any, onDelete: (id: string) => void }) {
+    const [expanded, setExpanded] = useState(false);
+
+    return (
+        <Card 
+            className={`bg-card border-border shadow-sm transition-all group relative cursor-pointer ${expanded ? 'ring-1 ring-primary/20' : 'hover:shadow-md'}`}
+            onClick={() => setExpanded(!expanded)}
+        >
+            <CardContent className="flex gap-5 relative group transition-all">
+
+              {/* TIME COLUMN */}
+              <div className="flex flex-col items-center min-w-[70px] pr-5 border-r border-border/40">
+                  {/* Time */}
+                  <div className="text-sm font-semibold text-primary bg-primary/10 px-2 py-1 rounded-md shadow-sm">
+                      {new Date(log.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
+
+                  {/* Vertical Line */}
+                  <div
+                      className={`
+                          w-[3px] mt-3 rounded-full bg-gradient-to-b from-primary/40 to-primary/10
+                          transition-all duration-300 
+                          ${expanded ? "h-24 opacity-100" : "h-10 opacity-70"}
+                      `}
+                  />
+              </div>
+
+              {/* CONTENT COLUMN */}
+              <div className="flex-1 space-y-3 pr-10">
+                  
+                  {/* Header Metrics */}
+                  <div className="flex justify-between items-start">
+                      
+                      {/* Metric Badges */}
+                      <div className="flex flex-wrap items-center gap-2">
+
+                          {/* Calories In */}
+                          <span className="text-[11px] font-mono font-semibold text-primary bg-primary/10 px-2 py-1 rounded border border-primary/20 shadow-sm">
+                              +{log.totalCaloriesIn}
+                              <span className="text-muted-foreground ml-1">kcal</span>
+                          </span>
+
+                          {/* Calories Out */}
+                          {log.totalCaloriesOut > 0 && (
+                              <span className="text-[11px] font-mono font-semibold text-success bg-success/10 px-2 py-1 rounded border border-success/20 shadow-sm">
+                                  -{log.totalCaloriesOut}
+                              </span>
+                          )}
+
+                          {/* Water */}
+                          {log.waterMl > 0 && (
+                              <span className="text-[11px] font-mono font-semibold text-info bg-info/10 px-2 py-1 rounded border border-info/20 shadow-sm">
+                                  {log.waterMl}ml
+                              </span>
+                          )}
+                      </div>
+
+                      {/* Chevron */}
+                      {/* <button className="transition-transform duration-300 text-muted-foreground">
+                          <ChevronDown className={`w-5 h-5 ${expanded ? "rotate-180" : ""}`} />
+                      </button> */}
+                  </div>
+
+                  {/* COLLAPSED PREVIEW */}
+                  {!expanded && (
+                      <p className="text-sm text-foreground/80 line-clamp-1 italic">
+                          "{log.rawText}"
+                      </p>
+                  )}
+
+                  {/* EXPANDED SECTION */}
+                  {expanded && (
+                        <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                            
+                            {/* Main text */}
+                            <div className="bg-secondary/20 p-3 sm:p-4 rounded-lg border border-border/40 text-sm leading-relaxed shadow-sm">
+                                "{log.rawText}"
+                            </div>
+
+                            {/* AI Feedback */}
+                            {log.parsedData && (
+                                <div className="mt-4 space-y-3 sm:space-y-4 border-t border-border/40 pt-4">
+                                    
+                                    {/* 1. AI COACH FEEDBACK */}
+                                    {(log.aiFeedback || log.parsedData.ai_feedback) && (
+                                        <div className="bg-primary/5 p-3 sm:p-4 rounded-xl border border-primary/10 shadow-sm">
+                                            <div className="font-bold text-primary flex items-center gap-2 mb-2 text-xs sm:text-sm uppercase tracking-wider">
+                                                <MessageSquare className="w-4 h-4 shrink-0" /> Coach Analysis
+                                            </div>
+                                            <p className="text-xs sm:text-sm italic text-muted-foreground leading-relaxed">
+                                                "{log.aiFeedback || log.parsedData.ai_feedback}"
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* 2. THE NEXT ACTIONABLE STEP */}
+                                    {log.parsedData.next_step && (
+                                        <div className="bg-emerald-500/10 p-3 sm:p-4 rounded-xl border border-emerald-500/20 shadow-sm">
+                                            <div className="font-bold text-emerald-600 dark:text-emerald-500 flex items-center gap-2 mb-1.5 text-xs sm:text-sm uppercase tracking-wider">
+                                                <Target className="w-4 h-4 shrink-0" /> Next Step
+                                            </div>
+                                            <p className="text-xs sm:text-sm font-medium text-foreground leading-snug">
+                                                {log.parsedData.next_step}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* 3. CALORIE SUMMARY TABS */}
+                                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                                        <div className="bg-secondary/30 p-2.5 sm:p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between border border-border/50 gap-1">
+                                            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                                <Utensils className="w-3.5 h-3.5" /> In
+                                            </span>
+                                            <span className="font-bold text-orange-500 text-sm sm:text-base">{log.totalCaloriesIn} kcal</span>
+                                        </div>
+                                        <div className="bg-secondary/30 p-2.5 sm:p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between border border-border/50 gap-1">
+                                            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                                                <Flame className="w-3.5 h-3.5" /> Out
+                                            </span>
+                                            <span className="font-bold text-red-500 text-sm sm:text-base">{log.totalCaloriesOut} kcal</span>
+                                        </div>
+                                    </div>
+
+                                    {/* 4. FOODS LOGGED TABLE */}
+                                    {log.parsedData.foods && log.parsedData.foods.length > 0 && (
+                                        <div className="space-y-2">
+                                            <h4 className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider pl-1">
+                                                Foods Tracked
+                                            </h4>
+                                            <div className="divide-y divide-border/50 border border-border/50 rounded-xl overflow-hidden bg-card">
+                                                {log.parsedData.foods.map((food: any, i: number) => (
+                                                    <div key={i} className="p-2.5 sm:p-3 flex flex-col gap-1.5 sm:flex-row sm:items-center justify-between hover:bg-secondary/10 transition-colors">
+                                                        <div className="flex items-start justify-between sm:block w-full sm:w-auto gap-2">
+                                                            <span className="font-semibold text-xs sm:text-sm leading-tight">{food.name}</span>
+                                                            <span className="sm:hidden bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold px-1.5 py-0.5 rounded text-[10px] whitespace-nowrap shrink-0">
+                                                                {food.calories} kcal
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] sm:text-xs">
+                                                            <span className="text-muted-foreground"><strong className="text-foreground">{food.protein}g</strong> Pro</span>
+                                                            <span className="text-muted-foreground"><strong className="text-foreground">{food.carbs}g</strong> Carbs</span>
+                                                            <span className="text-muted-foreground"><strong className="text-foreground">{food.fats}g</strong> Fat</span>
+                                                            <span className="hidden sm:inline-flex bg-orange-500/10 text-orange-600 dark:text-orange-400 font-bold px-2 py-0.5 rounded-md ml-auto whitespace-nowrap">
+                                                                {food.calories} kcal
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 5. EXERCISES LOGGED TABLE */}
+                                    {log.parsedData.exercises && log.parsedData.exercises.length > 0 && (
+                                        <div className="space-y-2">
+                                            <h4 className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-wider pl-1">
+                                                Activity Tracked
+                                            </h4>
+                                            <div className="divide-y divide-border/50 border border-border/50 rounded-xl overflow-hidden bg-card">
+                                                {log.parsedData.exercises.map((exercise: any, i: number) => (
+                                                    <div key={i} className="p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 hover:bg-secondary/10 transition-colors">
+                                                        <span className="font-semibold text-xs sm:text-sm leading-tight">{exercise.name}</span>
+                                                        <div className="flex items-center justify-between sm:justify-end gap-3 text-[11px] sm:text-xs w-full sm:w-auto">
+                                                            <span className="text-muted-foreground font-medium">{exercise.duration_minutes} mins</span>
+                                                            <span className="bg-red-500/10 text-red-600 dark:text-red-400 font-bold px-1.5 sm:px-2 py-0.5 rounded sm:rounded-md whitespace-nowrap">
+                                                                {exercise.calories_burned} kcal
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 👇 6. AI DISCLAIMER (NEW) */}
+                                    <div className="mt-5 pt-4 border-t border-border/40 flex items-start gap-2 sm:gap-3 text-[10px] sm:text-[11px] text-muted-foreground/60 italic leading-snug">
+                                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-70" />
+                                        <p>
+                                            The values provided above are approximate estimations generated by AI and are not exact. The organization does not assume any responsibility for their absolute accuracy.
+                                        </p>
+                                    </div>
+                                    
+                                </div>
+                            )}
+                        </div>
+                    )}
+              </div>
+
+              {/* DELETE BUTTON */}
+              <div
+                  className={`
+                      absolute top-3 right-3 transition-opacity duration-200
+                      ${expanded ? "opacity-100" : "opacity-0 group-hover:opacity-100"}
+                  `}
+              >
+                  <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 shadow-sm"
+                      onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(log.id);
+                      }}
+                  >
+                      <Trash2 className="w-4 h-4" />
+                  </Button>
+              </div>
+
+          </CardContent>
+
+        </Card>
+    );
 }
 

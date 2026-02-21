@@ -11,7 +11,8 @@ const isPublicRoute = createRouteMatcher([
   "/icons(.*)",         // 👈 PWA Assets
   "/sitemap.xml",       // 👈 CRITICAL FIX FOR GOOGLE
   "/robots.txt",         // 👈 CRITICAL FIX FOR GOOGLE
-  "/guides(.*)",        // Public Guides
+  "/guides(.*)",        // Public Guides,
+  '/api/cron/notifications',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {

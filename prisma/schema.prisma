@@ -56,7 +56,18 @@ model User {
   joinedAt          DateTime @default(now())
 
   feedback  Feedback[]
+  pushSubscriptions PushSubscription[]
+}
+
+// 2. Add this NEW model to store browser subscriptions
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String
+  p256dh    String
+  auth      String
   
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model DailyLog {
@@ -114,6 +125,7 @@ model Task {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
+  lastNotifiedAt  DateTime?  // 👈 Tracks the 6-hour interval
 
   // 👇 ADD THIS LINE AT THE BOTTOM OF 'model Task'
   // This ensures a specific habit (parentId) can only appear once per day (date) for a user.

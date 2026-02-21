@@ -24,6 +24,7 @@ import {
   isToday,
   isSameMonth
 } from "date-fns";
+import { DNALoader } from "../dna-loader";
 
 export default function HabitAnalysisClient({ userId }: { userId: string }) {
   const [habits, setHabits] = useState<any[]>([]);
@@ -43,7 +44,7 @@ export default function HabitAnalysisClient({ userId }: { userId: string }) {
     fetchHabitData();
   }, [userId]);
 
-  if (loading) return <div className="p-8 text-center text-muted-foreground">Loading Analysis...</div>;
+  if (loading) return <DNALoader />;
 
   const selectedHabit = habits.find(h => h.title === selectedTitle);
 
