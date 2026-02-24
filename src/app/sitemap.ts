@@ -6,7 +6,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // 1. Define your static pages
   const staticRoutes = [
-    '',
+    '/',
     '/guides',
   ].map((route) => ({
     url: `${baseUrl}${route}`,

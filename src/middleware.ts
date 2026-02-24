@@ -13,6 +13,8 @@ const isPublicRoute = createRouteMatcher([
   "/robots.txt",         // 👈 CRITICAL FIX FOR GOOGLE
   "/guides(.*)",        // Public Guides,
   '/api/cron/notifications',
+  // '/hero-video.mp4', // 👈 CRITICAL FIX FOR GOOGLE (to allow indexing the homepage video)
+  // '/dashboard.mp4', // 👈 CRITICAL FIX FOR GOOGLE (to allow indexing the dashboard video in the features section)
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
