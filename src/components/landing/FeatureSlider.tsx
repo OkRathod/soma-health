@@ -17,7 +17,7 @@ const slides = [
   {
     id: 1,
     title: "Command Center",
-    description: "Centralize your biological metrics. Monitor your exact caloric intake, macro breakdowns, and daily hydration targets in one unified, real-time dashboard. No matter how much text you add here, it will safely flow downwards naturally on mobile without any scrolling!",
+    description: "Centralize your biological metrics. Monitor your exact caloric intake, macro breakdowns, and daily hydration targets in one unified, real-time dashboard.",
     media: [
       { type: "video", url: "https://somafit-01.s3.ap-south-1.amazonaws.com/dashboard.mp4", label: "Feature Video" },
       { type: "image", url: "https://somafit-01.s3.ap-south-1.amazonaws.com/dashboard-3.png", label: "Main Overview" }, 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Monoton, Pirata_One } from "next/font/google";
-import { ArrowRight, ArrowUpRight, Twitter, Github, Clock, Terminal } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Twitter, Github, Clock, Terminal, Activity } from "lucide-react";
 
 const monoton = Monoton({ weight: "400", subsets: ["latin"] });
 const pirata = Pirata_One({ weight: "400", subsets: ["latin"], display: 'swap' });
@@ -12,14 +12,36 @@ export function Footer() {
   // OS Feature: Live Terminal Clock State
   const [time, setTime] = useState<string>("00:00:00");
   const [mounted, setMounted] = useState(false);
+  
+  // OS Feature: Lifetime Website Visits
+  const [visits, setVisits] = useState<number | string>("...");
 
-  // Safely start the clock only on the client
+  // Safely start the clock and fetch visits only on the client
   useEffect(() => {
     setMounted(true);
+    
+    // 1. Clock Logic
     const interval = setInterval(() => {
       setTime(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
     }, 1000);
     setTime(new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    
+    // 2. Persistent Visit Counter Logic
+    const trackVisit = async () => {
+      try {
+        // This hits a free external DB. The "/up" endpoint permanently increments the count by 1.
+        // The namespace "somafit_os_production" is unique to your app.
+        const res = await fetch("https://api.counterapi.dev/v1/somafit_os_production/visits/up");
+        const data = await res.json();
+        setVisits(data.count);
+      } catch (error) {
+        console.error("Failed to fetch visit count", error);
+        setVisits("ERR");
+      }
+    };
+
+    trackVisit();
+
     return () => clearInterval(interval);
   }, []);
 
@@ -92,6 +114,15 @@ export function Footer() {
             </span>
             
             <span className="hidden md:block w-1 h-1 rounded-full bg-zinc-700" />
+
+            {/* NEW: Lifetime Traffic Counter */}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.03] border border-white/5 font-mono text-xs text-zinc-400 shadow-inner tracking-wider" title="Total Lifetime Visits">
+              <Activity className="w-3.5 h-3.5 text-primary/70" />
+              <span className="opacity-70">SESSIONS:</span>
+              <span className="text-white/90 font-semibold">
+                {typeof visits === 'number' ? visits.toLocaleString() : visits}
+              </span>
+            </div>
             
             {/* Live Terminal Clock */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white/[0.03] border border-white/5 font-mono text-xs text-zinc-400 shadow-inner tracking-wider">
@@ -124,11 +155,11 @@ export function Footer() {
             <span className="hidden md:block w-px h-4 bg-white/15" />
 
             <div className="flex items-center gap-5 text-zinc-400">
-              <Link href="#" className="hover:text-white hover:-translate-y-0.5 transition-transform duration-300">
+              {/* <Link href="#" className="hover:text-white hover:-translate-y-0.5 transition-transform duration-300">
                 <Twitter className="w-[18px] h-[18px] md:w-4 md:h-4" />
                 <span className="sr-only">Twitter</span>
-              </Link>
-              <Link href="#" className="hover:text-white hover:-translate-y-0.5 transition-transform duration-300">
+              </Link> */}
+              <Link href="https://github.com/OkRathod" className="hover:text-white hover:-translate-y-0.5 transition-transform duration-300">
                 <Github className="w-[18px] h-[18px] md:w-4 md:h-4" />
                 <span className="sr-only">GitHub</span>
               </Link>
@@ -144,7 +175,7 @@ export function Footer() {
 
       </div>
 
-      {/* 5. The Colossal Floor Logo (Mobile width explicitly fixed) */}
+      {/* 5. The Colossal Floor Logo */}
       <div className="w-full flex justify-center items-end mt-4 md:mt-0 relative z-0 overflow-hidden h-[18vw] md:h-auto">
         <h1 
           className={`${monoton.className} text-[27vw] md:text-[22vw] leading-[0.7] tracking-tighter md:tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-zinc-800 to-black select-none pointer-events-none hover:from-zinc-700 transition-all duration-1000`}
