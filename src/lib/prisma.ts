@@ -1,5 +1,6 @@
 // src/lib/prisma.ts
 import { PrismaClient } from '@prisma/client';
+import { currentUser } from '@clerk/nextjs/server';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
@@ -11,23 +12,18 @@ export const prisma =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
-import { currentUser } from '@clerk/nextjs/server';
-
 // This function ensures the user exists in our DB
 export async function getSomaUser() {
   const clerkUser = await currentUser();
   if (!clerkUser) return null;
 
-  // Check if user exists in OUR database
-  const user = await prisma.user.findUnique({
-    where: { id: clerkUser.id } // We will use Clerk ID as our Primary Key!
-  });
-
-  if (user) return user;
-
-  // If not, create them immediately
-  const newUser = await prisma.user.create({
-    data: {
+  // 👇 FIX: Use upsert to handle concurrent Next.js layout/page requests
+  const user = await prisma.user.upsert({
+    where: { 
+      id: clerkUser.id // We use Clerk ID as our Primary Key
+    },
+    update: {}, // If the user already exists, do nothing and just return them
+    create: {
       id: clerkUser.id, // Important: Sync the IDs
       email: clerkUser.emailAddresses[0].emailAddress,
       nationality: "Unknown", 
@@ -36,5 +32,5 @@ export async function getSomaUser() {
     }
   });
 
-  return newUser;
+  return user;
 }
