@@ -37,7 +37,7 @@ import { headers } from "next/headers";
 // --- DYNAMIC METADATA GENERATION (SEO & Indexing) ---
 export async function generateMetadata(): Promise<Metadata> {
   const headersList = await headers();
-  const host = headersList.get("host") || "somafit.com";
+  const host = headersList.get("host") || "www.somafit.in";
   const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
   
   // Dynamically constructs the base URL (handles localhost, preview URLs, and Production)
@@ -52,11 +52,6 @@ export async function generateMetadata(): Promise<Metadata> {
     description: "The operating system for your biological and physical potential. Centralize your metrics, schedule tasks, and track historical data.",
     keywords: ["health dashboard", "AI fitness", "habit tracker", "daily timeline", "macro tracker", "Soma OS"],
     manifest: "/manifest.webmanifest",
-    
-    // Prevents duplicate content penalties by establishing the master URL
-    alternates: {
-      canonical: "/", 
-    },
     
     // Explicit icon mapping for mobile devices and PWA
     icons: {

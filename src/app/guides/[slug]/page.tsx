@@ -1,25 +1,42 @@
 import { getGuide, guides } from "@/lib/guides";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Clock, UserPlus } from "lucide-react"; // Added UserPlus icon
+import { Calendar, Clock, UserPlus } from "lucide-react";
 import { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { MarkReadButton } from "@/components/guides/mark-read-button";
-import { Button } from "@/components/ui/button"; // Import Button for guests
+import { Button } from "@/components/ui/button";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
+// 👇 1. UPDATED METADATA: Includes the Canonical URL
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const guide = getGuide(slug);
+  
   if (!guide) return {};
+
+  const baseUrl = process.env.NODE_ENV === "development" 
+    ? "http://localhost:3000" 
+    : "https://www.somafit.in";
+  
+  const pageUrl = `${baseUrl}/guides/${slug}`;
   
   return {
     title: `${guide.title} | Soma`,
     description: guide.description,
+    alternates: {
+      canonical: pageUrl,
+    },
+    openGraph: {
+      title: `${guide.title} | Soma`,
+      description: guide.description,
+      url: pageUrl,
+      type: 'article',
+    }
   };
 }
 
@@ -29,7 +46,7 @@ export default async function GuidePage({ params }: Props) {
 
   if (!guide) return notFound();
 
-  // 👇 1. SAFE AUTH CHECK (Does not block page load)
+  // 👇 2. DYNAMIC SERVER RENDERING (Works perfectly without static params)
   const { userId } = await auth();
   let isRead = false;
 
@@ -72,7 +89,7 @@ export default async function GuidePage({ params }: Props) {
           dangerouslySetInnerHTML={{ __html: guide.content }} 
         />
 
-        {/* 👇 SMART FOOTER: Adapts to User vs Guest */}
+        {/* SMART FOOTER: Adapts to User vs Guest */}
         <div className="mt-16 p-8 bg-secondary/30 border border-border rounded-2xl text-center">
           
           {userId ? (
@@ -112,11 +129,4 @@ export default async function GuidePage({ params }: Props) {
       </article>
     </div>
   );
-}
-
-// Static generation still works fine
-export async function generateStaticParams() {
-  return guides.map((guide) => ({
-    slug: guide.slug,
-  }));
 }
