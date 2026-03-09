@@ -17,15 +17,21 @@ export async function getSomaUser() {
   const clerkUser = await currentUser();
   if (!clerkUser) return null;
 
-  // 👇 FIX: Use upsert to handle concurrent Next.js layout/page requests
+  const primaryEmail = clerkUser.emailAddresses[0].emailAddress;
+
+  // 👇 FIX: Anchor the upsert to the Email, not the ID
   const user = await prisma.user.upsert({
     where: { 
-      id: clerkUser.id // We use Clerk ID as our Primary Key
+      email: primaryEmail 
     },
-    update: {}, // If the user already exists, do nothing and just return them
+    update: {
+      // If they deleted and recreated their Clerk account, this heals the database
+      // by syncing the new Clerk ID to their existing Somafit profile.
+      id: clerkUser.id 
+    },
     create: {
-      id: clerkUser.id, // Important: Sync the IDs
-      email: clerkUser.emailAddresses[0].emailAddress,
+      id: clerkUser.id,
+      email: primaryEmail,
       nationality: "Unknown", 
       height: 0,
       weight: 0
