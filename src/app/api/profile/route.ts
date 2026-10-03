@@ -1,71 +1,50 @@
+// src/app/api/profile/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
+import { calorieGoal, waterGoal } from "@/lib/nutrition";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const userId = searchParams.get("userId");
-
-  if (!userId) {
-    return NextResponse.json({ success: false, error: "Missing User ID" }, { status: 400 });
-  }
+export async function GET() {
+  const gate = await requireUser();
+  if (gate instanceof NextResponse) return gate;
+  const { userId } = gate;
 
   try {
-    // 1. Fetch User Profile Data
-    // We try to find the user. If they don't exist in your DB yet (fresh Clerk sign-up), 
-    // we might return null or handle it gracefully.
-    const userProfile = await prisma.user.findUnique({
-      where: { id: userId }, 
-    });
+    const userProfile = await prisma.user.findUnique({ where: { id: userId } });
+    if (!userProfile) return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
 
-    if (!userProfile) {
-      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
-    }
-
-    // 2. Fetch Logs (For Stats & Streak Calculation)
+    // Streaks/badges count MEAL logs only — water no longer inflates them.
     const logs = await prisma.dailyLog.findMany({
-      where: { userId: userId },
-      orderBy: { date: 'desc' },
-      select: { date: true, totalCaloriesOut: true } // Select only what we need for speed
+      where: { userId, type: { not: "WATER" } },
+      orderBy: { date: "desc" },
+      select: { date: true, totalCaloriesOut: true },
     });
 
-    // --- CALCULATE STREAK ---
+    // Streak = consecutive days with at least one meal log, deduped per day.
+    const dayKeys = Array.from(
+      new Set(logs.map((l) => new Date(l.date).setHours(0, 0, 0, 0)))
+    ).sort((a, b) => b - a);
+
     let streak = 0;
-    if (logs.length > 0) {
-      const today = new Date().setHours(0,0,0,0);
-      const lastLogDate = new Date(logs[0].date).setHours(0,0,0,0);
-      
-      // Check if the most recent log is either today or yesterday
-      // (86400000 ms = 1 day)
-      const diffToLast = today - lastLogDate;
-
-      if (diffToLast <= 86400000) {
-          streak = 1; // They kept the streak alive
-          
-          for (let i = 0; i < logs.length - 1; i++) {
-              const curr = new Date(logs[i].date).setHours(0,0,0,0);
-              const next = new Date(logs[i+1].date).setHours(0,0,0,0);
-              const diff = curr - next;
-
-              if (diff === 86400000) { 
-                  // Exactly 1 day difference -> Streak continues
-                  streak++;
-              } else if (diff > 86400000) {
-                  // Gap of more than 1 day -> Streak broken
-                  break; 
-              }
-              // If diff === 0 (multiple logs same day), continue loop without incrementing
-          }
+    if (dayKeys.length > 0) {
+      const today = new Date().setHours(0, 0, 0, 0);
+      const DAY = 86400000;
+      if (today - dayKeys[0] <= DAY) {
+        streak = 1;
+        for (let i = 0; i < dayKeys.length - 1; i++) {
+          if (dayKeys[i] - dayKeys[i + 1] === DAY) streak++;
+          else break;
+        }
       }
     }
 
-    // --- CALCULATE STATS ---
-    const totalLogs = logs.length;
-    const totalCaloriesBurned = logs.reduce((acc, log) => acc + log.totalCaloriesOut, 0);
+    const totalLogs = dayKeys.length;
+    const totalCaloriesBurned = logs.reduce((a, l) => a + l.totalCaloriesOut, 0);
 
-    // --- DETERMINE BADGES ---
     const badges: string[] = [];
     if (streak >= 3) badges.push("Consistency King");
     if (streak >= 7) badges.push("Week Warrior");
+    if (streak >= 30) badges.push("Iron Habit");
     if (totalLogs >= 10) badges.push("Data Collector");
     if (totalLogs >= 50) badges.push("Journalist");
     if (totalCaloriesBurned > 5000) badges.push("Furnace");
@@ -74,59 +53,61 @@ export async function GET(req: Request) {
     return NextResponse.json({
       success: true,
       data: userProfile,
-      stats: {
-        streak,
-        totalLogs,
-        totalCaloriesBurned,
-        badges
-      }
+      stats: { streak, totalLogs, totalCaloriesBurned, badges, streakFreezes: userProfile.streakFreezes },
     });
-
   } catch (error) {
     console.error("Profile Fetch Error:", error);
     return NextResponse.json({ success: false, error: "Server Error" }, { status: 500 });
   }
 }
 
-// SAVE PROFILE
 export async function POST(req: Request) {
+  const gate = await requireUser();
+  if (gate instanceof NextResponse) return gate;
+  const { userId } = gate;
+
   try {
-    const body = await req.json();
-    const { userId, ...data } = body;
+    const data = await req.json();
 
-    if (!userId) {
-      return NextResponse.json({ success: false, error: "Missing User ID" }, { status: 400 });
-    }
+    const height = data.height ? parseFloat(data.height) : null;
+    const weight = data.weight ? parseFloat(data.weight) : null;
+    const age = data.age ? parseInt(data.age, 10) : null;
 
-    // Since 'id' is the primary key in your schema, we update based on that.
-    // Note: The user MUST exist first. Usually, a webhook creates the user 
-    // when they sign up with Clerk. If not, you might need 'upsert'.
-    // Here we use 'update' assuming the user exists.
-    const updatedUser = await prisma.user.update({
-        where: { id: userId },
-        data: {
-            // Physical
-            age: data.age ? parseInt(data.age) : null, // Ensure numbers are parsed
-            gender: data.gender,
-            height: data.height ? parseFloat(data.height) : null,
-            weight: data.weight ? parseFloat(data.weight) : null,
-            
-            // Lifestyle
-            activityLevel: data.activityLevel,
-            jobType: data.jobType,
-            dietaryPreferences: data.dietaryPreferences,
+    // Auto goals: if enabled, derive calorie/water goals from stats,
+    // otherwise honour whatever the user typed.
+    const autoGoals = data.autoGoals ?? true;
+    const inputs = {
+      age,
+      gender: data.gender,
+      height,
+      weight,
+      activityLevel: data.activityLevel,
+      weightGoal: data.weightGoal,
+    };
+    const derivedCalories = autoGoals ? calorieGoal(inputs) : null;
+    const derivedWater = autoGoals ? waterGoal(inputs) : null;
 
-            // Goals
-            customPurpose: data.customPurpose,
-            weightGoal: data.weightGoal,
-            targetWeight: data.targetWeight ? parseFloat(data.targetWeight) : null,
-            dailyCalorieGoal: data.dailyCalorieGoal ? parseInt(data.dailyCalorieGoal) : 2500,
-            waterGoal: data.waterGoal ? parseInt(data.waterGoal) : 2500,
-        }
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        age,
+        gender: data.gender ?? null,
+        height,
+        weight,
+        activityLevel: data.activityLevel ?? null,
+        jobType: data.jobType ?? null,
+        dietaryPreferences: data.dietaryPreferences ?? null,
+        customPurpose: data.customPurpose ?? null,
+        weightGoal: data.weightGoal ?? null,
+        targetWeight: data.targetWeight ? parseFloat(data.targetWeight) : null,
+        autoGoals,
+        dailyCalorieGoal: derivedCalories ?? (data.dailyCalorieGoal ? parseInt(data.dailyCalorieGoal, 10) : 2000),
+        waterGoal: derivedWater ?? (data.waterGoal ? parseInt(data.waterGoal, 10) : 2500),
+        ...(data.timezone ? { timezone: data.timezone } : {}),
+      },
     });
 
-    return NextResponse.json({ success: true, data: updatedUser });
-
+    return NextResponse.json({ success: true, data: updated });
   } catch (error) {
     console.error("Profile Update Error:", error);
     return NextResponse.json({ success: false, error: "Failed to update profile" }, { status: 500 });

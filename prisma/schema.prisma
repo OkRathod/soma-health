@@ -1,4 +1,13 @@
 // prisma/schema.prisma
+// SomaFit v5 — hardened schema
+// Key changes vs v4:
+//  - NEW: HabitTemplate + HabitSubtaskTemplate  (the per-user "source of truth" for habits)
+//  - Task now documents parentId => HabitTemplate.id (instances of a template)
+//  - Added User relations + onDelete: Cascade for Deadline / Note / DailyMetrics / UserReadGuide
+//  - DailyLog relation switched RESTRICT -> Cascade so users can actually be deleted
+//  - DailyLog.type ("MEAL" | "WATER") so water logs stop polluting streaks/badges
+//  - Added indexes on hot query paths
+//  - User.timezone, User.streakFreezes, notification-preference fields
 
 generator client {
   provider = "prisma-client-js"
@@ -6,7 +15,6 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  // You will get this URL from Supabase later
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -16,218 +24,264 @@ model User {
   email          String   @unique
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  
-  // Physical Profile (Optional at start)
-  nationality    String?  
-  height         Float?   // Stored in cm
-  weight         Float?   // Stored in kg
 
-  // THE VAULT: Securely stored API Key
-  // We never store the actual key, only the encrypted version
-  encryptedApiKey String? 
-  apiKeyIv        String? // Initialization Vector required for decryption
+  // Physical Profile
+  nationality    String?
+  height         Float?   // cm
+  weight         Float?   // kg
 
-  // Relations
-  logs           DailyLog[]
-  tasks          Task[]
+  // API key vault (optional per-user key)
+  encryptedApiKey String?
+  apiKeyIv        String?
 
-  // 👇 ADD THIS: Stores the date when the account will be permanently wiped
-  scheduledForDeletion  DateTime?
+  // Lifecycle
+  scheduledForDeletion DateTime?
 
-  // 👇 ADD THIS: "metric" or "imperial"
+  // Preferences
   unitPreference  String  @default("metric")
+  timezone        String  @default("UTC")   // IANA tz, e.g. "Asia/Kolkata" — drives habit generation
 
-  // 👇 NEW FIELDS FOR PROFILE
+  // Profile
   age               Int?
-  gender            String?  // "Male", "Female", "Other"
-  activityLevel     String?  // "Sedentary", "Active", etc.
-  jobType           String?  // "Desk Job", "Physical Labor" (Your specific request)
-  dietaryPreferences String? // "Vegan", "Keto", etc.
-  
+  gender            String?
+  activityLevel     String?
+  jobType           String?
+  dietaryPreferences String?
+
   // Goals
-  customPurpose     String?  // "Training for marathon" (Your specific request)
-  weightGoal        String?  // "Lose", "Gain", "Maintain"
+  customPurpose     String?
+  weightGoal        String?
   targetWeight      Float?
-  dailyCalorieGoal  Int      @default(2500)
+  dailyCalorieGoal  Int      @default(2000)
   waterGoal         Int      @default(2500)
-  
+  autoGoals         Boolean  @default(true)  // recompute goals from stats + trend
+
+  // Gamification
+  streakFreezes     Int      @default(2)     // "freeze" tokens that save a broken streak
+
+  // Notification preferences
+  notifyEnabled     Boolean  @default(true)
+  quietHoursStart   Int?     // 0-23 local hour
+  quietHoursEnd     Int?     // 0-23 local hour
+
   // Membership
-  plan              String   @default("Free") // For future use
+  plan              String   @default("Free")
   joinedAt          DateTime @default(now())
 
-  feedback  Feedback[]
+  // Relations
+  logs              DailyLog[]
+  tasks             Task[]
+  habitTemplates    HabitTemplate[]
+  metrics           DailyMetrics[]
+  deadlines         Deadline[]
+  notes             Note[]
+  readGuides        UserReadGuide[]
+  feedback          Feedback[]
   pushSubscriptions PushSubscription[]
 }
 
-// 2. Add this NEW model to store browser subscriptions
 model PushSubscription {
   id        String   @id @default(cuid())
   userId    String
-  endpoint  String
+  endpoint  String   @unique
   p256dh    String
   auth      String
-  
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model DailyLog {
   id             String   @id @default(uuid())
   userId         String
   date           DateTime @default(now())
-  
-  // Natural Language Input
+
+  type           String   @default("MEAL") // "MEAL" | "WATER" — WATER rows are excluded from streaks/badges
+
   rawText        String   @db.Text
-  
-  // AI Analysis (Stored as JSON for flexibility)
-  parsedData     Json?    
-  // Example JSON structure:
-  // { 
-  //   "foods": [{ "name": "Dal", "calories": 150 }], 
-  //   "exercises": [{ "name": "Squats", "sets": 3 }] 
-  // }
+  parsedData     Json?
 
   totalCaloriesIn  Int      @default(0)
   totalCaloriesOut Int      @default(0)
-  
-  // Coach's feedback for this specific log
+  waterMl          Int      @default(0)
+
   aiFeedback       String?  @db.Text
 
-  user           User     @relation(fields: [userId], references: [id])
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  waterMl         Int      @default(0)
+  @@index([userId, date])
+  @@index([userId, type, date])
 }
 
 model Task {
   id             String    @id @default(cuid())
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   title          String
   description    String?   @db.Text
-  
-  // Scheduling
-  date           DateTime  // The specific date for this task
-  startTime      DateTime? // Optional: "Actual Time"
-  durationMins   Int?      // Optional: For calendar sync later
-  
-  // Logic
+
+  date           DateTime  // day this task belongs to (stored at local-midnight UTC)
+  startTime      DateTime?
+  durationMins   Int?
+
   isRecurring    Boolean   @default(false)
-  frequency      String?   // "DAILY", "WEEKLY" (For future use)
-  parentId       String?   // If this is a daily copy, this points to the Master ID
-  
-  // Priority & Status
-  priority       String    // "HIGH", "MEDIUM", "LOW", "HABIT"
+  frequency      String?
+  parentId       String?   // For HABIT instances: the source HabitTemplate.id
+
+  priority       String    // "HIGH" | "MEDIUM" | "LOW" | "HABIT"
   isCompleted    Boolean   @default(false)
-  
-  // Relations
+
   subtasks       SubTask[]
-  
+
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  lastNotifiedAt  DateTime?  // 👈 Tracks the 6-hour interval
+  lastNotifiedAt DateTime?
 
-  // 👇 ADD THIS LINE AT THE BOTTOM OF 'model Task'
-  // This ensures a specific habit (parentId) can only appear once per day (date) for a user.
+  // A given habit template can only be instantiated once per day per user
   @@unique([userId, parentId, date])
   @@index([userId, date])
-
 }
 
 model SubTask {
-  id          String   @id @default(cuid())
-  taskId      String
-  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  
-  title       String
-  isCompleted Boolean  @default(false)
-  
-  // Tracking (Optional)
-  targetValue Int?     // e.g. 10 (reps) or 2 (hours)
-  currentValue Int?    // e.g. 5 (reps done so far)
-  unit        String?  // "reps", "mins", "km", "chapters"
+  id           String   @id @default(cuid())
+  taskId       String
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  title        String
+  isCompleted  Boolean  @default(false)
+
+  targetValue  Int?
+  currentValue Int?     @default(0)
+  unit         String?
+
+  @@index([taskId])
 }
 
-// Tracks completed content
+// ============================================================
+//  HABIT TEMPLATES  — the per-user source of truth for habits.
+//  Daily Task rows (priority HABIT) are *instances* generated
+//  from these templates. Notes / one-off tasks are never copied.
+// ============================================================
+model HabitTemplate {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title        String
+  description  String?   @db.Text
+
+  startTime    DateTime? // only the time-of-day component is used
+  durationMins Int?      @default(60)
+
+  // 0 = Sunday ... 6 = Saturday. Default = every day.
+  daysOfWeek   Int[]     @default([0, 1, 2, 3, 4, 5, 6])
+
+  isActive     Boolean   @default(true)
+  order        Int       @default(0)
+
+  subtasks     HabitSubtaskTemplate[]
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([userId, isActive])
+}
+
+model HabitSubtaskTemplate {
+  id          String        @id @default(cuid())
+  habitId     String
+  habit       HabitTemplate @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  title       String
+  targetValue Int?
+  unit        String?
+  order       Int           @default(0)
+
+  @@index([habitId])
+}
+
 model UserReadGuide {
   id        String   @id @default(cuid())
   userId    String
-  guideSlug String   // Matches the slug in your static guides file
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guideSlug String
   readAt    DateTime @default(now())
 
-  // Ensures a user can't read the same guide twice in the DB
   @@unique([userId, guideSlug])
 }
-
 
 model Feedback {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  
-  rating    Int      // 1-5 Star Rating
-  category  String   // "BUG", "FEATURE", "GENERAL"
-  
-  // We store the specific answers as JSON so we can change questions later without breaking the DB
-  answers   Json     
-  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rating    Int
+  category  String
+  answers   Json
+
   createdAt DateTime @default(now())
+
+  @@index([userId])
 }
-
-
 
 model DailyMetrics {
   id          String   @id @default(cuid())
   userId      String
-  date        DateTime // Store as Midnight (00:00:00) to ensure one per day
-  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime // local-midnight UTC
+
   steps       Int      @default(0)
-  stepSource  String   @default("MANUAL") // "MANUAL" or "GOOGLE"
+  stepSource  String   @default("MANUAL")
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@unique([userId, date]) // Prevents duplicate rows for the same day
+  @@unique([userId, date])
+  @@index([userId, date])
 }
-
-
-// prisma/schema.prisma
 
 model Deadline {
   id          String    @id @default(cuid())
   userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
-  
+
   startDate   DateTime  @default(now())
-  targetDate  DateTime? // 👈 If null, it's a "No Deadline" task (Open-ended)
-  
+  targetDate  DateTime?
+
   isCompleted Boolean   @default(false)
-  completedAt DateTime? 
+  completedAt DateTime?
 
   subtasks    DeadlineSubtask[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  @@index([userId])
 }
 
 model DeadlineSubtask {
   id          String   @id @default(cuid())
   title       String
   isCompleted Boolean  @default(false)
-  
+
   deadlineId  String
   deadline    Deadline @relation(fields: [deadlineId], references: [id], onDelete: Cascade)
+
+  @@index([deadlineId])
 }
 
 model Note {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title     String
-  content   String   @db.Text // Stores the HTML content
-  
-  // Optional: Add tags or colors later if you want
-  // color     String   @default("default") 
+  content   String   @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId, updatedAt])
 }

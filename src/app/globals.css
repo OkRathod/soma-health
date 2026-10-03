@@ -1,43 +1,41 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/*
+  SomaFit v6 — "Iris & Ember" palette.
+  A refined iris (indigo-violet) as the signature, paired with a warm ember/gold
+  energy accent, on cool porcelain / graphite surfaces. Elegant, premium and
+  calm — engineered for long focus sessions in both light and dark.
+*/
+
 @theme {
-  /* 1. Map Tailwind classes to CSS variables */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
-  
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
-  
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
-  
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  
-  /* 👇 YOUR NEW COLORS ADDED HERE */
+
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
-  
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
-  
+  --color-energy: var(--energy);
+  --color-energy-foreground: var(--energy-foreground);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -48,326 +46,237 @@
 
   --color-priority-high: var(--priority-high);
   --color-priority-high-bg: var(--priority-high-bg);
-  
   --color-priority-medium: var(--priority-medium);
   --color-priority-medium-bg: var(--priority-medium-bg);
-  
   --color-priority-habit: var(--priority-habit);
   --color-priority-habit-bg: var(--priority-habit-bg);
-  
   --color-priority-low: var(--priority-low);
   --color-priority-low-bg: var(--priority-low-bg);
+
+  /* Motion tokens shared everywhere */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* 2. Define the actual colors (Light Mode) */
-/* 2. Define the actual colors (Light Mode - Tuned for Contrast) */
+/* ============ LIGHT ============ */
 :root {
-  /* ===============================
-    BASE SURFACES
-    =============================== */
+  --background: #f6f6fb;   /* cool porcelain with a faint iris tint */
+  --foreground: #191627;   /* deep ink-navy, never pure black */
 
-  /* Softer than pure white, used by Linear / Notion */
-  --background: #f9fafb; /* Slate-50 */
-
-  /* Never pure black — easier on eyes */
-  --foreground: #0f172a; /* Slate-900 */
-
-  /* Cards slightly warmer than bg */
   --card: #ffffff;
-  --card-foreground: #0f172a;
-
+  --card-foreground: #191627;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
+  --popover-foreground: #191627;
 
-  /* ===============================
-    PRIMARY BRAND
-    =============================== */
+  /* Signature accent: refined iris */
+  --primary: #5b57e0;
+  --primary-foreground: #ffffff;
 
-  /* Dark slate, not black */
-  --primary: #1e293b; /* Slate-800 */
-  --primary-foreground: #f8fafc;
+  --secondary: #edecf8;
+  --secondary-foreground: #262048;
 
-  /* ===============================
-    SECONDARY / MUTED
-    =============================== */
+  --muted: #f0eff8;
+  --muted-foreground: #6b6987;
 
-  /* Used for subtle fills */
-  --secondary: #f1f5f9; /* Slate-100 */
-  --secondary-foreground: #1e293b;
+  --accent: #e6e4fb;          /* soft iris wash for hover fills */
+  --accent-foreground: #4a44c9;
 
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b; /* Slate-500 */
-
-  --accent: #e5e7eb; /* Neutral-200 */
-  --accent-foreground: #1f2937;
-
-  /* ===============================
-    FEEDBACK
-    =============================== */
-
-  --destructive: #dc2626; /* Red-600 */
+  --destructive: #e11d48;     /* vivid rose — clearly an action colour */
   --destructive-foreground: #ffffff;
-
-  --success: #16a34a; /* Green-600 */
+  --success: #12a150;
   --success-foreground: #ffffff;
-
-  --info: #2563eb; /* Blue-600 */
+  --info: #2563eb;
   --info-foreground: #ffffff;
+  --energy: #eab308;          /* warm ember-gold = calories/energy */
+  --energy-foreground: #3b2f00;
 
-  /* ===============================
-    BORDERS & INPUTS
-    =============================== */
+  --border: #e7e6f1;
+  --input: #e7e6f1;
+  --ring: #5b57e0;
 
-  /* VERY light borders — almost invisible */
-  --border: #e5e7eb; /* Neutral-200 */
-  --input: #e5e7eb;
-  --ring: #2563eb;
+  --radius: 0.9rem;
 
-  --radius: 0.75rem;
-
-  /* ===============================
-    SHADOWS (key for depth)
-    =============================== */
-
-  --shadow-card: 
-    0 1px 2px rgba(0,0,0,0.04),
-    0 4px 12px rgba(0,0,0,0.06);
-
-  --shadow-cta: 
-    0 8px 24px rgba(37,99,235,0.25);
-
-  /* ===============================
-    QUOTE SYSTEM (toned down)
-    =============================== */
-
-  /* Cooler, calmer quote colors */
-  --quote-bg: #f8fafc;
-  --quote-accent: #e5e7eb;
-  --quote-text: #0f172a;
-  --quote-author: #64748b;
-
-
-  /* Semantic Task Colors */
-  --priority-high: #dc2626;    /* Red-600 */
-  --priority-high-bg: #fee2e2; /* Red-100 */
-  
-  --priority-medium: #ea580c;  /* Orange-600 */
-  --priority-medium-bg: #ffedd5; /* Orange-100 */
-  
-  --priority-habit: #7c3aed;   /* Violet-600 */
-  --priority-habit-bg: #ede9fe; /* Violet-100 */
-  
-  --priority-low: #2563eb;     /* Blue-600 */
-  --priority-low-bg: #dbeafe;  /* Blue-100 */
-}
-
-
-/* 3. Dark Mode Overrides */
-.dark {
-  /* 1. Base Backgrounds (Kept your Deep Grays) */
-  --background: #1A1A1A; 
-  --foreground: #E5E5E5; 
-
-  /* 2. Cards & Popups (Kept your requested #2A2A2A) */
-  --card: #2A2A2A;
-  --card-foreground: #E5E5E5;
-
-  --popover: #2A2A2A;
-  --popover-foreground: #E5E5E5;
-
-  /* 3. Primary Brand Color (Changed to Blue) */
-  --primary: #3B82F6;  /* Vivid Blue */
-  --primary-foreground: #ffffff; /* White text looks best on Blue */
-
-  /* 4. Secondary/Muted Elements (Kept your requested #383838) */
-  --secondary: #383838;
-  --secondary-foreground: #E5E5E5;
-
-  --muted: #383838;
-  --muted-foreground: #a3a3a3; 
-
-  --accent: #383838;
-  --accent-foreground: #3B82F6; /* Blue text when hovering accents */
-
-  /* 5. Destructive */
-  --destructive: #7f1d1d; 
-  --destructive-foreground: #E5E5E5;
-
-  /* 6. Borders & Inputs (Kept your requested #383838) */
-  --border: #383838;
-  --input: #383838;
-  --ring: #3B82F6; /* Focus rings glow Blue */
-
-  /* 7. Status Colors */
-  --success: #059669; 
-  --success-foreground: #ffffff;
-  
-  --info: #3B82F6;    /* Matches Primary now */
-  --info-foreground: #ffffff;
-
-  /* 8. Visual Effects */
   --gradient-from: var(--primary);
-  --gradient-to: #1d4ed8; /* A darker blue for gradients */
+  --gradient-to: #7c5cff;
+  --glass-surface: color-mix(in srgb, var(--card) 72%, transparent);
+  --overlay: rgba(20, 18, 40, 0.45);
 
-  --glass-surface: color-mix(in srgb, var(--card) 80%, transparent 20%);
-  --overlay: rgba(0,0,0,0.8);
+  --shadow-card: 0 1px 2px rgba(25, 22, 39, 0.04), 0 10px 30px rgba(25, 22, 39, 0.07);
+  --shadow-elevated: 0 4px 12px rgba(25, 22, 39, 0.08), 0 24px 60px rgba(25, 22, 39, 0.12);
+  --shadow-cta: 0 10px 30px rgba(91, 87, 224, 0.30);
 
-  /* Blue-tinted shadow for buttons */
-  --shadow-cta: 0 10px 40px rgba(59, 130, 246, 0.2); 
-  --shadow-card: 0 6px 22px rgba(0,0,0,0.6);
-  
-  /* Quote Card Specifics */
-  --quote-bg: #2A2A2A; 
-  --quote-accent: #383838;
-  --quote-text: #E5E5E5;
-  --quote-author: #60A5FA; /* A lighter blue for better text readability */
+  --quote-bg: #f1f0fb;
+  --quote-accent: #e6e4fb;
+  --quote-text: #191627;
+  --quote-author: #4a44c9;
 
-  /* Semantic Task Colors - Dark Mode Adjustment */
-  --priority-high: #fca5a5;      
-  --priority-high-bg: #7f1d1d33; 
-  
-  /* MEDIUM: Pastel Orange Text / 20% Orange Background */
-  --priority-medium: #fdba74;    
-  --priority-medium-bg: #7c2d1233; 
-  
-  /* HABIT: Pastel Violet Text / 20% Violet Background */
-  --priority-habit: #d8b4fe;     
-  --priority-habit-bg: #581c8733; 
-  
-  /* LOW: Pastel Blue Text / 20% Blue Background */
-  --priority-low: #93c5fd;       
-  --priority-low-bg: #1e3a8a33;
+  --priority-high: #e11d48;    --priority-high-bg: #ffe4ea;
+  --priority-medium: #d97706;  --priority-medium-bg: #fef0d5;
+  --priority-habit: #5b57e0;   --priority-habit-bg: #e6e4fb;
+  --priority-low: #2563eb;     --priority-low-bg: #dbeafe;
 }
 
-/* 4. Global Reset */
+/* ============ DARK ============ */
+.dark {
+  --background: #12111c;   /* deep indigo-charcoal instrument panel */
+  --foreground: #e9e8f2;
+
+  --card: #1a1926;
+  --card-foreground: #e9e8f2;
+  --popover: #1a1926;
+  --popover-foreground: #e9e8f2;
+
+  --primary: #8b87ff;      /* brightened iris for dark surfaces */
+  --primary-foreground: #14112b;
+
+  --secondary: #232235;
+  --secondary-foreground: #e9e8f2;
+
+  --muted: #232235;
+  --muted-foreground: #9a98b6;
+
+  --accent: #2a2740;
+  --accent-foreground: #b6b2ff;
+
+  --destructive: #fb7185;      /* vivid rose reads clearly on dark */
+  --destructive-foreground: #2a0710;
+  --success: #34d399;
+  --success-foreground: #04241a;
+  --info: #60a5fa;
+  --info-foreground: #0a1830;
+  --energy: #fbbf24;
+  --energy-foreground: #241900;
+
+  --border: #2b2a3d;
+  --input: #2b2a3d;
+  --ring: #8b87ff;
+
+  --gradient-from: var(--primary);
+  --gradient-to: #6d5cff;
+  --glass-surface: color-mix(in srgb, var(--card) 78%, transparent);
+  --overlay: rgba(0, 0, 0, 0.72);
+  --shadow-cta: 0 12px 40px rgba(139, 135, 255, 0.22);
+  --shadow-card: 0 8px 28px rgba(0, 0, 0, 0.55);
+  --shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.6);
+
+  --quote-bg: #1a1926;
+  --quote-accent: #2a2740;
+  --quote-text: #e9e8f2;
+  --quote-author: #b6b2ff;
+
+  --priority-high: #fb7185;    --priority-high-bg: #4c111f;
+  --priority-medium: #fbbf24;  --priority-medium-bg: #3d2c0a;
+  --priority-habit: #8b87ff;   --priority-habit-bg: #282348;
+  --priority-low: #93c5fd;     --priority-low-bg: #14264d;
+}
+
 @layer base {
-  * {
-    border-color: var(--border); /* Direct CSS usage for v4 */
-  }
+  * { border-color: var(--border); }
   body {
     background-color: var(--background);
     color: var(--foreground);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Visible keyboard focus everywhere (accessibility quality floor). */
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+  ::selection { background: color-mix(in srgb, var(--primary) 28%, transparent); }
+}
+
+/* =========================================================
+   MOTION SYSTEM — reusable keyframes + helpers
+   Used across pages/popups for a cohesive, professional feel.
+========================================================= */
+@keyframes soma-fade-up   { 0% { opacity: 0; transform: translateY(14px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes soma-fade-in   { 0% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes soma-scale-in  { 0% { opacity: 0; transform: scale(0.96); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes soma-slide-right{ 0% { opacity: 0; transform: translateX(-16px); } 100% { opacity: 1; transform: translateX(0); } }
+@keyframes soma-float      { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes soma-shimmer    { 100% { transform: translateX(100%); } }
+@keyframes soma-pop        { 0% { transform: scale(0.6); opacity: 0; } 60% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+
+.animate-fade-up    { animation: soma-fade-up   0.5s var(--ease-out-soft) both; }
+.animate-fade-in    { animation: soma-fade-in   0.4s ease both; }
+.animate-scale-in   { animation: soma-scale-in  0.35s var(--ease-out-soft) both; }
+.animate-slide-right{ animation: soma-slide-right 0.4s var(--ease-out-soft) both; }
+.animate-pop        { animation: soma-pop 0.4s var(--ease-spring) both; }
+
+/* Stagger helpers — add .stagger to a parent, children fade-up in sequence */
+.stagger > *        { animation: soma-fade-up 0.5s var(--ease-out-soft) both; }
+.stagger > *:nth-child(1){ animation-delay: 0.02s; }
+.stagger > *:nth-child(2){ animation-delay: 0.06s; }
+.stagger > *:nth-child(3){ animation-delay: 0.10s; }
+.stagger > *:nth-child(4){ animation-delay: 0.14s; }
+.stagger > *:nth-child(5){ animation-delay: 0.18s; }
+.stagger > *:nth-child(6){ animation-delay: 0.22s; }
+.stagger > *:nth-child(7){ animation-delay: 0.26s; }
+.stagger > *:nth-child(8){ animation-delay: 0.30s; }
+
+/* Micro-interactions */
+.hover-lift { transition: transform 0.25s var(--ease-out-soft), box-shadow 0.25s var(--ease-out-soft); }
+.hover-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-elevated); }
+
+.press { transition: transform 0.12s var(--ease-out-soft); }
+.press:active { transform: scale(0.97); }
+
+/* Skeleton shimmer overlay */
+.shimmer { position: relative; overflow: hidden; }
+.shimmer::after {
+  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--foreground) 8%, transparent), transparent);
+  animation: soma-shimmer 1.4s infinite;
+}
+
+/* Elegant gradient text for headings */
+.text-gradient {
+  background: linear-gradient(120deg, var(--gradient-from), var(--gradient-to));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* Slim, tasteful scrollbars (class already referenced across the app) */
+.custom-scrollbar { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--foreground) 18%, transparent) transparent; }
+.custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--foreground) 16%, transparent);
+  border-radius: 999px; border: 2px solid transparent; background-clip: padding-box;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--foreground) 28%, transparent); background-clip: padding-box; }
+
+/* Safe-area helpers for the mobile bottom bar */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.pt-safe { padding-top: env(safe-area-inset-top); }
+
+/* ---------- "Pulse Core" loader keyframes ---------- */
+@keyframes soma-orbit { to { transform: rotate(360deg); } }
+@keyframes soma-pulse {
+  0%, 100% { transform: scale(0.82); opacity: 0.55; }
+  50%      { transform: scale(1);    opacity: 1; }
+}
+@keyframes soma-trace {
+  0%   { stroke-dashoffset: 300; opacity: 0.2; }
+  50%  { opacity: 1; }
+  100% { stroke-dashoffset: 0;   opacity: 0.2; }
+}
+
+/* Calendar dropdowns */
+.rdp-dropdown_year, .rdp-dropdown_month {
+  background-color: transparent; font-weight: 500; font-size: 0.875rem;
+  border: none; cursor: pointer; outline: none; appearance: none; padding-right: 0.5rem;
+}
+.rdp-dropdown_year:hover, .rdp-dropdown_month:hover { opacity: 0.7; }
+.rdp-caption_dropdowns { display: flex; gap: 0.5rem; align-items: center; justify-content: center; }
+
+/* Legacy aliases kept so existing markup keeps animating */
+@keyframes fadeUp { 0% { opacity: 0; transform: translateY(12px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { 0% { opacity: 0; } 100% { opacity: 1; } }
+
+/* Respect reduced-motion: kill decorative animation for those who ask. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
-
-/* 5. DNA Loader Animations */
-@keyframes strand1 {
-  0%, 100% { transform: translateY(0) scale(1); opacity: 1; z-index: 10; }
-  25% { transform: translateY(15px) scale(0.8); opacity: 0.7; z-index: 0; }
-  50% { transform: translateY(0) scale(1); opacity: 1; z-index: 0; }
-  75% { transform: translateY(-15px) scale(0.8); opacity: 0.7; z-index: 10; }
-}
-
-@keyframes strand2 {
-  0%, 100% { transform: translateY(0) scale(1); opacity: 1; z-index: 0; }
-  25% { transform: translateY(-15px) scale(0.8); opacity: 0.7; z-index: 10; }
-  50% { transform: translateY(0) scale(1); opacity: 1; z-index: 10; }
-  75% { transform: translateY(15px) scale(0.8); opacity: 0.7; z-index: 0; }
-}
-
-/* 5. DNA Loader Animations */
-@keyframes spinPair {
-  0% {
-    transform: translateY(0) scale(1) rotateX(0deg);
-    opacity: 1;
-    z-index: 10;
-  }
-  25% {
-    /* Reduced scale difference for a tighter look */
-    transform: translateY(0) scale(0.85) rotateX(90deg); 
-    opacity: 0.6;
-    z-index: 0;
-  }
-  50% {
-    transform: translateY(0) scale(0.7) rotateX(180deg);
-    opacity: 0.4;
-    z-index: 0;
-  }
-  75% {
-    transform: translateY(0) scale(0.85) rotateX(270deg); 
-    opacity: 0.6;
-    z-index: 10;
-  }
-  100% {
-    transform: translateY(0) scale(1) rotateX(360deg);
-    opacity: 1;
-    z-index: 10;
-  }
-}
-
-.dna-dot {
-  position: absolute;
-  border-radius: 50%;
-}
-
-/* Style the Calendar Dropdowns */
-.rdp-dropdown_year, 
-.rdp-dropdown_month {
-  background-color: transparent;
-  font-weight: 500;
-  font-size: 0.875rem; /* text-sm */
-  border: none;
-  cursor: pointer;
-  outline: none;
-  appearance: none; /* Hides default arrow to look cleaner */
-  padding-right: 0.5rem;
-}
-
-/* Add a subtle hover effect */
-.rdp-dropdown_year:hover, 
-.rdp-dropdown_month:hover {
-  opacity: 0.7;
-}
-
-/* Hide the weird scrollbar in some browsers */
-.rdp-caption_dropdowns {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  justify-content: center;
-}
-
-@keyframes fadeUp {
-  0% {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-
-
-/* src/app/globals.css */
-/* .ProseMirror ul {
-  list-style-type: disc;
-  padding-left: 1.5em;
-}
-.ProseMirror ol {
-  list-style-type: decimal;
-  padding-left: 1.5em;
-}
-.ProseMirror h1 {
-  font-size: 2em;
-  font-weight: bold;
-}
-.ProseMirror h2 {
-  font-size: 1.5em;
-  font-weight: bold;
-}
-.ProseMirror blockquote {
-  border-left: 3px solid #ccc;
-  padding-left: 1em;
-  margin-left: 0;
-  color: #fff;
-} */

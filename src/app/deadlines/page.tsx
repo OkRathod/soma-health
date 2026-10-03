@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AddDeadlineDialog } from "@/components/deadlines/add-deadline-dialog";
 import { DeadlineCard } from "@/components/deadlines/deadline-card";
 import { getDeadlines } from "@/app/actions/deadlines";
-import { DNALoader } from "@/components/dna-loader";
+import { SomaLoader as DNALoader } from "@/components/soma-loader";
 
 export default function DeadlinesPage() {
   const [activeTab, setActiveTab] = useState("running");

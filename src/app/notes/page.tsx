@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { NoteEditor } from "@/components/notes/note-editor";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { DNALoader } from "@/components/dna-loader";
+import { SomaLoader as DNALoader } from "@/components/soma-loader";
 
 export default function NotesPage() {
   const [notes, setNotes] = useState<any[]>([]);

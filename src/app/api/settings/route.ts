@@ -1,45 +1,46 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { encryptKey } from '@/lib/crypto'; // We use the encryption tool we built in Phase 1
+// src/app/api/settings/route.ts
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { requireUser } from "@/lib/auth";
+import { encryptKey } from "@/lib/crypto";
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { userId, nationality, height, weight, apiKey, unitPreference} = body;
+  const gate = await requireUser();
+  if (gate instanceof NextResponse) return gate;
+  const { userId } = gate;
 
-    // Prepare the update data
-    let updateData: any = {
-      nationality,
-      height: parseFloat(height),
-      weight: parseFloat(weight),
+  try {
+    const { nationality, height, weight, apiKey, unitPreference } = await req.json();
+
+    const data: Record<string, unknown> = {
+      nationality: nationality ?? null,
       unitPreference: unitPreference || "metric",
     };
+    if (height !== undefined && height !== "") data.height = parseFloat(height);
+    if (weight !== undefined && weight !== "") data.weight = parseFloat(weight);
 
-    // Only update the API Key if the user typed a new one
-    if (apiKey && apiKey.trim() !== "") {
-      const { encryptedData, iv } = encryptKey(apiKey);
-      updateData.encryptedApiKey = encryptedData;
-      updateData.apiKeyIv = iv;
+    if (apiKey && String(apiKey).trim() !== "") {
+      const { encryptedData, iv } = encryptKey(String(apiKey).trim());
+      data.encryptedApiKey = encryptedData;
+      data.apiKeyIv = iv;
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: updateData,
+    const updated = await prisma.user.update({ where: { id: userId }, data });
+    // Never echo the key back.
+    return NextResponse.json({
+      success: true,
+      user: { ...updated, encryptedApiKey: undefined, apiKeyIv: undefined },
     });
-
-    return NextResponse.json({ success: true, user: updatedUser });
-
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (error) {
+    console.error("Settings Save Error:", error);
+    return NextResponse.json({ success: false, error: "Failed to save settings" }, { status: 500 });
   }
 }
 
-// We also need a GET to fill the form when the page loads
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const userId = searchParams.get('userId');
-
-  if (!userId) return NextResponse.json({ error: "No ID" }, { status: 400 });
+export async function GET() {
+  const gate = await requireUser();
+  if (gate instanceof NextResponse) return gate;
+  const { userId } = gate;
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -47,17 +48,21 @@ export async function GET(req: Request) {
       nationality: true,
       height: true,
       weight: true,
-      encryptedApiKey: true,    // We check IF it exists, but we won't send the key back
-      unitPreference: true, 
-    }
+      encryptedApiKey: true,
+      unitPreference: true,
+      timezone: true,
+    },
   });
 
-  return NextResponse.json({ 
-    success: true, 
+  return NextResponse.json({
+    success: true,
     data: {
-      ...user,
-      hasKey: !!user?.encryptedApiKey, // Returns true if they have a key saved
-      unitPreference: user?.unitPreference || "metric"
-    }
+      nationality: user?.nationality ?? "",
+      height: user?.height ?? "",
+      weight: user?.weight ?? "",
+      unitPreference: user?.unitPreference ?? "metric",
+      timezone: user?.timezone ?? "UTC",
+      hasKey: !!user?.encryptedApiKey,
+    },
   });
 }

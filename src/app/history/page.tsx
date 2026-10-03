@@ -7,7 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Calendar as CalendarIcon, Clock , Trash2, Check, AlertTriangle, X, Plus, PenLine, ChevronDown, LayoutGrid, List } from "lucide-react";
 import { MessageSquare, Target, Utensils, Activity, Flame, ChevronRight } from "lucide-react";
-import { DNALoader } from "@/components/dna-loader";
+import { SomaLoader as DNALoader } from "@/components/soma-loader";
 import { Button } from "@/components/ui/button"; // Import Button
 // import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"; 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

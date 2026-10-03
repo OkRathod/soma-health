@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { subDays, startOfDay, endOfDay, isToday } from "date-fns";
 import { AlertTriangle, Check, Flame, Cookie, MessageSquare, Target, Utensils } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DNALoader } from "@/components/dna-loader";
+import { SomaLoader as DNALoader } from "@/components/soma-loader";
 import WeeklyChart from "@/components/WeeklyChart";
 
 // Components
@@ -19,7 +19,7 @@ import { CompleteProfileModal } from "@/components/complete-profile-modal";
 import { StepTracker } from "@/components/dashboard/step-tracker";
 import { toast } from "sonner"; // Assuming you have sonner installed
 // Add this near your other component imports (like QuoteBanner, QuickLog, etc.)
-import { EnableNotifications } from "@/components/EnableNotifications";
+import { ensureTodaysHabits } from "@/app/actions/habits";
 
 export default function DashboardClient({ user }: { user: any }) {
   const USER_ID = user.id;   
@@ -27,7 +27,11 @@ export default function DashboardClient({ user }: { user: any }) {
   const [loading, setLoading] = useState(true);
   
   // 👇 UPDATED: Added macros to the summary state
-  const [summary, setSummary] = useState({ in: 0, out: 0, goal: 2500, protein: 0, carbs: 0, fats: 0 });
+  const [summary, setSummary] = useState({
+        in: 0, out: 0,
+        goal: user?.dailyCalorieGoal ?? 2000,
+        protein: 0, carbs: 0, fats: 0,
+        });
   
   const [waterTotal, setWaterTotal] = useState(0);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -59,6 +63,12 @@ export default function DashboardClient({ user }: { user: any }) {
   }, []);
 
   useEffect(() => {
+      // Safety net: generate today's habits from templates if the cron hasn't
+      // run yet. Idempotent — safe on every load, never duplicates.
+      ensureTodaysHabits(Intl.DateTimeFormat().resolvedOptions().timeZone)
+        .then((r) => { if (r?.created) fetchTasks(); })
+        .catch(() => {});
+
       Promise.all([fetchLogs(), fetchTasks()]).finally(() => setLoading(false));
   }, []);
 
@@ -92,7 +102,7 @@ export default function DashboardClient({ user }: { user: any }) {
       const toDate = endOfDay(today).toISOString();
 
       const res = await fetch(
-        `/api/get-logs?userId=${USER_ID}&from=${fromDate}&to=${toDate}`
+        `/api/get-logs?from=${fromDate}&to=${toDate}`
       );
       
       const data = await res.json();
@@ -216,7 +226,7 @@ export default function DashboardClient({ user }: { user: any }) {
       setWaterTotal(prev => prev + 250);
       const res = await fetch("/api/log-water", {
         method: "POST",
-        body: JSON.stringify({ userId: USER_ID, amount: 250 }),
+        body: JSON.stringify({ amount: 250 }),
       });
       const data = await res.json();
       if (data.success) fetchLogs(); 
@@ -234,7 +244,6 @@ export default function DashboardClient({ user }: { user: any }) {
       const res = await fetch("/api/process-log", {
         method: "POST",
         body: JSON.stringify({
-          userId: USER_ID,
           userText: newLogText,
           userTimezone: "Asia/Kolkata", 
           date: new Date().toISOString() // Pass date to ensure proper logging
@@ -278,8 +287,6 @@ export default function DashboardClient({ user }: { user: any }) {
             </h1>
         </div>
 
-        {/* 👇 NEW: NOTIFICATION ENABLE BANNER 👇 */}
-        <EnableNotifications />
 
         {/* RESTORE BANNER */}
         {user?.scheduledForDeletion && (
