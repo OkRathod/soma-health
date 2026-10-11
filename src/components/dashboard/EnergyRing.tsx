@@ -1,103 +1,52 @@
 "use client";
 
-import { 
-  Label, PolarGrid, PolarRadiusAxis, RadialBar, RadialBarChart, PolarAngleAxis 
-} from "recharts";
-import { ChartContainer, type ChartConfig } from "@/components/ui/chart";
-
 interface EnergyRingProps {
   value: number;
   max: number;
   label: string;
+  /** Any CSS colour, normally a token such as `var(--foreground)` or `var(--burn)`. */
   color: string;
   icon?: React.ReactNode;
+  size?: number;
 }
 
-export function EnergyRing({ value, max, label, color, icon }: EnergyRingProps) {
-  const chartData = [{ activity: "energy", value: value, fill: color }];
-  const chartConfig = { energy: { label: label, color: color } } satisfies ChartConfig;
+/**
+ * Progress ring for a single calorie figure (consumed or burned).
+ * Plain SVG — no chart library needed for one arc.
+ */
+export function EnergyRing({ value, max, label, color, icon, size = 132 }: EnergyRingProps) {
+  const stroke = 10;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = max > 0 ? Math.min(value / max, 1) : 0;
 
   return (
-    <div className="flex flex-col items-center justify-center relative">
-      <div className="relative z-10">
-        <ChartContainer config={chartConfig} className="mx-auto aspect-square h-[140px] w-[140px]">
-          <RadialBarChart 
-            data={chartData} 
-            startAngle={90} 
-            endAngle={90 + 360} 
-            innerRadius={55} 
-            outerRadius={75}
-          >
-            {/* Background Track */}
-            <PolarGrid
-              gridType="circle"
-              radialLines={false}
-              stroke="none"
-              className="first:fill-muted/5 last:fill-background"
-              polarRadius={[60, 50]} 
-            />
-            
-            {/* Scale Axis */}
-            <PolarAngleAxis type="number" domain={[0, max]} angleAxisId={0} tick={false} />
-            
-            {/* Data Bar */}
-            <RadialBar 
-              dataKey="value" 
-              background 
-              cornerRadius={20} 
-              fill={color}
-            />
-            
-            {/* Center Text */}
-            <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-              <Label
-                content={({ viewBox }) => {
-                  if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                    return (
-                      <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
-                        
-                        {/* 1. Main Value */}
-                        <tspan 
-                            x={viewBox.cx} 
-                            y={(viewBox.cy || 0) - 6} 
-                            className="fill-foreground text-xl font-bold tracking-tighter"
-                        >
-                          {value.toLocaleString()}
-                        </tspan>
-
-                        {/* 2. Goal (New) */}
-                        <tspan 
-                            x={viewBox.cx} 
-                            y={(viewBox.cy || 0) + 12} 
-                            className="fill-muted-foreground text-[10px] font-medium"
-                        >
-                           / {max.toLocaleString()}
-                        </tspan>
-
-                        {/* 3. Label */}
-                        <tspan 
-                            x={viewBox.cx} 
-                            y={(viewBox.cy || 0) + 26} 
-                            className="fill-muted-foreground text-[9px] uppercase tracking-widest opacity-70"
-                        >
-                          {label}
-                        </tspan>
-                      </text>
-                    );
-                  }
-                }}
-              />
-            </PolarRadiusAxis>
-          </RadialBarChart>
-        </ChartContainer>
+    <div
+      className="relative shrink-0"
+      style={{ width: size, height: size }}
+      role="img"
+      aria-label={`${label}: ${value.toLocaleString()} of ${max.toLocaleString()} kilocalories`}
+    >
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface)" strokeWidth={stroke} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={c}
+          strokeDashoffset={c * (1 - pct)}
+          style={{ transition: "stroke-dashoffset 900ms cubic-bezier(0.22,1,0.36,1)" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        {icon && <span className="mb-1 text-muted-foreground [&_svg]:size-4">{icon}</span>}
+        <span className="numeral text-[1.6rem]">{value.toLocaleString()}</span>
+        <span className="mt-1 font-mono text-[10px] text-muted-foreground">/ {max.toLocaleString()}</span>
       </div>
-
-      {/* Floating Icon */}
-      {icon && (
-        <div className="absolute -bottom-3 p-1.5 bg-card rounded-full shadow border border-border/50 text-muted-foreground/80">
-            {icon}
-        </div>
-      )}
     </div>
   );
 }

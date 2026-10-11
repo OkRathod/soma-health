@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format, isToday } from "date-fns";
-import { Plus, Repeat, AlignLeft, ChevronDown } from "lucide-react";
+import { addDays, format, isToday, subDays } from "date-fns";
+import { AlignLeft, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Plus, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageShell, PageHeader, Segmented } from "@/components/layout/page";
 import { AddTaskDialog } from "@/components/tasks/add-task-dialog";
 import { TaskList } from "@/components/tasks/task-list";
 import { TimelineView } from "@/components/tasks/timeline-view";
@@ -16,8 +16,7 @@ import { ensureTodaysHabits } from "@/app/actions/habits";
 
 export default function TasksPage() {
 
-//###################################################################################################################################################
-// STATES & REFS
+  // State
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,8 +29,7 @@ export default function TasksPage() {
   const [activeTab, setActiveTab] = useState("tasks");
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
 
-// ##################################################################################################################################################
-// FUNCTIONS
+  // Handlers
 
 // Fetch tasks for the selected date. When the selected date is TODAY we first
 // run ensureTodaysHabits() — the same idempotent safety-net the dashboard uses —
@@ -250,85 +248,124 @@ async function handleDropTask(e: React.DragEvent, hour: number) {
     await fetch(`/api/tasks?id=${taskId}`, { method: "DELETE" });
   }
 
-return (
-    <div className="h-screen bg-background text-foreground flex flex-col overflow-hidden">
+  const doneCount = filteredTasks.filter(t => t.isCompleted).length;
+  const pct = filteredTasks.length ? Math.round((doneCount / filteredTasks.length) * 100) : 0;
+
+  return (
+    <PageShell>
         {loading && <DNALoader/>}
-        {/* 1. Header */}
-        <header className="h-16 border-b border-border/50 bg-background/70 backdrop-blur-md flex items-center justify-between px-4 md:px-6 shrink-0 z-10 gap-4">
-            <div className="flex items-center gap-3 overflow-hidden">
-                <div className="min-w-0 flex items-center gap-2">
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                className={cn(
-                                    "pl-0 text-lg md:text-2xl font-bold tracking-tight text-foreground/90 hover:bg-transparent hover:text-primary transition-colors justify-start h-auto p-0"
-                                )}
-                            >
-                                <span className="truncate">
-                                    {format(selectedDate, "EEEE, MMM do, yyyy")}
-                                </span>
-                                <ChevronDown className="ml-2 h-5 w-5 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 border-border" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={selectedDate}
-                                onSelect={(date) => date && setSelectedDate(date)}
-                                initialFocus
-                                fromYear={2024}
-                                toYear={new Date().getFullYear() + 5}
-                                className="rounded-md border-0"
-                            />
-                        </PopoverContent>
-                    </Popover>
-                </div>
+
+        <PageHeader
+            eyebrow="Tasks"
+            title={<>Plan the <em>day</em></>}
+            description="Line up what matters, then give it a slot on the timeline."
+            actions={
+                <Button onClick={() => { resetForm(); setIsAdding(true); }}>
+                    <Plus /> Add task
+                </Button>
+            }
+        />
+
+        {/* Toolbar: date navigation, filter, view switch. Scrolls sideways on phones. */}
+        <div className="no-scrollbar -mx-4 mb-4 flex items-center gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
+            <div className="flex shrink-0 items-center gap-1">
+                <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Previous day"
+                    onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+                >
+                    <ChevronLeft />
+                </Button>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="gap-2 tabular-nums">
+                            <CalendarDays className="text-muted-foreground" />
+                            <span className="sm:hidden">{format(selectedDate, "EEE, MMM d")}</span>
+                            <span className="hidden sm:inline">{format(selectedDate, "EEEE, MMM do, yyyy")}</span>
+                            <ChevronDown className="text-muted-foreground" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto rounded-3xl border-border p-2 shadow-float" align="start">
+                        <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={(date) => date && setSelectedDate(date)}
+                            initialFocus
+                            captionLayout="dropdown-buttons"
+                            fromYear={2024}
+                            toYear={new Date().getFullYear() + 5}
+                            className="border-0"
+                        />
+                    </PopoverContent>
+                </Popover>
+                <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="Next day"
+                    onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+                >
+                    <ChevronRight />
+                </Button>
             </div>
 
-            <div className="flex md:hidden bg-secondary/60 p-1 rounded-lg border border-border/50">
-                <button
-                onClick={() => setMobileView("list")}
+            {!isToday(selectedDate) && (
+                <Button variant="ghost" onClick={() => setSelectedDate(new Date())}>
+                    Today
+                </Button>
+            )}
+
+            <Segmented
+                className="shrink-0 lg:hidden"
+                value={mobileView}
+                onChange={setMobileView}
+                options={[
+                    { value: "list", label: "List" },
+                    { value: "timeline", label: "Timeline" },
+                ]}
+            />
+
+            <Segmented
+                className="ml-auto shrink-0"
+                value={activeTab}
+                onChange={setActiveTab}
+                options={[
+                    { value: "tasks", label: "Tasks", icon: <AlignLeft /> },
+                    { value: "habits", label: "Habits", icon: <Repeat /> },
+                ]}
+            />
+        </div>
+
+        <div className="grid items-start gap-3 md:gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+            {/* List */}
+            <section
                 className={cn(
-                    "px-3 py-1 text-xs font-semibold rounded-md transition-all press",
-                    mobileView === "list" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
+                    "panel flex-col overflow-hidden lg:sticky lg:top-24 lg:max-h-[calc(100dvh-7.5rem)]",
+                    mobileView === "list" ? "flex" : "hidden lg:flex"
                 )}
-                >
-                List
-                </button>
-                <button
-                onClick={() => setMobileView("timeline")}
-                className={cn(
-                    "px-3 py-1 text-xs font-semibold rounded-md transition-all press",
-                    mobileView === "timeline" ? "bg-card shadow-sm text-foreground" : "text-muted-foreground"
-                )}
-                >
-                Time
-                </button>
-            </div>
-        </header>
+            >
+                <header className="shrink-0 border-b border-border p-5 md:px-6">
+                    <p className="label-mono">
+                        {isToday(selectedDate) ? "Today" : format(selectedDate, "EEE, MMM d")}
+                        {" · "}
+                        {activeTab}
+                    </p>
+                    <p className="mt-2 text-lg font-medium tracking-[-0.02em]">
+                        {loading
+                            ? "Loading..."
+                            : filteredTasks.length === 0
+                                ? "Nothing scheduled"
+                                : `${doneCount} of ${filteredTasks.length} done`}
+                    </p>
+                    <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-surface" aria-hidden="true">
+                        <div
+                            className="h-full rounded-full bg-foreground transition-[width] duration-700"
+                            style={{ width: `${loading ? 0 : pct}%` }}
+                        />
+                    </div>
+                </header>
 
-
-        {/* 2. Main Content */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-
-            {/* === Left Column (List) === */}
-            <aside className={cn(
-                "w-full md:w-[400px] xl:w-[450px] border-r border-border/50 bg-background/40 flex-col shrink-0 relative",
-                mobileView === 'list' ? 'flex h-full' : 'hidden md:flex'
-            )}>
-                {/* Tabs Header */}
-                <div className="p-4 border-b border-border/50 shrink-0">
-                    <Tabs defaultValue="tasks" value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="tasks" className="gap-2"><AlignLeft className="w-4 h-4"/> Tasks</TabsTrigger>
-                            <TabsTrigger value="habits" className="gap-2"><Repeat className="w-4 h-4"/> Habits</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                </div>
-
-                {/* Scrollable List Area */}
-                <div className="flex-1 overflow-y-auto pb-40 md:pb-24 custom-scrollbar animate-fade-in">
+                <div className="custom-scrollbar min-h-0 flex-1 lg:overflow-y-auto">
                     <TaskList
                         loading={loading}
                         tasks={filteredTasks}
@@ -341,35 +378,38 @@ return (
                         onEdit={openEditModal}
                     />
                 </div>
+            </section>
 
-                {/* STICKY ADD BUTTON */}
-                <div className="absolute bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent pt-10 z-20">
-                    <Button
-                        onClick={() => { resetForm(); setIsAdding(true); }}
-                        className="w-full shadow-xl shadow-primary/25 h-12 text-sm font-semibold rounded-xl hover-lift"
-                    >
-                        <Plus className="w-5 h-5 mr-2" /> Add New Task
-                    </Button>
+            {/* Timeline */}
+            <section
+                className={cn(
+                    "panel flex-col overflow-hidden",
+                    mobileView === "timeline" ? "flex" : "hidden lg:flex"
+                )}
+            >
+                <header className="flex items-end justify-between gap-4 border-b border-border p-5 md:px-6">
+                    <div>
+                        <p className="label-mono">Timeline</p>
+                        <p className="mt-2 text-lg font-medium tracking-[-0.02em]">24 hours</p>
+                    </div>
+                    <p className="max-w-[16rem] text-right text-[13px] leading-snug text-muted-foreground">
+                        <span className="lg:hidden">Tap an hour to add a task.</span>
+                        <span className="hidden lg:inline">Click an hour to add a task, or drag one in from the list.</span>
+                    </p>
+                </header>
+                <div className="pr-3 md:pr-5">
+                    <TimelineView
+                        tasks={filteredTasks}
+                        loading={loading}
+                        onTimeSlotClick={openAddModalAtTime}
+                        onDropTask={handleDropTask}
+                        draggedTaskId={draggedTaskId}
+                        onEdit={openEditModal}
+                    />
                 </div>
-            </aside>
-
-            {/* === Right Column (Timeline) === */}
-            <main className={cn(
-                "flex-1 overflow-y-auto bg-background/40 relative custom-scrollbar flex justify-center pt-3 pb-24 md:pb-5",
-                mobileView === 'timeline' ? 'flex' : 'hidden md:flex'
-            )}>
-                <TimelineView
-                    tasks={filteredTasks}
-                    loading={loading}
-                    onTimeSlotClick={openAddModalAtTime}
-                    onDropTask={handleDropTask}
-                    draggedTaskId={draggedTaskId}
-                    onEdit={openEditModal}
-                />
-            </main>
+            </section>
         </div>
 
-        {/* 3. Dialog */}
         <AddTaskDialog
             isOpen={isAdding}
             onOpenChange={(open: boolean) => { setIsAdding(open); if(!open) resetForm(); }}
@@ -380,6 +420,6 @@ return (
             onSave={handleSaveTask}
             isEditing={!!editingId}
         />
-    </div>
+    </PageShell>
   );
 }

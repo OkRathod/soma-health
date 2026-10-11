@@ -1,16 +1,17 @@
 "use client";
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Edit2, Sparkles, Layers, Plus } from "lucide-react";
 
+const fieldLabel = "label-mono mb-2 block";
+
+/** Create / edit form for a task. Bottom sheet on phones, centred dialog from `sm`. */
 export function AddTaskDialog({ isOpen, onOpenChange, task, setTask, subtask, setSubtask, onSave, isEditing }: any) {
-  
+
   const addSubtask = () => {
     if (!subtask.title) return;
     setTask({ ...task, subtasks: [...task.subtasks, { ...subtask }] });
@@ -19,152 +20,145 @@ export function AddTaskDialog({ isOpen, onOpenChange, task, setTask, subtask, se
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-lg bg-card border-border sm:rounded-xl max-h-[85vh] flex flex-col p-0 overflow-hidden shadow-xl">
-        
-        {/* Header */}
-        <div className="p-6 pb-3 border-b border-border/40 bg-secondary/20">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              {isEditing ? <Edit2 className="w-5 h-5 text-primary" /> : <Sparkles className="w-5 h-5 text-primary" />}
-              {isEditing ? "Edit Task" : "Create New Task"}
-            </DialogTitle>
-          </DialogHeader>
-        </div>
+      <DialogContent
+        className="bottom-0 left-0 top-auto flex max-h-[90dvh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none rounded-t-[2rem] p-0 sm:bottom-auto sm:left-[50%] sm:top-[50%] sm:max-w-lg sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-3xl"
+      >
+        <DialogHeader className="shrink-0 gap-3 border-b border-border px-6 pb-5 pt-6 text-left">
+          <p className="eyebrow">{isEditing ? "Edit" : "New"}</p>
+          <DialogTitle className="display text-3xl font-normal">
+            {isEditing ? "Edit task" : "Create a task"}
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            Set the title, priority, schedule and subtasks for this task.
+          </DialogDescription>
+        </DialogHeader>
 
-        {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 custom-scrollbar">
-          
-          {/* Title Input */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-foreground/80">Title</label>
+        <div className="custom-scrollbar flex-1 space-y-5 overflow-y-auto px-6 py-5">
+          <div>
+            <label htmlFor="task-title" className={fieldLabel}>Title</label>
             <Input
-              className="bg-secondary/30 border-transparent focus:border-primary transition-all"
+              id="task-title"
               placeholder="What needs to be done?"
               value={task.title}
               onChange={e => setTask({ ...task, title: e.target.value })}
             />
           </div>
 
-          {/* Priority & Time Row */}
-          <div className="grid grid-rows-2 gap-4">
-            {/* Priority */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-foreground/80">Priority</label>
-              <Select
-                value={task.priority === "HABIT" && !task.isRecurring ? "LOW" : task.priority}
-                onValueChange={v => setTask({ ...task, priority: v })}
-                disabled={task.isRecurring}
-              >
-                <SelectTrigger className="bg-secondary/30 border-transparent focus:border-primary">
-                  <SelectValue placeholder="Select" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="HIGH">High (Max 3)</SelectItem>
-                  <SelectItem value="MEDIUM">Medium (Max 5)</SelectItem>
-                  <SelectItem value="LOW">Low</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <label className={fieldLabel}>Priority</label>
+            <Select
+              value={task.priority === "HABIT" && !task.isRecurring ? "LOW" : task.priority}
+              onValueChange={v => setTask({ ...task, priority: v })}
+              disabled={task.isRecurring}
+            >
+              <SelectTrigger className="h-11 w-full rounded-xl bg-card">
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="HIGH">High (Max 3)</SelectItem>
+                <SelectItem value="MEDIUM">Medium (Max 5)</SelectItem>
+                <SelectItem value="LOW">Low</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Date + Time */}
-            <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-foreground/80">Time</label>
-                <div className="flex gap-2">
-                    <Input
-                        type="date"
-                        className="bg-secondary/30 border-transparent focus:border-primary flex-1"
-                        value={task.date}
-                        onChange={e => setTask({ ...task, date: e.target.value })}
-                    />
-                    <Input
-                        type="time"
-                        className="bg-secondary/30 border-transparent focus:border-primary w-24"
-                        value={task.startTime}
-                        onChange={e => setTask({ ...task, startTime: e.target.value })}
-                    />
-                    <div className="flex items-center gap-2 bg-secondary/30 rounded-md px-3 border border-transparent focus-within:border-primary">
-                        <Input 
-                            className="w-12 h-9 border-none bg-transparent p-0 text-center focus-visible:ring-0"
-                            type="number" 
-                            placeholder="60"
-                            value={task.duration} 
-                            onChange={e => setTask({...task, duration: e.target.value})} 
-                        />
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">min</span>
-                    </div>
-                </div>
+          <div>
+            <label htmlFor="task-date" className={fieldLabel}>When</label>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_8rem_7rem]">
+              <Input
+                id="task-date"
+                type="date"
+                aria-label="Date"
+                className="col-span-2 sm:col-span-1"
+                value={task.date}
+                onChange={e => setTask({ ...task, date: e.target.value })}
+              />
+              <Input
+                type="time"
+                aria-label="Start time"
+                value={task.startTime}
+                onChange={e => setTask({ ...task, startTime: e.target.value })}
+              />
+              <div className="flex h-11 items-center gap-2 rounded-xl border border-input bg-card px-3.5 focus-within:border-foreground/60 focus-within:ring-[3px] focus-within:ring-foreground/10">
+                <input
+                  className="w-full min-w-0 bg-transparent text-base outline-none md:text-sm"
+                  type="number"
+                  aria-label="Duration in minutes"
+                  placeholder="60"
+                  value={task.duration}
+                  onChange={e => setTask({ ...task, duration: e.target.value })}
+                />
+                <span className="text-xs text-muted-foreground">min</span>
+              </div>
             </div>
           </div>
 
-          {/* Recurring Toggle */}
-          <div className="flex items-start gap-3 border border-border/50 bg-secondary/10 p-4 rounded-lg">
+          <div className="flex items-start gap-3 rounded-2xl bg-surface p-4">
             <Checkbox
               id="recurring"
-              className="mt-1 data-[state=checked]:bg-primary"
+              className="mt-0.5 size-5 rounded-md bg-card"
               checked={task.isRecurring}
               onCheckedChange={(c) => setTask({ ...task, isRecurring: !!c })}
             />
-            <div className="space-y-0.5">
-              <label htmlFor="recurring" className="text-sm font-medium cursor-pointer">Mark as Daily Habit</label>
-              <p className="text-xs text-muted-foreground">Repeats every day automatically.</p>
+            <div>
+              <label htmlFor="recurring" className="text-sm font-medium">Mark as daily habit</label>
+              <p className="mt-0.5 text-[13px] text-muted-foreground">Repeats every day automatically.</p>
             </div>
           </div>
 
-          {/* Description */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-foreground/80">Description</label>
+          <div>
+            <label htmlFor="task-description" className={fieldLabel}>Description</label>
             <Textarea
-              className="bg-secondary/30 border-transparent focus:border-primary resize-none min-h-[80px]"
+              id="task-description"
+              className="min-h-[88px] resize-none"
               placeholder="Add details..."
               value={task.description}
               onChange={e => setTask({ ...task, description: e.target.value })}
             />
           </div>
 
-          {/* Subtasks Section */}
-          <div className="bg-secondary/20 p-4 rounded-lg border border-border/50 space-y-4">
-            <label className="text-sm font-semibold flex items-center gap-2 text-foreground/80">
-              <Layers className="w-4 h-4 text-primary" /> Subtasks
-            </label>
+          <div>
+            <label htmlFor="subtask-title" className={fieldLabel}>Subtasks</label>
             <div className="flex gap-2">
               <Input
+                id="subtask-title"
                 placeholder="Name (e.g. Pushups)"
-                className="h-9 text-sm bg-background border-transparent"
                 value={subtask.title}
                 onChange={e => setSubtask({ ...subtask, title: e.target.value })}
               />
               <Input
                 placeholder="Target"
                 type="number"
-                className="h-9 w-20 text-sm bg-background border-transparent"
+                aria-label="Subtask target"
+                className="w-24 shrink-0"
                 value={subtask.targetValue}
                 onChange={e => setSubtask({ ...subtask, targetValue: e.target.value })}
               />
-              <Button size="sm" className="h-9" onClick={addSubtask}>Add</Button>
+              <Button variant="secondary" className="h-11" onClick={addSubtask}>Add</Button>
             </div>
-            
+
             {task.subtasks.length > 0 && (
-              <div className="space-y-2 mt-1">
+              <ul className="mt-3 divide-y divide-border overflow-hidden rounded-2xl border border-border">
                 {task.subtasks.map((st: any, i: number) => (
-                  <div key={i} className="text-xs flex justify-between items-center bg-background p-2 px-3 rounded-md border shadow-sm">
-                    <span className="font-medium truncate max-w-[70%]">{st.title}</span>
+                  <li key={i} className="flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm">
+                    <span className="min-w-0 truncate font-medium">{st.title}</span>
                     {st.targetValue && (
-                      <Badge variant="secondary" className="text-[10px] h-5">Target: {st.targetValue}</Badge>
+                      <span className="shrink-0 rounded-full bg-surface px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
+                        Target: {st.targetValue}
+                      </span>
                     )}
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="p-6 pt-2 border-t border-border/40 bg-background">
-            <Button className="w-full text-base font-semibold py-6 shadow-lg shadow-primary/20" onClick={onSave}>
-                {isEditing ? "Save Changes" : "Create Task"}
-            </Button>
+        <div className="shrink-0 border-t border-border px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4">
+          <Button size="lg" className="w-full" onClick={onSave}>
+            {isEditing ? "Save changes" : "Create task"}
+          </Button>
         </div>
-
       </DialogContent>
     </Dialog>
   );

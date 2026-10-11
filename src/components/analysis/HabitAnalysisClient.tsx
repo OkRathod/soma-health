@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Flame, Trophy, CheckCircle2, ChevronLeft, ChevronRight, Activity } from "lucide-react";
+import Link from "next/link";
+import { Flame, Trophy, CheckCircle2, ChevronLeft, ChevronRight, Activity, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -11,24 +11,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { 
-  isSameDay, 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  eachDayOfInterval, 
-  getDay, 
-  addMonths, 
-  subMonths, 
-  isFuture, 
+import {
+  isSameDay,
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  getDay,
+  addMonths,
+  subMonths,
+  isFuture,
   isToday,
-  isSameMonth
+  isSameMonth,
 } from "date-fns";
-import { DNALoader } from "../dna-loader";
+import { cn } from "@/lib/utils";
+import { SomaLoader as DNALoader } from "@/components/soma-loader";
+import { PageShell, PageHeader, Panel, PanelHeader, StatTile, EmptyState } from "@/components/layout/page";
+
+const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 export default function HabitAnalysisClient({ userId }: { userId: string }) {
   const [habits, setHabits] = useState<any[]>([]);
-  const [selectedTitle, setSelectedTitle] = useState<string>(""); 
+  const [selectedTitle, setSelectedTitle] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,34 +41,35 @@ export default function HabitAnalysisClient({ userId }: { userId: string }) {
       const data = await res.json();
       if (data.success && data.habits.length > 0) {
         setHabits(data.habits);
-        setSelectedTitle(data.habits[0].title); 
+        setSelectedTitle(data.habits[0].title);
       }
       setLoading(false);
     }
     fetchHabitData();
   }, [userId]);
 
-  if (loading) return <DNALoader />;
+  if (loading) return <DNALoader label="Loading your streaks" />;
 
-  const selectedHabit = habits.find(h => h.title === selectedTitle);
+  const selectedHabit = habits.find((h) => h.title === selectedTitle);
 
   return (
-    <div className="max-w-5xl mx-auto p-4 pb-28 md:p-8 md:pb-8 space-y-6 animate-in fade-in duration-500">
-      
-      {/* HEADER & DROPDOWN */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-border/40 pb-6">
-          {/* <div>
-              <h1 className="text-3xl font-bold tracking-tight">Habit Analysis</h1>
-              <p className="text-muted-foreground mt-1">Select a habit to view your streaks and history.</p>
-          </div> */}
-
-          {habits.length > 0 && (
-            <div className="w-full md:w-[250px]">
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block uppercase tracking-wider">
-                Select Habit
+    <PageShell>
+      <PageHeader
+        eyebrow="Analysis"
+        title={
+          <>
+            How your habits <em>hold</em>
+          </>
+        }
+        description="Pick a habit to see its streaks and a month-by-month record of the days you showed up."
+        actions={
+          habits.length > 0 && (
+            <div className="w-full md:w-[260px]">
+              <label htmlFor="habit-picker" className="label-mono mb-2 block">
+                Habit
               </label>
               <Select value={selectedTitle} onValueChange={setSelectedTitle}>
-                <SelectTrigger className="w-full bg-card border-border/60 shadow-sm font-medium">
+                <SelectTrigger id="habit-picker" className="w-full rounded-full px-4 font-medium capitalize">
                   <SelectValue placeholder="Choose a habit..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -76,22 +81,26 @@ export default function HabitAnalysisClient({ userId }: { userId: string }) {
                 </SelectContent>
               </Select>
             </div>
-          )}
-      </div>
-      
-      {/* MAIN CONTENT AREA */}
-      <div>
-        {selectedHabit ? (
-          <HabitAnalysisCard key={selectedHabit.title} habit={selectedHabit} />
-        ) : (
-          <div className="py-16 flex flex-col items-center justify-center text-muted-foreground bg-card border border-dashed border-border/60 rounded-xl shadow-sm">
-            <Activity className="w-12 h-12 mb-3 opacity-20" />
-            <p className="font-medium text-foreground">No habits tracked yet.</p>
-            <p className="text-sm mt-1">Mark a task as a "Habit" to start analyzing your data!</p>
-          </div>
-        )}
-      </div>
-    </div>
+          )
+        }
+        className="[&>div:last-child]:w-full md:[&>div:last-child]:w-auto"
+      />
+
+      {selectedHabit ? (
+        <HabitAnalysisCard key={selectedHabit.title} habit={selectedHabit} />
+      ) : (
+        <EmptyState
+          icon={<Activity />}
+          title="No habits tracked yet"
+          description="Create a habit and complete it once. Its streaks and history will show up here."
+          action={
+            <Button asChild variant="outline">
+              <Link href="/habits">Go to habits</Link>
+            </Button>
+          }
+        />
+      )}
+    </PageShell>
   );
 }
 
@@ -104,126 +113,179 @@ function HabitAnalysisCard({ habit }: { habit: any }) {
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
-  
-  const startingDayIndex = getDay(monthStart); 
+
+  const startingDayIndex = getDay(monthStart);
   const emptyDaysPadding = Array.from({ length: startingDayIndex }).map((_, i) => i);
 
   const isCompletedOnDate = (targetDate: Date) => {
-    return habit.completedDates?.some((completedDateString: string) => 
-      isSameDay(new Date(completedDateString), targetDate)
-    ) || false; 
+    return (
+      habit.completedDates?.some((completedDateString: string) =>
+        isSameDay(new Date(completedDateString), targetDate)
+      ) || false
+    );
   };
 
+  // Display-only figures for the month in view, derived from the same data.
+  const cells = daysInMonth.map((date) => ({
+    date,
+    completed: isCompletedOnDate(date),
+    isFutureDate: isFuture(date) && !isToday(date),
+    isTodayDate: isToday(date),
+  }));
+  const elapsed = cells.filter((c) => !c.isFutureDate);
+  const doneThisMonth = elapsed.filter((c) => c.completed).length;
+  const monthRate = elapsed.length ? Math.round((doneThisMonth / elapsed.length) * 100) : 0;
+  const byWeekday = WEEKDAYS.map((label, d) => {
+    const days = elapsed.filter((c) => getDay(c.date) === d);
+    const done = days.filter((c) => c.completed).length;
+    return { label, done, total: days.length };
+  });
+
   return (
-    <Card className="bg-card border-border/60 shadow-sm transition-all overflow-hidden">
-      <CardHeader className="pb-4 border-b border-border/40 bg-secondary/5">
-        <CardTitle className="text-xl font-bold text-foreground capitalize tracking-wide flex items-center justify-between">
-          {habit.title} Overview
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="p-6 md:p-8">
-        <div className="flex flex-col md:flex-row gap-8 lg:gap-12 items-start">
-            
-          {/* LEFT SIDE: VERTICAL STATS WITH GLOW (Unchanged) */}
-          <div className="w-full md:w-1/3 flex flex-col gap-4">
-            {/* ... (Keep the existing glowing stats code here) ... */}
-            <div className="relative group overflow-hidden rounded-2xl border border-orange-500/30 shadow-lg shadow-orange-500/20 transition-all hover:shadow-orange-500/40">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-orange-500/40 via-transparent to-transparent blur-2xl opacity-70 -z-10 pointer-events-none" />
-              <div className="relative z-10 p-5 flex flex-col items-center">
-                <Flame className="w-6 h-6 text-orange-500 mb-2 drop-shadow-[0_0_8px_rgba(249,115,22,0.8)]" />
-                <p className="text-3xl font-black text-foreground leading-none mb-1 drop-shadow-sm">{habit.currentStreak}</p>
-                <p className="text-xs uppercase font-bold text-orange-500/80 tracking-wider">Current Streak</p>
-               </div>
-            </div>
-            <div className="relative group overflow-hidden rounded-2xl border border-violet-500/30 shadow-lg shadow-violet-500/20 transition-all hover:shadow-violet-500/40">
-               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-violet-500/40 via-transparent to-transparent blur-2xl opacity-70 -z-10 pointer-events-none" />
-               <div className="relative z-10 p-5 flex flex-col items-center">
-                <Trophy className="w-6 h-6 text-violet-500 mb-2 drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]" />
-                <p className="text-3xl font-black text-foreground leading-none mb-1 drop-shadow-sm">{habit.longestStreak}</p>
-                <p className="text-xs uppercase font-bold text-violet-500/80 tracking-wider">Longest Streak</p>
-               </div>
-            </div>
-            <div className="relative group overflow-hidden rounded-2xl border border-emerald-500/30 shadow-lg shadow-emerald-500/20 transition-all hover:shadow-emerald-500/40">
-               <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500/40 via-transparent to-transparent blur-2xl opacity-70 -z-10 pointer-events-none" />
-               <div className="relative z-10 p-5 flex flex-col items-center">
-                <CheckCircle2 className="w-6 h-6 text-emerald-500 mb-2 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                <p className="text-3xl font-black text-foreground leading-none mb-1 drop-shadow-sm">{habit.totalCompletions}</p>
-                <p className="text-xs uppercase font-bold text-emerald-500/80 tracking-wider">Total Done</p>
-               </div>
-            </div>
+    <div className="space-y-3 md:space-y-4">
+      <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+        <StatTile
+          tone="lime"
+          label="Current streak"
+          value={habit.currentStreak}
+          unit={habit.currentStreak === 1 ? "day" : "days"}
+          icon={<Flame className="size-3.5" />}
+        />
+        <StatTile
+          label="Longest streak"
+          value={habit.longestStreak}
+          unit={habit.longestStreak === 1 ? "day" : "days"}
+          icon={<Trophy className="size-3.5" />}
+        />
+        <StatTile
+          label="Total done"
+          value={habit.totalCompletions}
+          unit={habit.totalCompletions === 1 ? "day" : "days"}
+          icon={<CheckCircle2 className="size-3.5" />}
+        />
+        <StatTile
+          label={format(currentDate, "MMMM")}
+          value={doneThisMonth}
+          unit={`/ ${elapsed.length}`}
+          hint={`${monthRate}% of days completed`}
+          icon={<CalendarDays className="size-3.5" />}
+        />
+      </div>
+
+      <div className="grid gap-3 md:gap-4 lg:grid-cols-12">
+        {/* Monthly heatmap */}
+        <Panel className="lg:col-span-7">
+          <PanelHeader
+            label={<span className="capitalize">{habit.title}</span>}
+            title={format(currentDate, "MMMM yyyy")}
+            action={
+              <div className="flex gap-1.5">
+                <Button variant="outline" size="icon" onClick={handlePrevMonth} aria-label="Previous month">
+                  <ChevronLeft />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleNextMonth}
+                  disabled={isSameMonth(currentDate, new Date())}
+                  aria-label="Next month"
+                >
+                  <ChevronRight />
+                </Button>
+              </div>
+            }
+          />
+
+          <div className="mb-2 grid grid-cols-7 gap-1.5 sm:gap-2">
+            {WEEKDAYS.map((day) => (
+              <div key={day} className="label-mono text-center">
+                {day}
+              </div>
+            ))}
           </div>
 
-          {/* RIGHT SIDE: COMPACT CALENDAR WITH GLOW & SPARKLE */}
-          <div className="w-full md:w-2/3 flex justify-center md:justify-start">
-            <div className="bg-background border border-border/50 rounded-2xl p-5 md:p-6 shadow-sm w-full max-w-[400px]">
-              <div className="flex items-center justify-between mb-6">
-                <p className="font-bold text-base text-foreground uppercase tracking-widest">
-                  {format(currentDate, "MMMM yyyy")}
-                </p>
-                <div className="flex gap-1.5">
-                  <Button variant="outline" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={handlePrevMonth}>
-                    <ChevronLeft className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground" 
-                    onClick={handleNextMonth} 
-                    disabled={isSameMonth(currentDate, new Date())} 
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+            {emptyDaysPadding.map((empty) => (
+              <div key={`empty-${empty}`} aria-hidden="true" />
+            ))}
+            {cells.map(({ date, completed, isFutureDate, isTodayDate }) => (
+              <div
+                key={date.toISOString()}
+                title={`${format(date, "EEE, MMM d")}: ${
+                  completed ? "done" : isFutureDate ? "upcoming" : "not done"
+                }`}
+                className={cn(
+                  "grid aspect-square place-items-center rounded-xl text-[13px] tabular-nums transition-colors sm:aspect-auto sm:h-14 sm:rounded-2xl sm:text-sm",
+                  completed
+                    ? "bg-primary font-medium text-primary-foreground"
+                    : isFutureDate
+                      ? "border border-dashed border-border text-muted-foreground/60"
+                      : "bg-surface text-muted-foreground",
+                  isTodayDate && "ring-2 ring-foreground ring-offset-2 ring-offset-card"
+                )}
+              >
+                {format(date, "d")}
               </div>
+            ))}
+          </div>
 
-              <div className="grid grid-cols-7 gap-1.5 mb-2">
-                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => (
-                  <div key={day} className="text-center text-[11px] font-bold text-muted-foreground/60 uppercase tracking-wider">
-                    {day}
-                  </div>
-                ))}
-              </div>
+          <ul className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-4 text-[13px] text-muted-foreground">
+            <li className="inline-flex items-center gap-2">
+              <span className="size-3.5 rounded-[5px] bg-primary" /> Done
+            </li>
+            <li className="inline-flex items-center gap-2">
+              <span className="size-3.5 rounded-[5px] bg-surface" /> Missed
+            </li>
+            <li className="inline-flex items-center gap-2">
+              <span className="size-3.5 rounded-[5px] border border-dashed border-input" /> Upcoming
+            </li>
+            <li className="inline-flex items-center gap-2">
+              <span className="size-3 rounded-[4px] bg-surface ring-2 ring-foreground ring-offset-1 ring-offset-card" /> Today
+            </li>
+          </ul>
+        </Panel>
 
-              <div className="grid grid-cols-7 gap-1.5">
-                {emptyDaysPadding.map(empty => (
-                  <div key={`empty-${empty}`} className="aspect-square rounded-lg opacity-0" />
-                ))}
-                {daysInMonth.map(date => {
-                  const completed = isCompletedOnDate(date);
-                  const isFutureDate = isFuture(date) && !isToday(date);
-                  const isTodayDate = isToday(date);
+        {/* Month summary */}
+        <Panel className="flex flex-col lg:col-span-5">
+          <PanelHeader label={format(currentDate, "MMMM yyyy")} title="Consistency" />
 
-                  return (
+          <p className="numeral text-5xl md:text-6xl">
+            {monthRate}
+            <span className="ml-1 text-base font-normal tracking-normal text-muted-foreground">%</span>
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {doneThisMonth} of {elapsed.length} day{elapsed.length === 1 ? "" : "s"} completed in{" "}
+            {format(currentDate, "MMMM")}.
+          </p>
+          <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface" aria-hidden="true">
+            <div
+              className="h-full rounded-full bg-primary transition-[width] duration-700"
+              style={{ width: `${monthRate}%` }}
+            />
+          </div>
+
+          <div className="mt-6 rounded-3xl bg-surface p-4 md:mt-auto md:p-5">
+            <p className="label-mono">By weekday</p>
+            <div className="mt-4 grid grid-cols-7 gap-1.5 sm:gap-2">
+              {byWeekday.map((w, i) => (
+                <div key={i} className="flex flex-col items-center gap-2">
+                  <div className="flex h-16 w-full max-w-9 items-end overflow-hidden rounded-lg bg-card" aria-hidden="true">
                     <div
-                      key={date.toISOString()}
-                      className={`
-                        aspect-square rounded-lg flex items-center justify-center text-xs md:text-sm transition-all relative font-bold
-                        ${completed 
-                          ? "bg-primary text-primary-foreground scale-110 shadow-[0_0_12px_var(--primary)] z-10" 
-                          : "bg-secondary/40 text-muted-foreground hover:bg-secondary/60 font-semibold"
-                        }
-                        ${isFutureDate ? "opacity-30 bg-transparent border border-dashed border-border/50 text-muted-foreground/50" : ""}
-                        ${isTodayDate && !completed ? "border-2 border-primary/50 text-primary bg-primary/5" : ""}
-                      `}
-                    >
-                      {/* ✨ The Sparkle Animation ✨ */}
-                      {/* {completed && (
-                        <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/80 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-                        </span>
-                      )} */}
-                      {format(date, "d")}
-                    </div>
-                  );
-                })}
-              </div>
+                      className="w-full rounded-lg bg-primary transition-[height] duration-700"
+                      style={{ height: `${w.total ? (w.done / w.total) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-[13px] tabular-nums">
+                    {w.total ? w.done : "–"}
+                    {w.total > 0 && <span className="text-muted-foreground">/{w.total}</span>}
+                  </span>
+                  <span className="label-mono">{w.label}</span>
+                </div>
+              ))}
             </div>
           </div>
-
-        </div>
-      </CardContent>
-    </Card>
+        </Panel>
+      </div>
+    </div>
   );
 }

@@ -1,11 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { Check } from "lucide-react";
 
 export function HistoryTimeline({ tasks }: { tasks: any[] }) {
-   // 👇 NEW: Layout Engine for Timeline (Same as Tasks Page)
-    const positionedTasks = useMemo(() => {
+  // Layout engine for the timeline (same as the Tasks page)
+  const positionedTasks = useMemo(() => {
     if (tasks.length === 0) return [];
 
     // 1. Sort by Start Time
@@ -63,62 +62,63 @@ export function HistoryTimeline({ tasks }: { tasks: any[] }) {
   }, [tasks]);
 
   return (
-    <div className="relative h-[1440px] border rounded-xl bg-card/30 overflow-hidden shadow-inner">
-        {/* 24 Hour Grid Lines - Quieter */}
-        {Array.from({length: 24}).map((_, i) => (
-            <div key={i} className="absolute left-0 w-full border-t border-border/10 h-[60px]" style={{ top: `${i * 60}px` }}>
-                <span className="text-[10px] text-muted-foreground/30 pl-2 pt-1 block font-mono">
-                    {i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i-12} PM`}
+    <div className="panel relative h-[1440px] overflow-hidden">
+      {/* 24 hour grid */}
+      {Array.from({ length: 24 }).map((_, i) => (
+        <div
+          key={i}
+          className={`absolute left-0 h-[60px] w-full ${i === 0 ? "" : "border-t border-border"}`}
+          style={{ top: `${i * 60}px` }}
+        >
+          <span className="label-mono block pl-3 pt-1.5 text-[10px]">
+            {i === 0 ? "12 AM" : i < 12 ? `${i} AM` : i === 12 ? "12 PM" : `${i - 12} PM`}
+          </span>
+        </div>
+      ))}
+
+      {/* Task blocks */}
+      {positionedTasks.map((task: any) => {
+        const d = new Date(task.startTime);
+        const topPos = d.getHours() * 60 + d.getMinutes();
+        const height = task.duration;
+        const widthVal = `calc((100% - 5rem) / ${task.totalCols})`;
+        const leftVal = `calc(4rem + ((100% - 5rem) / ${task.totalCols} * ${task.colIndex}))`;
+        const styleVariant =
+          task.priority === "HIGH"
+            ? "border-l-priority-high bg-priority-high-bg"
+            : task.priority === "MEDIUM"
+              ? "border-l-priority-medium bg-priority-medium-bg"
+              : task.priority === "HABIT"
+                ? "border-l-priority-habit bg-priority-habit-bg"
+                : "border-l-priority-low bg-priority-low-bg";
+
+        return (
+          <div
+            key={task.id}
+            className={`absolute cursor-pointer overflow-hidden rounded-lg border-l-[3px] px-3 py-1.5 text-[13px] ring-1 ring-card transition-opacity hover:z-20 hover:opacity-100 ${styleVariant} ${task.isCompleted ? "opacity-55" : "opacity-95"}`}
+            style={{
+              top: `${topPos}px`,
+              height: `${Math.max(30, height)}px`,
+              width: widthVal,
+              left: leftVal,
+              zIndex: 10 + task.colIndex,
+            }}
+          >
+            <div className="flex h-full flex-col justify-between">
+              <span className={`truncate font-medium leading-tight ${task.isCompleted ? "line-through" : ""}`}>
+                {task.title}
+              </span>
+
+              {/* Time, only when the block is tall enough */}
+              {height > 40 && (
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  {d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </span>
+              )}
             </div>
-        ))}
-
-        {/* Task Blocks */}
-        {positionedTasks.map((task: any) => {
-            const d = new Date(task.startTime);
-            const topPos = (d.getHours() * 60) + d.getMinutes();
-            const height = task.duration;
-            const widthVal = `calc((100% - 5rem) / ${task.totalCols})`;
-            const leftVal = `calc(4rem + ((100% - 5rem) / ${task.totalCols} * ${task.colIndex}))`;
-            const styleVariant = 
-            task.priority === 'HIGH' ? 'border-l-red-500/70 bg-red-500/5' : 
-            task.priority === 'MEDIUM' ? 'border-l-orange-500/70 bg-orange-500/5' :
-            task.priority === 'HABIT' ? 'border-l-violet-500/70 bg-violet-500/5' :
-            'border-l-blue-500/70 bg-blue-500/5'; // Low
-
-            return (
-              <div 
-                  key={task.id}
-                  className={`
-                      absolute rounded-r-sm border-l-[3px] px-3 py-1.5 text-xs 
-                      transition-all hover:brightness-95 hover:z-20 cursor-pointer
-                      ${styleVariant}
-                      ${task.isCompleted ? 'opacity-50 grayscale-[0.5]' : 'opacity-90'}
-                  `}
-                  style={{ 
-                      top: `${topPos}px`, 
-                      height: `${Math.max(30, height)}px`, 
-                      width: widthVal,
-                      left: leftVal,
-                      zIndex: 10 + task.colIndex
-                  }} 
-              >
-                  <div className="flex flex-col h-full justify-between">
-                      {/* Title - Darker text for readability */}
-                      <span className="font-medium text-foreground/90 truncate leading-tight">
-                          {task.title}
-                      </span>
-                      
-                      {/* Time - Only show if tall enough */}
-                      {(height > 40) && (
-                          <span className="text-[9px] text-muted-foreground/60 font-mono">
-                              {d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
-                          </span>
-                      )}
-                  </div>
-              </div>
-          )
-        })}
+          </div>
+        );
+      })}
     </div>
   );
 }

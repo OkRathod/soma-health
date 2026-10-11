@@ -3,10 +3,8 @@
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Sparkles, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { shouldRequestFeedback } from "@/app/actions/feedback"; // Import the action
-import Link from "next/link";
 
 export function FeedbackPrompt() {
   const [isOpen, setIsOpen] = useState(false);
@@ -53,21 +51,21 @@ export function FeedbackPrompt() {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleDismiss()}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader className="flex flex-col items-center text-center gap-2">
-            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
-                <Sparkles className="w-6 h-6 text-primary" />
-            </div>
-            <DialogTitle>Enjoying Soma?</DialogTitle>
-            <DialogDescription className="text-center pt-1">
-                We noticed you've been using the app for a while. 
+      <DialogContent className="gap-0 sm:max-w-[400px]">
+        <DialogHeader className="gap-0 text-left">
+            <p className="eyebrow">A quick question</p>
+            <DialogTitle className="display mt-3 text-[2rem] font-normal sm:text-4xl">
+                Enjoying <em>Soma?</em>
+            </DialogTitle>
+            <DialogDescription className="mt-2 leading-relaxed">
+                We noticed you&apos;ve been using the app for a while.
                 We would love to hear your thoughts to help us improve.
             </DialogDescription>
         </DialogHeader>
-        
-        <DialogFooter className="flex-col sm:flex-col gap-2 mt-4">
-            <Button onClick={handleAccept} className="w-full">
-                Give Feedback
+
+        <DialogFooter className="mt-6 flex-col gap-2 sm:flex-col">
+            <Button onClick={handleAccept} size="lg" className="w-full">
+                Give feedback
             </Button>
             <Button onClick={handleDismiss} variant="ghost" className="w-full text-muted-foreground">
                 Maybe later

@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, UserCog } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export function CompleteProfileModal({ userId, missingFields }: { userId: string, missingFields: string[] }) {
   const [open, setOpen] = useState(true); // Always open if rendered
@@ -51,46 +51,48 @@ export function CompleteProfileModal({ userId, missingFields }: { userId: string
 
   // Prevent closing by clicking outside (Force completion)
   return (
-    <Dialog open={open} onOpenChange={() => {}}> 
-      <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <UserCog className="w-5 h-5 text-primary" /> Setup Your Profile
+    <Dialog open={open} onOpenChange={() => {}}>
+      <DialogContent
+        className="gap-0 sm:max-w-md"
+        showCloseButton={false}
+        onInteractOutside={(e) => e.preventDefault()}
+      >
+        <DialogHeader className="gap-0 text-left">
+          <p className="eyebrow">One-time setup</p>
+          <DialogTitle className="display mt-3 text-[2rem] font-normal sm:text-4xl">
+            Set up your <em>profile</em>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="mt-2 leading-relaxed">
             Soma needs your body metrics to calculate accurate calorie goals.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-4">
-          
-          {/* Only show inputs if field was missing (or show all for simplicity) */}
-          
-          <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 py-6">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Height (cm)</Label>
-              <Input 
-                type="number" 
-                placeholder="175" 
+              <Input
+                type="number"
+                placeholder="175"
                 onChange={(e) => setFormData({...formData, height: e.target.value})}
               />
             </div>
             <div className="space-y-2">
               <Label>Weight (kg)</Label>
-              <Input 
-                type="number" 
-                placeholder="70" 
+              <Input
+                type="number"
+                placeholder="70"
                 onChange={(e) => setFormData({...formData, weight: e.target.value})}
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Age</Label>
-              <Input 
-                type="number" 
-                placeholder="25" 
+              <Input
+                type="number"
+                placeholder="25"
                 onChange={(e) => setFormData({...formData, age: e.target.value})}
               />
             </div>
@@ -106,12 +108,11 @@ export function CompleteProfileModal({ userId, missingFields }: { userId: string
               </Select>
             </div>
           </div>
-
         </div>
 
         <DialogFooter>
-          <Button onClick={handleSubmit} disabled={loading} className="w-full">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save & Continue"}
+          <Button onClick={handleSubmit} disabled={loading} size="lg" className="w-full">
+            {loading ? <Loader2 className="size-4 animate-spin" /> : "Save and continue"}
           </Button>
         </DialogFooter>
       </DialogContent>

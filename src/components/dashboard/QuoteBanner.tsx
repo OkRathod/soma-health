@@ -1,26 +1,20 @@
 "use client";
 
+/** Daily quote, set in the display serif on an ink panel. */
 export function QuoteBanner({ quote }: { quote: { quote: string; author: string } }) {
   return (
-    <div className="relative overflow-hidden border-2 border-border/60 rounded-2xl bg-[var(--quote-bg)] px-6 py-5 flex flex-row gap-4 shadow-sm transition-all hover:shadow-md w-full items-start">
-      
-      {/* Decorative Quote Mark - Smaller & Elegant */}
-      <span className="text-7xl leading-none font-serif text-[var(--quote-accent)] select-none pointer-events-none -mt-1 shrink-0 opacity-90">
-        “
-      </span>
-
-      {/* Text Content */}
-      <div className="flex flex-col gap-3 z-10 w-full pt-1">
-        <p className="text-xl font-serif text-[var(--quote-text)] leading-relaxed italic">
+    <figure className="panel-ink flex h-full flex-col justify-between gap-8 p-5 md:p-6">
+      <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-ink-foreground/50">Thought for today</p>
+      <div>
+        <blockquote className="font-display text-[1.7rem] leading-[1.12] tracking-[-0.01em] text-ink-foreground">
+          <span className="text-lime">“</span>
           {quote.quote}
-        </p>
-        
+          <span className="text-lime">”</span>
+        </blockquote>
         {quote.author && (
-          <p className="text-sm font-medium text-[var(--quote-author)] self-end uppercase tracking-wider opacity-90">
-            — {quote.author}
-          </p>
+          <figcaption className="mt-4 text-sm text-ink-foreground/55">— {quote.author}</figcaption>
         )}
       </div>
-    </div>
+    </figure>
   );
 }

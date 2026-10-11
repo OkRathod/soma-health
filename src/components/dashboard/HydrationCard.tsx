@@ -1,45 +1,61 @@
 "use client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Droplets, Plus } from "lucide-react";
-import { motion } from "framer-motion";
 
-export function HydrationCard({ total, onAdd }: { total: number; onAdd: () => void }) {
-  const goal = 2500;
-  const percentage = Math.min((total / goal) * 100, 100);
+import { Droplets, Plus } from "lucide-react";
+
+/**
+ * Water intake for today. One tap adds a 250 ml glass. `goal` defaults to
+ * 2.5 L and is overridden by the user's own water goal when the dashboard
+ * passes it in.
+ */
+export function HydrationCard({
+  total,
+  onAdd,
+  goal = 2500,
+}: {
+  total: number;
+  onAdd: () => void;
+  goal?: number;
+}) {
+  const glasses = Math.max(Math.ceil(goal / 250), 1);
+  const filled = Math.min(Math.floor(total / 250), glasses);
+  const litres = (total / 1000).toFixed(total % 1000 === 0 ? 0 : 2).replace(/0$/, "");
 
   return (
-    <Card className="relative overflow-hidden border-border/60 shadow-sm group">
-      
-      {/* 🌊 Liquid Fill Animation Background */}
-      <motion.div 
-        className="absolute bottom-0 left-0 right-0 bg-blue-500/10 z-0"
-        initial={{ height: "0%" }}
-        animate={{ height: `${percentage}%` }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-      />
+    <section className="panel flex flex-col p-5 md:p-6">
+      <div className="flex items-center justify-between">
+        <p className="label-mono flex items-center gap-2">
+          <Droplets className="size-3.5 text-water" /> Water
+        </p>
+        <span className="font-mono text-[11px] text-muted-foreground">goal {(goal / 1000).toString()} L</span>
+      </div>
 
-      <CardContent className="p-5 flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-500/20 rounded-full text-blue-600">
-                <Droplets className="w-6 h-6" />
-            </div>
-            <div>
-                <div className="text-2xl font-bold text-foreground tracking-tight flex items-baseline gap-1">
-                    {total} <span className="text-sm font-normal text-muted-foreground">/ {goal}ml</span>
-                </div>
-                <p className="text-xs text-blue-600 font-medium">Daily Hydration</p>
-            </div>
-        </div>
+      <p className="numeral mt-5 text-5xl">
+        {litres}
+        <span className="ml-1.5 text-base font-normal tracking-normal text-muted-foreground">L</span>
+      </p>
 
-        <Button 
-          onClick={onAdd} 
-          size="sm" 
-          className="h-10 px-5 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-        >
-          <Plus className="w-4 h-4 mr-1" /> Add
-        </Button>
-      </CardContent>
-    </Card>
+      {/* One cell per 250 ml glass */}
+      <div
+        className="mt-5 grid gap-1"
+        style={{ gridTemplateColumns: `repeat(${glasses}, minmax(0, 1fr))` }}
+        role="img"
+        aria-label={`${filled} of ${glasses} glasses`}
+      >
+        {Array.from({ length: glasses }).map((_, i) => (
+          <span
+            key={i}
+            className={`h-7 rounded-md transition-colors duration-500 ${i < filled ? "bg-water" : "bg-surface"}`}
+          />
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={onAdd}
+        className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-full border border-border text-sm font-medium transition-colors hover:border-foreground/30 hover:bg-accent press md:mt-auto"
+      >
+        <Plus className="size-4" /> Add 250 ml
+      </button>
+    </section>
   );
 }

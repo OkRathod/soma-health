@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Plus, X, Loader2, CalendarClock } from "lucide-react";
+import { Plus, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createDeadline } from "@/app/actions/deadlines";
-import { updateDeadline } from "@/app/actions/deadlines";
+import { deadlineSheetClass } from "@/components/deadlines/sheet";
 
 interface AddDeadlineDialogProps {
   open: boolean;
@@ -19,14 +19,14 @@ interface AddDeadlineDialogProps {
 
 export function AddDeadlineDialog({ open, onOpenChange, onSave }: AddDeadlineDialogProps) {
   const [loading, setLoading] = useState(false);
-  
-  // Form State
+
+  // Form state
   const [title, setTitle] = useState("");
   const [hasDeadline, setHasDeadline] = useState(true);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("23:59"); // Default to end of day
-  
-  // Subtasks State
+
+  // Subtasks state
   const [currentSubtask, setCurrentSubtask] = useState("");
   const [subtasks, setSubtasks] = useState<string[]>([]);
 
@@ -52,7 +52,7 @@ export function AddDeadlineDialog({ open, onOpenChange, onSave }: AddDeadlineDia
       let targetDateISO = null;
 
       if (hasDeadline && date) {
-        // Combine Date and Time into ISO string
+        // Combine date and time into an ISO string
         const combined = new Date(`${date}T${time}`);
         targetDateISO = combined.toISOString();
       }
@@ -63,14 +63,14 @@ export function AddDeadlineDialog({ open, onOpenChange, onSave }: AddDeadlineDia
         subtasks,
       });
 
-      toast.success("Deadline Created!");
-      
-      // Reset Form
+      toast.success("Deadline created");
+
+      // Reset form
       setTitle("");
       setSubtasks([]);
       setCurrentSubtask("");
       setHasDeadline(true);
-      
+
       onSave(); // Refresh parent
       onOpenChange(false); // Close modal
     } catch (e) {
@@ -82,101 +82,118 @@ export function AddDeadlineDialog({ open, onOpenChange, onSave }: AddDeadlineDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CalendarClock className="w-5 h-5 text-primary" />
-            Create New Deadline
+      <DialogContent className={deadlineSheetClass}>
+        <DialogHeader className="pr-8 text-left">
+          <p className="eyebrow">New deadline</p>
+          <DialogTitle className="display mt-1 text-[2rem] font-normal leading-none">
+            What are you working <em>towards?</em>
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Name the goal, set an optional due date and break it into steps.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          
-          {/* 1. Title Input */}
+        <div className="mt-6 space-y-5">
+          {/* Title */}
           <div className="space-y-2">
-            <Label>Goal / Task Title</Label>
-            <Input 
-              placeholder="e.g. Submit Project Report" 
+            <Label htmlFor="new-deadline-title">Goal or task title</Label>
+            <Input
+              id="new-deadline-title"
+              placeholder="e.g. Submit project report"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               className="font-medium"
             />
           </div>
 
-          {/* 2. Deadline Toggle & Picker */}
-          <div className="space-y-4 rounded-lg border border-border p-4 bg-muted/20">
-             <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                   <Label>Set Specific Deadline?</Label>
-                   <p className="text-xs text-muted-foreground">Disable for open-ended goals.</p>
-                </div>
-                <Switch checked={hasDeadline} onCheckedChange={setHasDeadline} />
-             </div>
+          {/* Due date toggle and pickers */}
+          <div className="rounded-2xl bg-surface p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <Label htmlFor="new-deadline-has-date">Set a due date</Label>
+                <p className="mt-1.5 text-[13px] text-muted-foreground">Turn off for open-ended goals.</p>
+              </div>
+              <Switch id="new-deadline-has-date" checked={hasDeadline} onCheckedChange={setHasDeadline} />
+            </div>
 
-             {hasDeadline && (
-                <div className="grid grid-cols-2 gap-4 pt-2 animate-in slide-in-from-top-2">
-                   <div className="space-y-2">
-                      <Label className="text-xs">Date</Label>
-                      <Input 
-                        type="date" 
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                      />
-                   </div>
-                   <div className="space-y-2">
-                      <Label className="text-xs">Time</Label>
-                      <Input 
-                        type="time" 
-                        value={time}
-                        onChange={(e) => setTime(e.target.value)}
-                      />
-                   </div>
+            {hasDeadline && (
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="min-w-0 space-y-1.5">
+                  <Label htmlFor="new-deadline-date" className="label-mono">Date</Label>
+                  <Input
+                    id="new-deadline-date"
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                  />
                 </div>
-             )}
+                <div className="min-w-0 space-y-1.5">
+                  <Label htmlFor="new-deadline-time" className="label-mono">Time</Label>
+                  <Input
+                    id="new-deadline-time"
+                    type="time"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* 3. Subtasks Manager */}
-          <div className="space-y-3">
-             <Label>Subtasks (Optional)</Label>
-             
-             {/* List of added subtasks */}
-             {subtasks.length > 0 && (
-                 <div className="space-y-2 mb-3">
-                    {subtasks.map((task, i) => (
-                        <div key={i} className="flex items-center justify-between text-sm bg-secondary/50 px-3 py-2 rounded-md border border-border">
-                           <span>{task}</span>
-                           <button onClick={() => handleRemoveSubtask(i)} className="text-muted-foreground hover:text-destructive">
-                              <X className="w-4 h-4" />
-                           </button>
-                        </div>
-                    ))}
-                 </div>
-             )}
+          {/* Subtasks */}
+          <div className="space-y-2">
+            <Label htmlFor="new-deadline-step">
+              Steps <span className="font-normal text-muted-foreground">optional</span>
+            </Label>
 
-             {/* Add Input */}
-             <div className="flex gap-2">
-                <Input 
-                   placeholder="Add a step..." 
-                   value={currentSubtask}
-                   onChange={(e) => setCurrentSubtask(e.target.value)}
-                   onKeyDown={(e) => e.key === "Enter" && handleAddSubtask()}
-                />
-                <Button variant="secondary" onClick={handleAddSubtask} type="button">
-                   <Plus className="w-4 h-4" />
-                </Button>
-             </div>
+            {subtasks.length > 0 && (
+              <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
+                {subtasks.map((task, i) => (
+                  <li key={i} className="flex items-center gap-2 py-1 pl-3.5 pr-1 text-sm">
+                    <span className="label-mono w-5 shrink-0 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="min-w-0 flex-1 truncate">{task}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSubtask(i)}
+                      aria-label={`Remove step "${task}"`}
+                      className="grid size-10 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-destructive"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="flex gap-2">
+              <Input
+                id="new-deadline-step"
+                placeholder="Add a step…"
+                value={currentSubtask}
+                onChange={(e) => setCurrentSubtask(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddSubtask()}
+              />
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={handleAddSubtask}
+                type="button"
+                aria-label="Add step"
+                className="size-11"
+              >
+                <Plus />
+              </Button>
+            </div>
           </div>
-
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-7 grid grid-cols-2 gap-3 sm:flex">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2"/> : null}
-            Create Deadline
+            {loading ? <Loader2 className="animate-spin" /> : null}
+            Create deadline
           </Button>
         </DialogFooter>
-
       </DialogContent>
     </Dialog>
   );

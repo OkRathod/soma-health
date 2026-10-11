@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Bell, BellRing, BellOff, Loader2 } from 'lucide-react'; // 👈 Added BellOff
+import { Bell, BellOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 
@@ -53,7 +53,7 @@ export function EnableNotifications() {
                 applicationServerKey: convertedVapidKey
             });
 
-            // 👇 Make sure this path matches exactly where your route.ts is located
+            // This path must match where the subscribe route.ts lives
             const res = await fetch('/api/cron/notifications/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -62,7 +62,7 @@ export function EnableNotifications() {
 
             if (res.ok) {
                 setIsSubscribed(true);
-                toast.success("Reminders enabled successfully! 🎉");
+                toast.success("Reminders enabled successfully!");
             } else {
                 toast.error("Failed to connect device to server.");
             }
@@ -74,7 +74,7 @@ export function EnableNotifications() {
         }
     }
 
-    // 👇 NEW: Function to handle turning off notifications
+    // Turns notifications off for this device
     async function handleUnsubscribe() {
         setIsLoading(true);
         try {
@@ -86,7 +86,7 @@ export function EnableNotifications() {
                 await subscription.unsubscribe();
 
                 // 2. Tell the database to delete this device
-                // 👇 Make sure this path matches exactly where your route.ts is located
+                // This path must match where the subscribe route.ts lives
                 await fetch('/api/cron/notifications/subscribe', {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
@@ -106,35 +106,46 @@ export function EnableNotifications() {
 
     if (!isSupported) {
         return (
-            <div className="p-4 bg-secondary/30 rounded-xl border border-border/50 text-sm text-muted-foreground flex items-center gap-3">
-                <Bell className="w-5 h-5 opacity-50" />
+            <div className="flex items-center gap-3 rounded-3xl bg-surface p-5 text-sm text-muted-foreground">
+                <BellOff className="size-5 shrink-0" />
                 <p>Push notifications are not supported or are blocked in this browser.</p>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-card border border-border/60 rounded-2xl shadow-sm">
-            <div className="space-y-1">
-                <h4 className="font-bold text-foreground flex items-center gap-2">
-                    <Bell className="w-4 h-4 text-primary" /> Task Reminders
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                    Get pinged 5 mins before a task starts, and every 6 hours for un-timed habits.
-                </p>
+        <div className="panel flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
+            <div className="flex min-w-0 items-start gap-4">
+                <span
+                    className={`grid size-11 shrink-0 place-items-center rounded-full ${
+                        isSubscribed ? 'bg-lime text-lime-foreground' : 'bg-surface text-muted-foreground'
+                    }`}
+                >
+                    <Bell className="size-5" />
+                </span>
+                <div className="min-w-0">
+                    <h4 className="flex flex-wrap items-center gap-2 text-[15px] font-medium">
+                        Task reminders
+                        <span className="label-mono">{isSubscribed ? 'On for this device' : 'Off'}</span>
+                    </h4>
+                    <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+                        Get pinged 5 mins before a task starts, and every 6 hours for un-timed habits.
+                    </p>
+                </div>
             </div>
-            
-            {/* 👇 UPDATED: Button now toggles between subscribe and unsubscribe */}
-            <Button 
-                onClick={isSubscribed ? handleUnsubscribe : handleSubscribe} 
+
+            <Button
+                onClick={isSubscribed ? handleUnsubscribe : handleSubscribe}
                 disabled={isLoading}
                 variant={isSubscribed ? "outline" : "default"}
-                className={`gap-2 shrink-0 transition-all ${isSubscribed ? 'text-destructive hover:bg-destructive/10 border-destructive/20 hover:text-destructive' : 'shadow-md'}`}
+                className={`w-full shrink-0 sm:w-auto ${
+                    isSubscribed ? 'text-destructive hover:border-destructive/40 hover:bg-priority-high-bg hover:text-destructive' : ''
+                }`}
             >
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 
-                 isSubscribed ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-                
-                {isSubscribed ? "Turn off Reminders" : "Turn on Reminders"}
+                {isLoading ? <Loader2 className="size-4 animate-spin" /> :
+                 isSubscribed ? <BellOff /> : <Bell />}
+
+                {isSubscribed ? "Turn off reminders" : "Turn on reminders"}
             </Button>
         </div>
     );

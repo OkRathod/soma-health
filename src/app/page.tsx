@@ -4,19 +4,16 @@ import { FeatureSlider } from "@/components/landing/FeatureSlider";
 import { FeaturesBento } from "@/components/landing/FeaturesBento";
 import { Footer } from "@/components/landing/Footer";
 
+/** Public landing page: hero → product tour → why / modules / how → CTA + footer. */
 export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-background text-foreground overflow-x-hidden selection:bg-primary selection:text-primary-foreground">
-      {/* 1. Glass Navbar */}
+    <div className="flex min-h-dvh flex-col overflow-x-clip bg-background text-foreground">
       <Navbar />
-
       <main className="flex-1">
         <HeroSection />
         <FeatureSlider />
         <FeaturesBento />
       </main>
-
-      {/* 4. Footer */}
       <Footer />
     </div>
   );

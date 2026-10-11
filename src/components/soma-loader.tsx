@@ -1,18 +1,17 @@
 "use client";
 
 /**
- * SomaLoader — "Pulse Core".
- * A breathing core with an orbiting tracer ring. Uses theme tokens (primary),
- * respects prefers-reduced-motion (via globals.css), and works inline or
- * fullscreen. Drop-in replacement for <DNALoader />.
+ * SomaLoader — the app's only loading indicator.
+ * A thin ink ring with a lime tracer. Works inline or as a full-screen veil.
+ * The veil is deliberately light (no heavy blur) so the page underneath stays
+ * readable while data arrives.
  *
- * Usage:
- *   <SomaLoader />                       // fullscreen overlay
- *   <SomaLoader inline size={40} />      // inline spinner
- *   <SomaLoader label="Analyzing…" />
+ *   <SomaLoader />                    // full-screen veil
+ *   <SomaLoader inline size={32} />   // inline spinner
+ *   <SomaLoader label="Analysing…" />
  */
 export function SomaLoader({
-  size = 72,
+  size = 44,
   inline = false,
   label,
 }: {
@@ -21,47 +20,28 @@ export function SomaLoader({
   label?: string;
 }) {
   const core = (
-    <div
-      className="relative grid place-items-center"
+    <span
+      className="relative inline-grid place-items-center"
       style={{ width: size, height: size }}
       role="status"
       aria-live="polite"
       aria-label={label ?? "Loading"}
     >
-      {/* Orbiting tracer ring */}
-      <svg
-        viewBox="0 0 100 100"
-        width={size}
-        height={size}
-        className="absolute inset-0"
-        style={{ animation: "soma-orbit 2.4s linear infinite" }}
-      >
-        <circle cx="50" cy="50" r="42" fill="none" stroke="var(--border)" strokeWidth="3" opacity="0.4" />
+      <svg viewBox="0 0 48 48" width={size} height={size} style={{ animation: "soma-orbit 0.9s linear infinite" }}>
+        <circle cx="24" cy="24" r="20" fill="none" stroke="var(--border)" strokeWidth="4" />
         <circle
-          cx="50"
-          cy="50"
-          r="42"
+          cx="24"
+          cy="24"
+          r="20"
           fill="none"
-          stroke="var(--primary)"
+          stroke="var(--foreground)"
           strokeWidth="4"
           strokeLinecap="round"
-          strokeDasharray="60 300"
-          style={{ animation: "soma-trace 2.4s ease-in-out infinite" }}
+          strokeDasharray="34 126"
         />
       </svg>
-
-      {/* Breathing core */}
-      <span
-        className="rounded-full"
-        style={{
-          width: size * 0.34,
-          height: size * 0.34,
-          background: "radial-gradient(circle at 30% 30%, var(--primary), color-mix(in srgb, var(--primary) 55%, transparent))",
-          boxShadow: "0 0 24px color-mix(in srgb, var(--primary) 45%, transparent)",
-          animation: "soma-pulse 1.6s ease-in-out infinite",
-        }}
-      />
-    </div>
+      <span className="absolute size-1.5 rounded-full bg-lime ring-1 ring-foreground/20" />
+    </span>
   );
 
   if (inline) {
@@ -74,11 +54,11 @@ export function SomaLoader({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-background/70 backdrop-blur-md">
+    <div className="fixed inset-0 z-[100] grid place-items-center bg-background/75 backdrop-blur-[2px] animate-fade-in">
       <div className="flex flex-col items-center gap-4">
         {core}
-        <p className="text-sm font-medium tracking-wide text-muted-foreground animate-pulse">
-          {label ?? "Loading your day…"}
+        <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+          {label ?? "Loading your day"}
         </p>
       </div>
     </div>

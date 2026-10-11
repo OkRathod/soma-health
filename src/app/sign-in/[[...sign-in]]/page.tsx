@@ -1,9 +1,13 @@
 import { SignIn } from "@clerk/nextjs";
+import { AuthShell, clerkAppearance } from "@/components/account/auth-shell";
 
 export default function Page() {
   return (
-    <div className="flex justify-center items-center min-h-screen bg-background">
-      <SignIn path="/sign-in" />
-    </div>
+    <AuthShell
+      eyebrow="Welcome back"
+      alternate={{ prompt: "New to Somafit?", label: "Create an account", href: "/sign-up" }}
+    >
+      <SignIn path="/sign-in" appearance={clerkAppearance} />
+    </AuthShell>
   );
 }

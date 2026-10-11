@@ -3,9 +3,27 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, CheckCircle, Lock, Info, X, Download, AlertTriangle, Check, Moon, Sun, Monitor } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { PageShell, PageHeader, Segmented } from "@/components/layout/page";
+import { SettingsSection, FieldRow, WithUnit } from "@/components/account/form-row";
+import { cn } from "@/lib/utils";
+import {
+  AlertTriangle,
+  Bell,
+  Check,
+  Download,
+  Info,
+  KeyRound,
+  Loader2,
+  Monitor,
+  Moon,
+  Palette,
+  ShieldCheck,
+  SlidersHorizontal,
+  Sun,
+  User,
+  X,
+} from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { SomaLoader as DNALoader } from "@/components/soma-loader";
 import { useTheme } from "next-themes";
@@ -19,6 +37,27 @@ const toImperialHeight = (cm: string) => (Number(cm) / 30.48).toFixed(1); // cm 
 const toMetricHeight = (ft: string) => (Number(ft) * 30.48).toFixed(0);   // ft -> cm
 const toImperialWeight = (kg: string) => (Number(kg) * 2.20462).toFixed(0); // kg -> lbs
 const toMetricWeight = (lbs: string) => (Number(lbs) / 2.20462).toFixed(1); // lbs -> kg
+
+const SECTIONS = [
+  { value: "profile", label: "Profile", icon: User },
+  { value: "preferences", label: "Preferences", icon: SlidersHorizontal },
+  { value: "appearance", label: "Appearance", icon: Palette },
+  { value: "notifications", label: "Notifications", icon: Bell },
+  { value: "data", label: "Data & privacy", icon: ShieldCheck },
+];
+
+// Fixed swatches for the theme previews: each tile depicts a theme regardless
+// of the one currently active, so these cannot come from the live tokens.
+const PREVIEW = {
+  light: { bg: "#f3f2ec", card: "#fbfaf6", line: "#dddbcf", ink: "#171713" },
+  dark: { bg: "#10100e", card: "#181816", line: "#2b2b27", ink: "#eeede6" },
+};
+
+const THEMES = [
+  { value: "light", label: "Light", hint: "Bone paper", icon: Sun },
+  { value: "dark", label: "Dark", hint: "Graphite", icon: Moon },
+  { value: "system", label: "System", hint: "Follows your device", icon: Monitor },
+];
 
 export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -138,317 +177,382 @@ export default function SettingsPage() {
     });
   };
 
-  const showSaveBar = tab === "preferences" || tab === "data";
+  const metric = form.unitPreference === "metric";
+
+  const saveButton = (
+    <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
+      {saving ? <Loader2 className="size-4 animate-spin" /> : null}
+      Save changes
+    </Button>
+  );
 
   return (
-    <div className="min-h-screen bg-background p-6 md:p-10 font-sans pb-32">
-      <div
-        className={`max-w-4xl mx-auto space-y-8 transition-all ${
-          deleteStep > 0 || simpleModal ? "blur-sm scale-[0.98] opacity-80" : ""
-        }`}
+    <PageShell>
+      <PageHeader
+        eyebrow="Account"
+        title={
+          <>
+            You, your goals, <em>your data.</em>
+          </>
+        }
+        description="Your profile, preferences and privacy, all in one place."
+      />
+
+      <Tabs
+        value={tab}
+        onValueChange={setTab}
+        className="gap-5 lg:grid lg:grid-cols-[13.5rem_minmax(0,1fr)] lg:items-start lg:gap-10"
       >
-        {/* HEADER */}
-        <div className="border-b border-border pb-6 animate-fade-up">
-          <h1 className="text-3xl font-bold text-foreground">Account</h1>
-          <p className="text-muted-foreground mt-1">
-            Your profile, preferences and privacy — all in one place.
-          </p>
+        {/* Section nav: scrollable pill row on phones, a vertical list from lg */}
+        <div className="-mx-4 overflow-x-auto px-4 no-scrollbar sm:mx-0 sm:px-0 lg:sticky lg:top-28 lg:overflow-visible">
+          <TabsList className="w-max justify-start lg:h-auto lg:w-full lg:flex-col lg:items-stretch lg:gap-1 lg:rounded-none lg:bg-transparent lg:p-0">
+            {SECTIONS.map((s) => (
+              <TabsTrigger
+                key={s.value}
+                value={s.value}
+                className="flex-none lg:h-11 lg:justify-start lg:gap-3 lg:px-4 lg:text-sm lg:hover:bg-accent lg:data-[state=active]:hover:bg-ink dark:lg:data-[state=active]:hover:bg-lime"
+              >
+                <s.icon className="hidden lg:block" />
+                {s.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
         </div>
 
-        {/* TABS */}
-        <Tabs value={tab} onValueChange={setTab} className="space-y-8">
-          <TabsList className="bg-muted/60 p-1 rounded-xl flex-wrap h-auto">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="data">Data & Privacy</TabsTrigger>
-          </TabsList>
-
-          {/* ================= PROFILE TAB ================= */}
+        <div className="min-w-0">
+          {/* ---------- Profile ---------- */}
           <TabsContent value="profile">
             <ProfilePanel />
           </TabsContent>
 
-          {/* ================= PREFERENCES TAB ================= */}
-          <TabsContent value="preferences" className="space-y-6 animate-fade-in">
-            <Card className="border-border shadow-sm">
-              <CardHeader className="pb-2">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center">
-                    Physical Profile
-                    <InfoPopup text="This data helps the AI calibrate calories specifically for your body type." />
-                  </CardTitle>
-
-                  {/* UNIT TOGGLE */}
-                  <div className="flex items-center bg-muted rounded-lg p-1">
-                    <button
-                      onClick={() => toggleUnit("metric")}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all press ${
-                        form.unitPreference === "metric" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-                      }`}
-                    >
-                      Metric
-                    </button>
-                    <button
-                      onClick={() => toggleUnit("imperial")}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-all press ${
-                        form.unitPreference === "imperial" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-                      }`}
-                    >
-                      Imperial
-                    </button>
-                  </div>
-                </div>
-                <CardDescription>Calibrate Soma for your body metrics.</CardDescription>
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                <div className="grid gap-2">
-                  <Label>Nationality / Cultural Background</Label>
+          {/* ---------- Preferences ---------- */}
+          <TabsContent value="preferences" className="space-y-4 animate-fade-in">
+            <SettingsSection
+              label="Calibration"
+              title={
+                <>
+                  Body profile
+                  <InfoPopup text="This data helps the AI calibrate calories specifically for your body type." />
+                </>
+              }
+              description="Calibrate Soma for your body metrics."
+              action={
+                <Segmented
+                  size="sm"
+                  value={form.unitPreference}
+                  onChange={toggleUnit}
+                  options={[
+                    { value: "metric", label: "Metric" },
+                    { value: "imperial", label: "Imperial" },
+                  ]}
+                />
+              }
+              footer={saveButton}
+            >
+              <FieldRow label="Nationality" hint="Or cultural background. It shapes food estimates.">
+                <Input
+                  value={form.nationality}
+                  onChange={(e) => setForm({ ...form, nationality: e.target.value })}
+                  placeholder="e.g. Indian, Japanese, Mediterranean"
+                />
+              </FieldRow>
+              <FieldRow label="Height">
+                <WithUnit unit={metric ? "cm" : "ft"}>
                   <Input
-                    value={form.nationality}
-                    onChange={(e) => setForm({ ...form, nationality: e.target.value })}
-                    placeholder="e.g. Indian, Japanese, Mediterranean"
+                    value={form.height}
+                    onChange={(e) => setForm({ ...form, height: e.target.value })}
+                    placeholder={metric ? "175" : "5.9"}
+                    inputMode="decimal"
                   />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label>Height ({form.unitPreference === "metric" ? "cm" : "ft"})</Label>
-                    <Input
-                      value={form.height}
-                      onChange={(e) => setForm({ ...form, height: e.target.value })}
-                      placeholder={form.unitPreference === "metric" ? "175" : "5.9"}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Weight ({form.unitPreference === "metric" ? "kg" : "lbs"})</Label>
-                    <Input
-                      value={form.weight}
-                      onChange={(e) => setForm({ ...form, weight: e.target.value })}
-                      placeholder={form.unitPreference === "metric" ? "70" : "150"}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </WithUnit>
+              </FieldRow>
+              <FieldRow label="Weight">
+                <WithUnit unit={metric ? "kg" : "lbs"}>
+                  <Input
+                    value={form.weight}
+                    onChange={(e) => setForm({ ...form, weight: e.target.value })}
+                    placeholder={metric ? "70" : "150"}
+                    inputMode="decimal"
+                  />
+                </WithUnit>
+              </FieldRow>
+            </SettingsSection>
           </TabsContent>
 
-          {/* ================= APPEARANCE TAB ================= */}
+          {/* ---------- Appearance ---------- */}
           <TabsContent value="appearance" className="animate-fade-in">
-            <Card className="border-border/60">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  Theme Preferences
+            <SettingsSection
+              label="Theme"
+              title={
+                <>
+                  How Soma looks
                   <InfoPopup text="Choose how Soma looks on your device." />
-                </CardTitle>
-                <CardDescription>Light, dark, or system-based appearance.</CardDescription>
-              </CardHeader>
-
-              <CardContent>
-                <div className="grid grid-cols-3 gap-4">
-                  <button
-                    onClick={() => setTheme("light")}
-                    className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all press ${
-                      theme === "light" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
-                    }`}
-                  >
-                    <Sun className="w-6 h-6 mb-2" />
-                    <span className="text-xs font-medium">Light</span>
-                  </button>
-
-                  <button
-                    onClick={() => setTheme("dark")}
-                    className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all press ${
-                      theme === "dark" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
-                    }`}
-                  >
-                    <Moon className="w-6 h-6 mb-2" />
-                    <span className="text-xs font-medium">Dark</span>
-                  </button>
-
-                  <button
-                    onClick={() => setTheme("system")}
-                    className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all press ${
-                      theme === "system" ? "border-primary bg-primary/5 text-primary" : "border-border text-muted-foreground hover:border-primary/30"
-                    }`}
-                  >
-                    <Monitor className="w-6 h-6 mb-2" />
-                    <span className="text-xs font-medium">System</span>
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
+                </>
+              }
+              description="Light, dark, or matched to your device."
+            >
+              <div className="grid grid-cols-3 gap-2.5 py-5 sm:gap-4 md:py-6" role="radiogroup" aria-label="Theme">
+                {THEMES.map((t) => {
+                  const active = theme === t.value;
+                  return (
+                    <button
+                      key={t.value}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      onClick={() => setTheme(t.value)}
+                      className={cn(
+                        "press group rounded-3xl border p-2 text-left transition-colors sm:p-2.5",
+                        active ? "border-foreground bg-surface" : "border-border hover:border-foreground/30"
+                      )}
+                    >
+                      <ThemePreview mode={t.value as "light" | "dark" | "system"} />
+                      <span className="flex items-center justify-between gap-2 px-1.5 pb-1 pt-3 sm:px-2">
+                        <span className="min-w-0">
+                          <span className="flex items-center gap-1.5 text-sm font-medium">
+                            <t.icon className="hidden size-4 text-muted-foreground sm:block" />
+                            {t.label}
+                          </span>
+                          <span className="mt-0.5 hidden truncate text-xs text-muted-foreground sm:block">{t.hint}</span>
+                        </span>
+                        <span
+                          className={cn(
+                            "size-6 shrink-0 place-items-center rounded-full border",
+                            active
+                              ? "grid border-transparent bg-lime text-lime-foreground"
+                              : "hidden border-border text-transparent sm:grid"
+                          )}
+                        >
+                          <Check className="size-3.5" />
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </SettingsSection>
           </TabsContent>
 
-          {/* ================= NOTIFICATIONS TAB ================= */}
-          <TabsContent value="notifications" className="space-y-6 animate-fade-in">
-            <div>
-              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                Push Notifications
-              </h3>
-              <EnableNotifications />
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Reminders are delivered to this device. You can turn them off any time, and each
-              device manages its own subscription.
+          {/* ---------- Notifications ---------- */}
+          <TabsContent value="notifications" className="space-y-4 animate-fade-in">
+            <p className="label-mono">Push notifications</p>
+            <EnableNotifications />
+            <p className="max-w-prose text-[13px] leading-relaxed text-muted-foreground">
+              Reminders are delivered to this device. You can turn them off any time, and each device manages its own
+              subscription.
             </p>
           </TabsContent>
 
-          {/* ================= DATA TAB ================= */}
-          <TabsContent value="data" className="space-y-6 animate-fade-in">
-            {/* VAULT */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="flex items-center gap-2">
-                      <Lock className="w-5 h-5 text-emerald-600" /> AI Configuration
-                    </CardTitle>
-                    <CardDescription>Bring your own Gemini API key. Stored with AES-256 encryption.</CardDescription>
-                  </div>
-
-                  {hasKey && (
-                    <div className="flex items-center gap-1 text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-medium border border-emerald-200">
-                      <CheckCircle className="w-3 h-3" /> Key Active
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-2">
-                  <Label>Google Gemini API Key</Label>
-                  <Input
-                    type="password"
-                    placeholder={hasKey ? "••••••••••••••••" : "AIzaSy..."}
-                    value={form.apiKey}
-                    onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Don't have one?{" "}
-                    <a href="https://aistudio.google.com/app/apikey" target="_blank" className="underline text-primary hover:text-primary/80">
+          {/* ---------- Data & privacy ---------- */}
+          <TabsContent value="data" className="space-y-4 animate-fade-in">
+            <SettingsSection
+              label="AI configuration"
+              title={
+                <>
+                  <KeyRound className="size-4.5 text-muted-foreground" />
+                  Your Gemini key
+                </>
+              }
+              description="Bring your own Gemini API key. Stored with AES-256 encryption."
+              action={
+                hasKey ? (
+                  <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-lime px-3 font-mono text-[11px] uppercase tracking-[0.1em] text-lime-foreground">
+                    <Check className="size-3.5" /> Key active
+                  </span>
+                ) : null
+              }
+              footer={saveButton}
+            >
+              <FieldRow
+                label="Google Gemini API key"
+                hint={
+                  <>
+                    Don&apos;t have one?{" "}
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      className="text-foreground underline decoration-foreground/30 underline-offset-4 hover:decoration-foreground"
+                    >
                       Get it free here
                     </a>
                     .
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                  </>
+                }
+              >
+                <Input
+                  type="password"
+                  placeholder={hasKey ? "••••••••••••••••" : "AIzaSy..."}
+                  value={form.apiKey}
+                  onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
+                />
+              </FieldRow>
+            </SettingsSection>
 
-            {/* EXPORT */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Export Data</CardTitle>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">Download your entire health history as CSV.</p>
+            <SettingsSection
+              label="Export"
+              title="Take your data with you"
+              description="Download your entire health history as CSV."
+              action={
                 <Button variant="outline" onClick={handleExport}>
-                  <Download className="w-4 h-4 mr-2" />
+                  <Download />
                   Export
                 </Button>
-              </CardContent>
-            </Card>
+              }
+            />
 
-            {/* DANGER ZONE */}
-            <Card className="border-destructive/30">
-              <CardHeader>
-                <CardTitle className="text-destructive">Danger Zone</CardTitle>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">Permanently deactivate your account.</p>
-                <Button variant="destructive" onClick={() => setDeleteStep(1)}>
+            {/* Destructive zone: set apart and quiet until it is needed */}
+            <div className="pt-8">
+              <p className="label-mono mb-3">Danger zone</p>
+              <div className="flex flex-col gap-4 rounded-3xl border border-dashed border-border p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
+                <div className="min-w-0">
+                  <h2 className="text-[15px] font-medium">Deactivate account</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Hides your account right away. You get 15 days to change your mind.
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteStep(1)}
+                  className="shrink-0 text-destructive hover:border-destructive/40 hover:bg-priority-high-bg hover:text-destructive"
+                >
                   Deactivate
                 </Button>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </TabsContent>
-        </Tabs>
+        </div>
+      </Tabs>
 
-        {/* STICKY SAVE BAR — only for settings-backed tabs */}
-        {showSaveBar && (
-          <div className="fixed bottom-20 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border md:static md:bg-transparent md:border-none md:p-0 flex justify-end z-40">
-            <Button onClick={handleSave} disabled={saving} size="lg" className="w-full md:w-auto shadow-lg md:shadow-none hover-lift">
-              {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              Save Changes
-            </Button>
-          </div>
-        )}
-      </div>
-
-      {/* ================= MODALS ================= */}
+      {/* ---------- Dialogs ---------- */}
       {deleteStep > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+        <Sheet>
           {deleteStep === 1 && (
-            <div className="bg-card border border-border rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center space-y-6 animate-scale-in">
-              <div className="mx-auto bg-destructive/10 h-12 w-12 rounded-full flex items-center justify-center">
-                <AlertTriangle className="h-6 w-6 text-destructive" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-foreground">Are you sure?</h3>
-                <p className="text-sm text-muted-foreground">This will begin the process of deactivating your account.</p>
-              </div>
-              <div className="flex gap-3 justify-center">
-                <Button variant="outline" onClick={() => setDeleteStep(0)} className="w-auto">Cancel</Button>
-                <Button onClick={() => setDeleteStep(2)} className="w-auto">Continue</Button>
+            <div className="animate-fade-in">
+              <span className="grid size-11 place-items-center rounded-full bg-priority-high-bg text-destructive">
+                <AlertTriangle className="size-5" />
+              </span>
+              <h3 className="display mt-5 text-3xl">Are you sure?</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                This will begin the process of deactivating your account.
+              </p>
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <Button variant="outline" onClick={() => setDeleteStep(0)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => setDeleteStep(2)}>Continue</Button>
               </div>
             </div>
           )}
 
           {deleteStep === 2 && (
-            <div className="bg-card border border-border rounded-2xl shadow-2xl max-w-md w-full p-6 space-y-6 animate-slide-right">
-              <div className="flex items-start gap-4">
-                <div className="bg-info/10 p-3 rounded-full shrink-0">
-                  <Info className="w-6 h-6 text-info" />
-                </div>
-                <div className="space-y-3">
-                  <h3 className="text-lg font-bold text-foreground">Safety & Grace Period</h3>
-                  <div className="text-sm text-muted-foreground leading-relaxed">
-                    <p className="mb-3">We don't want you to lose data by accident.</p>
-                    <ul className="list-disc pl-4 space-y-2">
-                      <li>Your account will be <strong>hidden immediately</strong>.</li>
-                      <li>You have <strong>15 days</strong> to log back in and restore everything.</li>
-                      <li>After 15 days, your data is <strong>deleted forever</strong>.</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              <div className="flex gap-3 justify-end pt-2">
-                <Button variant="ghost" onClick={() => setDeleteStep(1)}>Back</Button>
-                <Button variant="destructive" onClick={confirmDeactivation} disabled={isDeleting} className="gap-2">
-                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                  Confirm Deactivation
+            <div className="animate-slide-right">
+              <p className="eyebrow">Safety and grace period</p>
+              <h3 className="display mt-3 text-3xl">Before you go</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                We don&apos;t want you to lose data by accident.
+              </p>
+              <ul className="mt-5 divide-y divide-border overflow-hidden rounded-2xl border border-border text-sm">
+                <li className="p-3.5">
+                  Your account will be <span className="font-medium">hidden immediately</span>.
+                </li>
+                <li className="p-3.5">
+                  You have <span className="font-medium">15 days</span> to log back in and restore everything.
+                </li>
+                <li className="p-3.5">
+                  After 15 days, your data is <span className="font-medium">deleted forever</span>.
+                </li>
+              </ul>
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <Button variant="ghost" onClick={() => setDeleteStep(1)}>
+                  Back
+                </Button>
+                <Button variant="destructive" onClick={confirmDeactivation} disabled={isDeleting}>
+                  {isDeleting ? <Loader2 className="size-4 animate-spin" /> : null}
+                  Confirm deactivation
                 </Button>
               </div>
             </div>
           )}
-        </div>
+        </Sheet>
       )}
 
       {simpleModal && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-card border border-border rounded-2xl shadow-2xl max-w-sm w-full p-6 relative animate-scale-in">
-            <button onClick={() => setSimpleModal(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
-              <X className="w-5 h-5" />
-            </button>
-            <div className="flex items-start gap-4">
-              <div className={`p-3 rounded-full shrink-0 ${simpleModal.isError ? "bg-destructive/10 text-destructive" : "bg-success/10 text-emerald-600"}`}>
-                {simpleModal.isError ? <AlertTriangle className="w-6 h-6" /> : <Check className="w-6 h-6" />}
-              </div>
-              <div className="space-y-1 pt-1">
-                <h3 className="text-lg font-bold text-foreground">{simpleModal.title}</h3>
-                <p className="text-sm text-muted-foreground">{simpleModal.msg}</p>
-              </div>
-            </div>
-            <div className="mt-6 flex justify-end">
-              <Button onClick={() => setSimpleModal(null)} variant={simpleModal.isError ? "destructive" : "default"}>
-                Okay, got it
-              </Button>
+        <Sheet>
+          <button
+            onClick={() => setSimpleModal(null)}
+            aria-label="Close"
+            className="absolute right-4 top-4 grid size-10 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <X className="size-4" />
+          </button>
+          <div className="flex items-start gap-4 pr-8">
+            <span
+              className={cn(
+                "grid size-11 shrink-0 place-items-center rounded-full",
+                simpleModal.isError ? "bg-priority-high-bg text-destructive" : "bg-lime text-lime-foreground"
+              )}
+            >
+              {simpleModal.isError ? <AlertTriangle className="size-5" /> : <Check className="size-5" />}
+            </span>
+            <div>
+              <h3 className="text-lg font-medium tracking-[-0.02em]">{simpleModal.title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{simpleModal.msg}</p>
             </div>
           </div>
-        </div>
+          <Button
+            onClick={() => setSimpleModal(null)}
+            variant={simpleModal.isError ? "destructive" : "default"}
+            className="mt-6 w-full sm:ml-auto sm:flex sm:w-auto"
+          >
+            Okay, got it
+          </Button>
+        </Sheet>
       )}
+    </PageShell>
+  );
+}
+
+/** Overlay + sheet for the account dialogs. Bottom sheet on phones, centred from `sm`. */
+function Sheet({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] grid place-items-end bg-[var(--overlay)] p-0 backdrop-blur-[3px] animate-fade-in sm:place-items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="relative max-h-[90dvh] w-full overflow-y-auto rounded-t-[2rem] border border-border bg-card p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-float animate-scale-in sm:max-w-md sm:rounded-3xl">
+        {children}
+      </div>
     </div>
+  );
+}
+
+/** A miniature app window drawn in the colours of the theme it stands for. */
+function ThemePreview({ mode }: { mode: "light" | "dark" | "system" }) {
+  const pane = (c: (typeof PREVIEW)["light"]) => (
+    <span className="flex h-full w-full flex-col gap-1.5 p-2 sm:p-3" style={{ background: c.bg }}>
+      <span className="h-1.5 w-2/5 rounded-full" style={{ background: c.ink }} />
+      <span
+        className="flex flex-1 flex-col justify-end gap-1 rounded-lg border p-1.5 sm:p-2"
+        style={{ background: c.card, borderColor: c.line }}
+      >
+        <span className="h-1 w-3/5 rounded-full" style={{ background: c.line }} />
+        <span className="h-1 w-2/5 rounded-full" style={{ background: c.line }} />
+        <span className="mt-0.5 h-2 w-6 rounded-full bg-lime sm:h-2.5 sm:w-8" />
+      </span>
+    </span>
+  );
+  return (
+    <span className="relative block aspect-[4/3] w-full overflow-hidden rounded-2xl border border-border" aria-hidden="true">
+      {mode === "system" ? (
+        <>
+          <span className="absolute inset-0">{pane(PREVIEW.light)}</span>
+          <span className="absolute inset-0 [clip-path:polygon(100%_0,100%_100%,0_100%)]">{pane(PREVIEW.dark)}</span>
+        </>
+      ) : (
+        pane(PREVIEW[mode])
+      )}
+    </span>
   );
 }
 
@@ -456,29 +560,31 @@ function InfoPopup({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="relative inline-flex ml-2 items-center">
-      <Info onClick={() => setOpen(!open)} className="w-4 h-4 text-muted-foreground hover:text-info cursor-pointer transition-colors" />
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50">
-            <div className="relative bg-primary text-primary-foreground text-xs rounded-lg shadow-2xl p-4 pr-10 w-96 animate-scale-in">
-              <p className="leading-relaxed">{text}</p>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpen(false);
-                }}
-                className="absolute top-2 right-2 p-1 text-primary-foreground/70 hover:text-primary-foreground transition-colors"
-              >
-                <X className="w-4 h-4" strokeWidth={3} />
-              </button>
-              <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-primary" />
-            </div>
-          </div>
-        </>
-      )}
-    </div>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="More information"
+          className="-m-2 grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <Info className="size-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="top"
+        collisionPadding={16}
+        className="w-72 max-w-[calc(100vw-2rem)] rounded-2xl border-0 bg-ink p-4 pr-11 text-[13px] font-normal leading-relaxed tracking-normal text-ink-foreground shadow-float"
+      >
+        {text}
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          aria-label="Close"
+          className="absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-full text-ink-foreground/70 hover:text-ink-foreground"
+        >
+          <X className="size-4" />
+        </button>
+      </PopoverContent>
+    </Popover>
   );
 }

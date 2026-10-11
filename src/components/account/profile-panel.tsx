@@ -2,13 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { LogOut, User, Briefcase, Target, Flame, Trophy, Activity } from "lucide-react";
+import { Activity, Flame, LogOut, Trophy, Zap } from "lucide-react";
+import { StatTile } from "@/components/layout/page";
+import { SettingsSection, FieldRow, WithUnit } from "@/components/account/form-row";
 import { toast } from "sonner";
 
 /**
@@ -103,229 +102,227 @@ export function ProfilePanel() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="h-28 rounded-2xl bg-secondary/50 shimmer" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="space-y-4">
+        <div className="h-28 rounded-3xl bg-surface shimmer" />
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-28 rounded-2xl bg-secondary/50 shimmer" />
+            <div key={i} className={`h-32 rounded-3xl bg-surface shimmer ${i === 0 ? "col-span-2 md:col-span-1" : ""}`} />
           ))}
         </div>
-        <div className="h-52 rounded-2xl bg-secondary/50 shimmer" />
+        <div className="h-52 rounded-3xl bg-surface shimmer" />
       </div>
     );
   }
 
+  const initials =
+    (user?.fullName || user?.primaryEmailAddress?.emailAddress || "S")
+      .split(/\s+/)
+      .map((w) => w[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* IDENTITY */}
-      <Card className="border-border bg-card shadow-sm rounded-2xl overflow-hidden">
-        <CardContent className="p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          <div className="flex items-center gap-5 min-w-0">
-            <div className="h-18 w-18 md:h-20 md:w-20 rounded-full overflow-hidden border-2 border-border bg-muted shrink-0 ring-2 ring-primary/10">
-              <img src={user?.imageUrl} alt="Profile" className="h-full w-full object-cover" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-2xl font-semibold leading-tight text-foreground truncate">
-                {user?.fullName}
-              </h2>
-              <p className="text-sm text-muted-foreground truncate mt-0.5">
-                {user?.primaryEmailAddress?.emailAddress}
-              </p>
-              <div className="flex flex-wrap items-center gap-3 mt-3">
-                <Badge variant="outline" className="border-primary/40 text-primary px-2.5 py-0.5 text-xs font-medium">
-                  {form.plan} Plan
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  Member since {new Date(form.joinedAt).toLocaleDateString()}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex md:justify-end justify-center border border-border/70 rounded-lg">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                toast("Signed out");
-                signOut();
-              }}
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive gap-2 px-4 py-2"
-            >
-              <LogOut className="w-4 h-4" />
-              <span className="text-sm font-medium">Sign Out</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* STATS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-br from-primary to-[var(--gradient-to)] text-primary-foreground border-none shadow-md h-full hover-lift">
-          <CardContent className="p-6 text-center flex flex-col justify-center h-full items-center">
-            <Flame className="w-10 h-10 opacity-90 mb-2" />
-            <div className="text-4xl font-extrabold tracking-tight">{stats.streak}</div>
-            <p className="text-sm opacity-90 font-medium">Day Streak</p>
-          </CardContent>
-        </Card>
-
-        <Card className="h-full border-border/60 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">All-Time Activity</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-secondary rounded-full"><Activity className="w-4 h-4 text-primary" /></div>
-                <span className="text-sm font-medium">Total Logs</span>
-              </div>
-              <div className="text-xl font-bold">{stats.totalLogs}</div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-secondary rounded-full"><Flame className="w-4 h-4 text-destructive" /></div>
-                <span className="text-sm font-medium">Burned</span>
-              </div>
-              <div className="text-xl font-bold">{(stats.totalCaloriesBurned / 1000).toFixed(1)}k</div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="h-full border-border/60 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Earned Badges</CardTitle>
-          </CardHeader>
-          <CardContent className="h-[100px] flex items-center justify-center">
-            {stats.badges.length > 0 ? (
-              <div className="flex flex-wrap gap-2 justify-center">
-                {stats.badges.map((badge) => (
-                  <Badge key={badge} variant="secondary" className="px-2 py-1 gap-1">
-                    <Trophy className="w-3 h-3 text-yellow-600" /> {badge}
-                  </Badge>
-                ))}
-              </div>
+    <div className="space-y-4 animate-fade-in">
+      {/* Identity */}
+      <section className="panel flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-lime text-lime-foreground md:size-[4.5rem]">
+            {user?.imageUrl ? (
+              <img src={user.imageUrl} alt="Profile" className="h-full w-full object-cover" />
             ) : (
-              <div className="text-center text-muted-foreground">
-                <Trophy className="w-8 h-8 mx-auto mb-2 opacity-20" />
-                <p className="text-xs">No badges yet.</p>
-              </div>
+              <span className="font-display text-2xl">{initials}</span>
             )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* FORMS */}
-      <div className="space-y-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2"><User className="w-5 h-5 text-primary" /> Physical Stats</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>Age</Label>
-              <Input type="number" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} placeholder="25" />
+          </div>
+          <div className="min-w-0">
+            <h2 className="truncate font-display text-[1.75rem] leading-tight tracking-[-0.02em] md:text-3xl">
+              {user?.fullName}
+            </h2>
+            <p className="mt-0.5 truncate text-sm text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <span className="inline-flex h-6 items-center rounded-full border border-border px-2.5 font-mono text-[11px] uppercase tracking-[0.1em]">
+                {form.plan} plan
+              </span>
+              <span className="label-mono">Member since {new Date(form.joinedAt).toLocaleDateString()}</span>
             </div>
-            <div className="space-y-2">
-              <Label>Gender</Label>
-              <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
-                <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Height (cm)</Label>
-              <Input type="number" value={form.height} onChange={(e) => setForm({ ...form, height: e.target.value })} />
-            </div>
-            <div className="space-y-2">
-              <Label>Weight (kg)</Label>
-              <div className="relative">
-                <Input type="number" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
-                <div className="absolute right-2 top-2 bottom-2 w-8 opacity-20">
-                  <svg viewBox="0 0 20 10" className="stroke-primary fill-none stroke-2"><path d="M0 5 L5 8 L10 4 L15 6 L20 2" /></svg>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2"><Briefcase className="w-5 h-5 text-primary" /> Lifestyle & Work</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Activity Level</Label>
-                <Select value={form.activityLevel} onValueChange={(v) => setForm({ ...form, activityLevel: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select Activity" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Sedentary">Sedentary (Office Job)</SelectItem>
-                    <SelectItem value="Moderate">Moderate (Light Exercise)</SelectItem>
-                    <SelectItem value="Active">Active (Daily Training)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Job Type</Label>
-                <Input value={form.jobType || ""} onChange={(e) => setForm({ ...form, jobType: e.target.value })} placeholder="e.g. Software Engineer (Sedentary)" />
-                <p className="text-xs text-muted-foreground">Your work hours affect your burn rate.</p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Dietary Preferences</Label>
-              <Input value={form.dietaryPreferences || ""} onChange={(e) => setForm({ ...form, dietaryPreferences: e.target.value })} placeholder="e.g. Vegetarian, Keto, No Dairy..." />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2"><Target className="w-5 h-5 text-primary" /> Goals & Purpose</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-primary font-semibold">Your Main Purpose</Label>
-              <Input value={form.customPurpose || ""} onChange={(e) => setForm({ ...form, customPurpose: e.target.value })} placeholder="e.g. Training for a marathon, Recovering from injury..." className="border-primary/20 bg-primary/5" />
-            </div>
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="space-y-2">
-                <Label>Weight Goal</Label>
-                <Select value={form.weightGoal} onValueChange={(v) => setForm({ ...form, weightGoal: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Lose">Lose Weight</SelectItem>
-                    <SelectItem value="Maintain">Maintain</SelectItem>
-                    <SelectItem value="Gain">Gain Muscle</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Target Weight (kg)</Label>
-                <Input type="number" value={form.targetWeight} onChange={(e) => setForm({ ...form, targetWeight: e.target.value })} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Daily Calorie Goal</Label>
-                <Input type="number" value={form.dailyCalorieGoal} onChange={(e) => setForm({ ...form, dailyCalorieGoal: Number(e.target.value) })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Daily Water Goal (ml)</Label>
-                <Input type="number" value={form.waterGoal} onChange={(e) => setForm({ ...form, waterGoal: Number(e.target.value) })} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving} className="w-full md:w-auto shadow-sm hover-lift">
-            {saving ? "Saving..." : "Save Profile"}
-          </Button>
+          </div>
         </div>
+
+        <Button
+          variant="outline"
+          onClick={() => {
+            toast("Signed out");
+            signOut();
+          }}
+          className="w-full shrink-0 sm:w-auto"
+        >
+          <LogOut />
+          Sign out
+        </Button>
+      </section>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
+        <StatTile
+          tone="lime"
+          label="Day streak"
+          value={stats.streak}
+          unit={stats.streak === 1 ? "day" : "days"}
+          icon={<Zap className="size-4" />}
+          className="col-span-2 md:col-span-1"
+        />
+        <StatTile label="Total logs" value={stats.totalLogs} hint="All time" icon={<Activity className="size-4" />} />
+        <StatTile
+          label="Burned"
+          value={`${(stats.totalCaloriesBurned / 1000).toFixed(1)}k`}
+          unit="kcal"
+          hint="All time"
+          icon={<Flame className="size-4 text-burn" />}
+        />
       </div>
+
+      {/* Badges */}
+      <section className="panel flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between md:px-6">
+        <p className="label-mono shrink-0">Earned badges</p>
+        {stats.badges.length > 0 ? (
+          <div className="flex flex-wrap gap-2 sm:justify-end">
+            {stats.badges.map((badge) => (
+              <span
+                key={badge}
+                className="inline-flex h-8 items-center gap-1.5 rounded-full bg-surface px-3 text-[13px] font-medium"
+              >
+                <Trophy className="size-3.5 text-energy" /> {badge}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Trophy className="size-4" /> No badges yet.
+          </p>
+        )}
+      </section>
+
+      {/* Forms */}
+      <SettingsSection label="Body" title="Physical stats">
+        <FieldRow label="Age">
+          <WithUnit unit="yrs">
+            <Input
+              type="number"
+              value={form.age}
+              onChange={(e) => setForm({ ...form, age: e.target.value })}
+              placeholder="25"
+            />
+          </WithUnit>
+        </FieldRow>
+        <FieldRow label="Gender">
+          <Select value={form.gender} onValueChange={(v) => setForm({ ...form, gender: v })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Male">Male</SelectItem>
+              <SelectItem value="Female">Female</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+        </FieldRow>
+        <FieldRow label="Height">
+          <WithUnit unit="cm">
+            <Input type="number" value={form.height} onChange={(e) => setForm({ ...form, height: e.target.value })} />
+          </WithUnit>
+        </FieldRow>
+        <FieldRow label="Weight">
+          <WithUnit unit="kg">
+            <Input type="number" value={form.weight} onChange={(e) => setForm({ ...form, weight: e.target.value })} />
+          </WithUnit>
+        </FieldRow>
+      </SettingsSection>
+
+      <SettingsSection label="Routine" title="Lifestyle and work">
+        <FieldRow label="Activity level">
+          <Select value={form.activityLevel} onValueChange={(v) => setForm({ ...form, activityLevel: v })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select activity" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Sedentary">Sedentary (Office Job)</SelectItem>
+              <SelectItem value="Moderate">Moderate (Light Exercise)</SelectItem>
+              <SelectItem value="Active">Active (Daily Training)</SelectItem>
+            </SelectContent>
+          </Select>
+        </FieldRow>
+        <FieldRow label="Job type" hint="Your work hours affect your burn rate.">
+          <Input
+            value={form.jobType || ""}
+            onChange={(e) => setForm({ ...form, jobType: e.target.value })}
+            placeholder="e.g. Software Engineer (Sedentary)"
+          />
+        </FieldRow>
+        <FieldRow label="Dietary preferences">
+          <Input
+            value={form.dietaryPreferences || ""}
+            onChange={(e) => setForm({ ...form, dietaryPreferences: e.target.value })}
+            placeholder="e.g. Vegetarian, Keto, No Dairy..."
+          />
+        </FieldRow>
+      </SettingsSection>
+
+      <SettingsSection
+        label="Direction"
+        title="Goals and purpose"
+        footer={
+          <Button onClick={handleSave} disabled={saving} className="w-full sm:w-auto">
+            {saving ? "Saving..." : "Save profile"}
+          </Button>
+        }
+      >
+        <FieldRow label="Your main purpose" hint="The one thing the coach should keep in mind.">
+          <Input
+            value={form.customPurpose || ""}
+            onChange={(e) => setForm({ ...form, customPurpose: e.target.value })}
+            placeholder="e.g. Training for a marathon, Recovering from injury..."
+          />
+        </FieldRow>
+        <FieldRow label="Weight goal">
+          <Select value={form.weightGoal} onValueChange={(v) => setForm({ ...form, weightGoal: v })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Lose">Lose Weight</SelectItem>
+              <SelectItem value="Maintain">Maintain</SelectItem>
+              <SelectItem value="Gain">Gain Muscle</SelectItem>
+            </SelectContent>
+          </Select>
+        </FieldRow>
+        <FieldRow label="Target weight">
+          <WithUnit unit="kg">
+            <Input
+              type="number"
+              value={form.targetWeight}
+              onChange={(e) => setForm({ ...form, targetWeight: e.target.value })}
+            />
+          </WithUnit>
+        </FieldRow>
+        <FieldRow label="Daily calorie goal">
+          <WithUnit unit="kcal">
+            <Input
+              type="number"
+              value={form.dailyCalorieGoal}
+              onChange={(e) => setForm({ ...form, dailyCalorieGoal: Number(e.target.value) })}
+            />
+          </WithUnit>
+        </FieldRow>
+        <FieldRow label="Daily water goal">
+          <WithUnit unit="ml">
+            <Input
+              type="number"
+              value={form.waterGoal}
+              onChange={(e) => setForm({ ...form, waterGoal: Number(e.target.value) })}
+            />
+          </WithUnit>
+        </FieldRow>
+      </SettingsSection>
     </div>
   );
 }

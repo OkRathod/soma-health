@@ -1,36 +1,39 @@
-"use client"; // 👈 This is fine for UI logic
+"use client";
 
 import { usePathname } from "next/navigation";
 import { Navbar } from "@/components/ui/navbar";
 import { FeedbackPrompt } from "@/components/feedback-prompt";
 
-export function MainLayoutClient({ 
-  children, 
-  user 
-}: { 
-  children: React.ReactNode, 
-  user: any // Recieves user data from the server parent
+/**
+ * Client half of the root layout. Decides whether a route gets the app shell
+ * (floating navbar on desktop, top bar + dock on mobile) or renders bare
+ * (landing page and Clerk auth screens).
+ */
+export function MainLayoutClient({
+  children,
+  user,
+}: {
+  children: React.ReactNode;
+  user: any;
 }) {
   const pathname = usePathname();
-  
-  // Define which pages are "Marketing" pages (No sidebar, no padding)
-  const isMarketingPage = pathname === "/" || pathname?.startsWith("/sign");
+  const isBare = pathname === "/" || pathname?.startsWith("/sign");
+
+  if (isBare) {
+    return (
+      <>
+        <main className="min-h-dvh">{children}</main>
+        <FeedbackPrompt />
+      </>
+    );
+  }
 
   return (
     <>
-      {/* 1. THE NAVBAR */}
-      {!isMarketingPage && <Navbar user={user}/>}
-
-      {/* 2. MAIN CONTENT WRAPPER */}
-      <main 
-        className={`min-h-screen ${
-          isMarketingPage 
-            ? "" // LANDING PAGE: No extra padding
-            : "pb-2 pt-2 md:pt-0 md:pb-0 md:pl-20" // DASHBOARD: Padded for Sidebar (80px)
-        }`}
-      >
-        {children}
-      </main>
+      <Navbar user={user} />
+      {/* md:pt-24 clears the fixed desktop bar. Mobile clearance for the dock is
+          handled by PageShell's bottom padding. */}
+      <main className={user ? "min-h-dvh md:pt-24" : "min-h-dvh pt-4"}>{children}</main>
       <FeedbackPrompt />
     </>
   );

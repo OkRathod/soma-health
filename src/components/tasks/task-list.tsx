@@ -1,40 +1,62 @@
 "use client";
 
-import { Check } from "lucide-react";
-import { TaskCard } from "@/components/tasks/task-card"; // Assuming you have this from earlier
+import { ListChecks, Repeat } from "lucide-react";
+import { EmptyState } from "@/components/layout/page";
+import { TaskCard } from "@/components/tasks/task-card";
 
+/** Rows for the selected day. The surrounding panel is provided by the page. */
 export function TaskList({ loading, tasks, activeTab, onDragStart, onToggle, onSubToggle, onSubProgress, onDelete, onEdit }: any) {
+  if (loading) {
+    return (
+      <div className="divide-y divide-border" role="status" aria-label="Loading tasks">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center gap-3 px-5 py-4 md:px-6">
+            <span className="shimmer size-6 shrink-0 rounded-full bg-surface" />
+            <div className="flex-1 space-y-2">
+              <span className="shimmer block h-3.5 rounded-full bg-surface" style={{ width: `${68 - i * 9}%` }} />
+              <span className="shimmer block h-3 w-24 rounded-full bg-surface" />
+            </div>
+          </div>
+        ))}
+        <span className="sr-only">Loading tasks...</span>
+      </div>
+    );
+  }
+
+  if (tasks.length === 0) {
+    return (
+      <EmptyState
+        className="border-0 py-12"
+        icon={activeTab === "habits" ? <Repeat /> : <ListChecks />}
+        title={`No ${activeTab} for this day.`}
+        description={
+          activeTab === "habits"
+            ? "Mark a task as a daily habit and it will show up here every day."
+            : "Add a task, or click an hour on the timeline to schedule one."
+        }
+      />
+    );
+  }
+
   return (
-    <div className="flex-1 overflow-y-auto p-4 pt-6 space-y-3 custom-scrollbar">
-      {loading ? (
-        <div className="text-center py-10 text-muted-foreground animate-pulse">Loading tasks...</div>
-      ) : (
-        <>
-          {tasks.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground text-sm flex flex-col items-center gap-2">
-              <div className="p-3 bg-secondary/20 rounded-full"><Check className="w-6 h-6 opacity-30" /></div>
-              No {activeTab} for today.
-            </div>
-          )}
-          {tasks.map((task: any) => (
-            <div 
-              key={task.id} 
-              draggable 
-              onDragStart={() => onDragStart(task.id)}
-              className="cursor-move"
-            >
-              <TaskCard 
-                task={task} 
-                onToggle={onToggle} 
-                onSubToggle={onSubToggle} 
-                onSubProgress={onSubProgress} 
-                onDelete={onDelete} 
-                onEdit={onEdit} 
-              />
-            </div>
-          ))}
-        </>
-      )}
-    </div>
+    <ul className="divide-y divide-border">
+      {tasks.map((task: any) => (
+        <li
+          key={task.id}
+          draggable
+          onDragStart={() => onDragStart(task.id)}
+          className="lg:cursor-grab lg:active:cursor-grabbing"
+        >
+          <TaskCard
+            task={task}
+            onToggle={onToggle}
+            onSubToggle={onSubToggle}
+            onSubProgress={onSubProgress}
+            onDelete={onDelete}
+            onEdit={onEdit}
+          />
+        </li>
+      ))}
+    </ul>
   );
 }

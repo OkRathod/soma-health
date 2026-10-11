@@ -1,61 +1,136 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { Monoton } from "next/font/google";
-import { ArrowRight, BookOpen } from "lucide-react";
+import { ArrowUpRight, Menu, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Logo } from "@/components/brand/logo";
+import { cn } from "@/lib/utils";
 
-const monoton = Monoton({ weight: "400", subsets: ["latin"] });
+const links = [
+  { href: "#tour", label: "Product" },
+  { href: "#modules", label: "Modules" },
+  { href: "#how", label: "How it works" },
+  { href: "/guides", label: "Guides" },
+];
 
+/**
+ * Landing navbar. Sits transparent over the hero photo, then condenses into a
+ * paper-coloured glass pill once the visitor scrolls past the fold.
+ */
 export function Navbar() {
   const { isSignedIn } = useAuth();
+  const [solid, setSolid] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setSolid(window.scrollY > 40);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const onDark = !solid && !open;
 
   return (
-    // {/* UPGRADED WIDTH: Replaced md:w-auto md:min-w-[600px] with md:w-[85%] md:max-w-6xl */}
-    <header className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 w-[96%] max-w-[420px] md:w-[85%] md:max-w-5xl rounded-2xl md:rounded-3xl border border-white/10 bg-black/20 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] transition-all duration-300">
-      
-      {/* Inner Content Wrapper */}
-      <div className="flex items-center justify-between px-3 py-2.5 md:px-6 md:py-3 w-full">
-        
-        {/* LEFT SIDE: Logo & Links */}
-        <div className="flex items-center gap-4 md:gap-8">
-          {/* Logo */}
-          <Link href="/" className={`${monoton.className} text-xl md:text-3xl text-white pt-1 tracking-wider hover:scale-105 transition-transform drop-shadow-[0_2px_10px_rgba(255,255,255,0.2)]`}>
-            SOMAFIT
-          </Link>
-          <Link 
-            href="/guides" 
-            className="hidden md:flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white transition-colors"
-          >
-            <BookOpen className="w-4 h-4" /> Guides
-          </Link>
-        </div>
+    <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-5 sm:pt-5">
+      <div
+        className={cn(
+          "mx-auto flex items-center justify-between rounded-full pl-4 pr-1.5 transition-[max-width,height,background-color,box-shadow,border-color] duration-500 ease-out sm:pl-5",
+          solid || open
+            ? "glass h-14 max-w-4xl shadow-float"
+            : "h-16 max-w-[1320px] border border-white/15 bg-white/[0.08] backdrop-blur-md"
+        )}
+      >
+        <Link href="/" aria-label="Somafit home" className={cn("transition-colors", onDark ? "text-white" : "text-foreground")}>
+          <Logo size={28} className="text-current" />
+        </Link>
 
-        {/* RIGHT SIDE: Auth Buttons */}
-        <div className="flex items-center gap-2 md:gap-3 shrink-0">
-          {isSignedIn ? (
-            <Button asChild className="rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_15px_rgba(var(--primary),0.3)] transition-all hover:scale-105 h-9 md:h-10 px-4 md:px-6 text-sm md:text-base">
-              <Link href="/dashboard">
-                Dashboard <ArrowRight className="ml-1.5 md:ml-2 w-3.5 h-3.5 md:w-4 md:h-4" />
-              </Link>
-            </Button>
-          ) : (
-            <>
-              {/* Premium Blue Sign In Button */}
-              <Button asChild className="rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all hover:scale-105 h-9 md:h-10 px-4 md:px-5 text-sm md:text-base font-medium border border-blue-500/50">
-                <Link href="/sign-in">Sign In</Link>
-              </Button>
-              
-              {/* Glow Get Started Button */}
-              <Button asChild className="rounded-xl bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-105 h-9 md:h-10 px-4 md:px-6 text-sm md:text-base font-semibold">
-                <Link href="/sign-up">Get Started</Link>
-              </Button>
-            </>
+        <nav aria-label="Sections" className="hidden items-center gap-1 md:flex">
+          {links.map((l) => (
+            <Link
+              key={l.href}
+              href={l.href}
+              className={cn(
+                "rounded-full px-3.5 py-2 font-mono text-[11.5px] uppercase tracking-[0.12em] transition-colors",
+                onDark ? "text-white/75 hover:text-white" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-1">
+          {!isSignedIn && (
+            <Link
+              href="/sign-in"
+              className={cn(
+                "hidden h-10 items-center rounded-full px-4 text-sm font-medium transition-colors sm:inline-flex",
+                onDark ? "text-white/85 hover:text-white" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Sign in
+            </Link>
           )}
+          <Link
+            href={isSignedIn ? "/dashboard" : "/sign-up"}
+            className="group inline-flex h-11 items-center gap-2.5 rounded-full bg-lime pl-4 pr-1.5 text-sm font-medium text-lime-foreground press"
+          >
+            {isSignedIn ? "Open app" : "Get started"}
+            <span className="grid size-8 place-items-center rounded-full bg-ink text-lime transition-transform duration-300 group-hover:rotate-45">
+              <ArrowUpRight className="size-4" />
+            </span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            className={cn(
+              "ml-0.5 grid size-11 place-items-center rounded-full md:hidden",
+              onDark ? "bg-white/15 text-white" : "bg-surface text-foreground"
+            )}
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </div>
-
       </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.nav
+            aria-label="Sections"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="glass mx-auto mt-2 max-w-4xl rounded-[1.75rem] p-2 shadow-float md:hidden"
+          >
+            {links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between rounded-2xl px-4 py-3.5 font-display text-2xl text-foreground hover:bg-accent"
+              >
+                {l.label}
+                <ArrowUpRight className="size-4 text-muted-foreground" />
+              </Link>
+            ))}
+            {!isSignedIn && (
+              <Link
+                href="/sign-in"
+                onClick={() => setOpen(false)}
+                className="mt-1 flex h-12 items-center justify-center rounded-full border border-border text-sm font-medium"
+              >
+                Sign in
+              </Link>
+            )}
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </header>
   );
 }

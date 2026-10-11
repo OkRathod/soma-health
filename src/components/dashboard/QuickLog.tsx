@@ -1,6 +1,6 @@
 "use client";
-import { Button } from "@/components/ui/button";
-import { Utensils, Loader2, Send, Mic } from "lucide-react";
+
+import { ArrowUp, Loader2, Sparkles } from "lucide-react";
 
 interface QuickLogProps {
   value: string;
@@ -9,60 +9,57 @@ interface QuickLogProps {
   isProcessing: boolean;
 }
 
+const EXAMPLES = ["2 eggs and toast", "30 min run", "Dal, rice and a salad"];
+
+/**
+ * The natural-language composer. One sentence in, calories/macros/activity out.
+ * Rendered inline on every breakpoint (it used to be a second, fixed bar on
+ * mobile that fought the bottom navigation for space).
+ */
 export function QuickLog({ value, onChange, onLog, isProcessing }: QuickLogProps) {
+  const canSend = !isProcessing && value.trim().length > 0;
+
   return (
-    <>
-      {/* Desktop Version: Inline */}
-      <div className="hidden md:block bg-card p-1 rounded-2xl shadow-sm border-2 border-border/50">
-        <div className="p-4 space-y-3">
-          <label className="text-sm font-semibold text-foreground/80 flex items-center gap-2">
-            <div className="p-1.5 bg-primary/10 rounded-md text-primary"><Utensils className="w-4 h-4"/></div>
-            Quick Log
-          </label>
-          <div className="relative">
-            <input
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && onLog()}
-              placeholder="Type '2 eggs and toast'..."
-              className="w-full h-12 pl-4 pr-24 rounded-xl border border-border bg-background/50 focus:bg-background text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all shadow-inner"
-            />
-            <div className="absolute right-1 top-1 bottom-1 flex gap-1">
-                <Button 
-                onClick={onLog} 
-                disabled={isProcessing || !value.trim()}
-                size="sm"
-                className="h-full px-4 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg"
-                >
-                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                </Button>
-            </div>
-          </div>
-        </div>
+    <div className="panel-ink p-2 pl-4 sm:pl-5">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <Sparkles className="hidden size-4 shrink-0 text-lime sm:block" aria-hidden="true" />
+        <label htmlFor="quick-log" className="sr-only">
+          Log food or a workout
+        </label>
+        <input
+          id="quick-log"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && canSend && onLog()}
+          placeholder="What did you eat or do?"
+          autoComplete="off"
+          enterKeyHint="send"
+          className="h-12 min-w-0 flex-1 bg-transparent text-base text-ink-foreground placeholder:text-ink-foreground/45 focus:outline-none sm:h-14 sm:text-[17px]"
+        />
+        <button
+          type="button"
+          onClick={onLog}
+          disabled={!canSend}
+          aria-label="Log entry"
+          className="grid size-12 shrink-0 place-items-center rounded-full bg-lime text-lime-foreground transition-[transform,opacity] duration-200 active:scale-95 disabled:opacity-40 sm:size-14"
+        >
+          {isProcessing ? <Loader2 className="size-5 animate-spin" /> : <ArrowUp className="size-5" />}
+        </button>
       </div>
 
-      {/* Mobile Version: Sticky Bottom */}
-      <div className="md:hidden fixed bottom-[calc(4rem+env(safe-area-inset-bottom))] left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t border-border z-45">
-        <div className="relative flex items-center gap-2 max-w-md mx-auto">
-            <div className="relative flex-1">
-                <input
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    placeholder="Log food or workout..."
-                    className="w-full h-12 pl-4 pr-12 rounded-full border border-border bg-card text-base focus:outline-none focus:ring-2 focus:ring-primary/50 shadow-lg"
-                />
-                <Utensils className="absolute right-4 top-3.5 w-5 h-5 text-muted-foreground opacity-50" />
-            </div>
-            <Button 
-                onClick={onLog} 
-                disabled={isProcessing || !value.trim()}
-                size="icon"
-                className="h-12 w-12 rounded-full shrink-0 shadow-lg"
-            >
-                {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-            </Button>
-        </div>
+      {/* Tap-to-fill examples: teaches the input format without a tutorial */}
+      <div className="no-scrollbar -ml-1 flex gap-1.5 overflow-x-auto pb-1.5 pr-2 pt-0.5">
+        {EXAMPLES.map((ex) => (
+          <button
+            key={ex}
+            type="button"
+            onClick={() => onChange(ex)}
+            className="shrink-0 rounded-full border border-white/12 px-3 py-1.5 text-xs text-ink-foreground/60 transition-colors hover:border-white/30 hover:text-ink-foreground"
+          >
+            {ex}
+          </button>
+        ))}
       </div>
-    </>
+    </div>
   );
 }

@@ -1,120 +1,131 @@
 import Link from "next/link";
-import { guides } from "@/lib/guides";
-import { ArrowRight, BookOpen, ArrowLeft } from "lucide-react";
-import { Metadata } from "next";
-import { auth } from "@clerk/nextjs/server"; // 👈 Import Server Auth
-import { CheckCircle2 } from "lucide-react"; // Import Check Icon
-import { prisma } from "@/lib/prisma"; // Import DB client
 import Image from "next/image";
-
+import { Metadata } from "next";
+import { ArrowUpRight, Check } from "lucide-react";
+import { auth } from "@clerk/nextjs/server";
+import { guides } from "@/lib/guides";
+import { prisma } from "@/lib/prisma";
+import { PageShell, PageHeader } from "@/components/layout/page";
+import { SomaMark } from "@/components/brand/logo";
 
 export const metadata: Metadata = {
   title: "Soma Guides | Health & Productivity Strategies",
   description: "Master your metabolism and productivity with our expert guides and protocols.",
 };
 
-// 👇 Make the component async to use await auth()
 export default async function GuidesIndex() {
-  // 👇 Check if user is signed in on the server
+  // Guides are public; read state only exists for signed-in readers.
   const { userId } = await auth();
-  
-  // Define destination based on auth status
-  const backLink = userId ? "/dashboard" : "/";
-  const backLabel = userId ? "Back to Dashboard" : "Back to Home";
 
-  // 👇 NEW: Fetch list of read guides for this user
   let readSlugs = new Set<string>();
-  
+
   if (userId) {
     const readRecords = await prisma.userReadGuide.findMany({
       where: { userId },
       select: { guideSlug: true }
     });
-    // Create a Set for instant O(1) lookups
-    readSlugs = new Set(readRecords.map(r => r.guideSlug));
+    // A Set gives O(1) lookups while rendering the list
+    readSlugs = new Set(readRecords.map((r: { guideSlug: string }) => r.guideSlug));
   }
 
+  const readCount = guides.filter((g) => readSlugs.has(g.slug)).length;
+
   return (
-    <div className="min-h-screen bg-background pt-12 pb-16 px-6">
-      <div className="container mx-auto max-w-5xl">
-        
-        {/* 👇 DYNAMIC BACK BUTTON */}
-        {/* <div className="mb-12">
-            <Button asChild variant="ghost" className="pl-0 text-muted-foreground hover:text-foreground">
-                <Link href={backLink}>
-                    <ArrowLeft className="w-4 h-4 mr-2" /> {backLabel}
-                </Link>
-            </Button>
-        </div> */}
-
-        {/* Header */}
-        <div className="text-center mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-            <BookOpen className="w-4 h-4" /> Knowledge Center
-          </div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-            Small Changes. Better Days.
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Science for your body, your habits, and your everyday life.
+    <PageShell>
+      <PageHeader
+        eyebrow="Guides"
+        title={
+          <>
+            Small changes. <em>Better days.</em>
+          </>
+        }
+        description="Science for your body, your habits, and your everyday life."
+        actions={
+          <p className="label-mono">
+            {userId
+              ? `${readCount} of ${guides.length} read`
+              : `${guides.length} ${guides.length === 1 ? "guide" : "guides"}`}
           </p>
-        </div>
+        }
+      />
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {guides.map((guide) => {
-            const isRead = readSlugs.has(guide.slug);
-            return (
-        <Link 
-            key={guide.slug} 
-            href={`/guides/${guide.slug}`}
-            className={`group flex flex-col h-full bg-card border rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 relative
-                ${isRead ? 'border-primary/40 bg-primary/5' : 'border-border'} 
-            `}
-        >
-            {/* 👇 "READ" BADGE (Absolute positioned) */}
-            {isRead && (
-                <div className="absolute top-4 right-4 z-10 bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 backdrop-blur-md">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Read
-                </div>
-            )}
-              {/* Image Placeholder */}
-              <div className="relative h-48 bg-secondary/50 flex items-center justify-center text-muted-foreground group-hover:bg-secondary/70 transition-colors overflow-hidden">
-                {/* 👇 CONDITIONAL LOGIC */}
-                 {guide.image ? (
-                    <Image 
-                      src={guide.image} 
+      <ol className="panel divide-y divide-border overflow-hidden">
+        {guides.map((guide, i) => {
+          const isRead = readSlugs.has(guide.slug);
+          return (
+            <li key={guide.slug}>
+              <Link
+                href={`/guides/${guide.slug}`}
+                className="group grid gap-4 p-4 transition-colors hover:bg-surface/60 sm:grid-cols-[13rem_minmax(0,1fr)] sm:gap-6 sm:p-5 lg:grid-cols-[2.5rem_17rem_minmax(0,1fr)_auto] lg:items-center lg:gap-8 lg:p-6"
+              >
+                <span className="hidden font-mono text-xs tabular-nums text-muted-foreground lg:block">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+
+                <span className="relative block aspect-[16/10] overflow-hidden rounded-2xl bg-surface">
+                  {guide.image ? (
+                    <Image
+                      src={guide.image}
                       alt={guide.title}
                       fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      sizes="(min-width: 1024px) 272px, (min-width: 640px) 208px, 100vw"
+                      className="object-cover"
                     />
-                 ) : (
-                    <span className="text-4xl">🧬</span>
-                 )}
-              </div>
-              
-              <div className="p-6 flex flex-col flex-1">
-                <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-                  <span>{guide.date}</span>
-                  <span>{guide.readTime}</span>
-                </div>
-                <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
-                  {guide.title}
-                </h3>
-                <p className="text-muted-foreground text-sm line-clamp-3 mb-4 flex-1">
-                  {guide.description}
-                </p>
-                <div className="flex items-center text-sm font-medium text-primary mt-auto">
-                  Read Protocol <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </div>
-              </div>
-        </Link>
-    );
-      })}
-        </div>
+                  ) : (
+                    <span className="dot-grid absolute inset-0 grid place-items-center">
+                      <SomaMark size={44} />
+                    </span>
+                  )}
+                </span>
 
-      </div>
-    </div>
+                <span className="block min-w-0">
+                  <span className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <span className="label-mono">
+                      {guide.date} <span className="mx-1 opacity-50">/</span> {guide.readTime}
+                    </span>
+                    {isRead && (
+                      <span className="inline-flex h-6 items-center gap-1 rounded-full bg-lime px-2.5 font-mono text-[11px] uppercase tracking-[0.1em] text-lime-foreground">
+                        <Check className="size-3" /> Read
+                      </span>
+                    )}
+                  </span>
+                  <span className="mt-2.5 block font-display text-[1.75rem] leading-[1.08] tracking-[-0.02em] md:text-[2rem]">
+                    {guide.title}
+                  </span>
+                  <span className="mt-2 block max-w-xl text-sm leading-relaxed text-muted-foreground line-clamp-3">
+                    {guide.description}
+                  </span>
+                  <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium lg:hidden">
+                    Read guide <ArrowUpRight className="size-4" />
+                  </span>
+                </span>
+
+                <span
+                  className="hidden size-11 place-items-center rounded-full border border-border transition-[transform,background-color,color,border-color] duration-300 ease-out group-hover:rotate-45 group-hover:border-transparent group-hover:bg-foreground group-hover:text-background lg:grid"
+                  aria-hidden="true"
+                >
+                  <ArrowUpRight className="size-4" />
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+
+      {!userId && (
+        <div className="mt-4 flex flex-col gap-4 rounded-3xl bg-surface p-5 sm:flex-row sm:items-center sm:justify-between md:p-6">
+          <div>
+            <p className="text-[15px] font-medium">Keep track of what you have read</p>
+            <p className="mt-1 text-sm text-muted-foreground">A free account remembers your place across guides.</p>
+          </div>
+          <Link
+            href="/sign-up"
+            className="press inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-primary px-4.5 text-sm font-medium text-primary-foreground"
+          >
+            Create free account <ArrowUpRight className="size-4" />
+          </Link>
+        </div>
+      )}
+    </PageShell>
   );
 }

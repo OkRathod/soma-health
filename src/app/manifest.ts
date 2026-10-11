@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Your personal AI health and fitness companion",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#000000",
+    background_color: "#f3f2ec",
+    theme_color: "#171713",
     orientation: "portrait",
     icons: [
       {

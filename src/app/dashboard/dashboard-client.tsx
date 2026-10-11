@@ -2,31 +2,57 @@
 
 import { useEffect, useState } from "react";
 import { subDays, startOfDay, endOfDay, isToday } from "date-fns";
-import { AlertTriangle, Check, Flame, Cookie, MessageSquare, Target, Utensils } from "lucide-react";
+import { AlertTriangle, Check, Cookie, Flame, Info, Target, X } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { SomaLoader as DNALoader } from "@/components/soma-loader";
+import { SomaLoader } from "@/components/soma-loader";
 import WeeklyChart from "@/components/WeeklyChart";
+import { PageShell, PageHeader } from "@/components/layout/page";
 
-// Components
 import { QuoteBanner } from "@/components/dashboard/QuoteBanner";
 import { QuickLog } from "@/components/dashboard/QuickLog";
 import { EnergyRing } from "@/components/dashboard/EnergyRing";
 import { NetBalanceCard } from "@/components/dashboard/NetBalanceCard";
 import { HydrationCard } from "@/components/dashboard/HydrationCard";
 import { PendingTasksList } from "@/components/dashboard/PendingTasksList";
-import { X } from "lucide-react";
-import { CompleteProfileModal } from "@/components/complete-profile-modal";
 import { StepTracker } from "@/components/dashboard/step-tracker";
-import { toast } from "sonner"; // Assuming you have sonner installed
-// Add this near your other component imports (like QuoteBanner, QuickLog, etc.)
+import { CompleteProfileModal } from "@/components/complete-profile-modal";
 import { ensureTodaysHabits } from "@/app/actions/habits";
 
+const AI_DISCLAIMER =
+  "Calorie and macro values are AI estimates and are approximate. Somafit does not guarantee their accuracy.";
+
+/** Overlay + sheet used by the three small dashboard dialogs. Bottom sheet on phones, centred from `sm`. */
+function Sheet({ children, onClose, wide }: { children: React.ReactNode; onClose?: () => void; wide?: boolean }) {
+  return (
+    <div
+      className="fixed inset-0 z-[150] grid place-items-end bg-[var(--overlay)] backdrop-blur-[3px] animate-fade-in sm:place-items-center sm:p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`relative max-h-[90dvh] w-full overflow-y-auto rounded-t-[2rem] border border-border bg-card p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-float animate-scale-in sm:rounded-3xl ${wide ? "sm:max-w-lg" : "sm:max-w-sm"}`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function greeting(hour: number) {
+  if (hour < 5) return "Still up";
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function DashboardClient({ user }: { user: any }) {
-  const USER_ID = user.id;   
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // 👇 UPDATED: Added macros to the summary state
+  // UPDATED: Added macros to the summary state
   const [summary, setSummary] = useState({
         in: 0, out: 0,
         goal: user?.dailyCalorieGoal ?? 2000,
@@ -50,7 +76,7 @@ export default function DashboardClient({ user }: { user: any }) {
 
   const [simpleModal, setSimpleModal] = useState<{ title: string; msg: string; isError?: boolean } | null>(null);
   
-  // 👇 NEW: State to hold the AI Coach Feedback
+  // NEW: State to hold the AI Coach Feedback
   const [feedbackModal, setFeedbackModal] = useState<any | null>(null);
 
   useEffect(() => {
@@ -180,7 +206,7 @@ export default function DashboardClient({ user }: { user: any }) {
       }
     }
 
-  // 👇 UPDATED: Added Macro Parsing logic
+  // UPDATED: Added Macro Parsing logic
   function calculateSummary(logs: any[]) {
     let totalIn = 0;
     let totalOut = 0;
@@ -235,7 +261,7 @@ export default function DashboardClient({ user }: { user: any }) {
     }
   }
 
-  // 👇 UPDATED: Handles AI Feedback Extraction & Triggers the Modal
+  // UPDATED: Handles AI Feedback Extraction & Triggers the Modal
   async function handleAddLog() {
     if (!newLogText.trim()) return;
     setIsProcessing(true);
@@ -245,7 +271,7 @@ export default function DashboardClient({ user }: { user: any }) {
         method: "POST",
         body: JSON.stringify({
           userText: newLogText,
-          userTimezone: "Asia/Kolkata", 
+          userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata",
           date: new Date().toISOString() // Pass date to ensure proper logging
         }),
       });
@@ -271,299 +297,265 @@ export default function DashboardClient({ user }: { user: any }) {
     }
   }
 
+  // Rendered after mount only, so server and client never disagree about "now".
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => setNow(new Date()), []);
+
+  const macros = [
+    { key: "protein", label: "Protein", value: summary.protein, color: "var(--protein)" },
+    { key: "carbs", label: "Carbs", value: summary.carbs, color: "var(--carbs)" },
+    { key: "fats", label: "Fats", value: summary.fats, color: "var(--fats)" },
+  ];
+  const macroTotal = macros.reduce((a, m) => a + m.value, 0);
+
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8 font-sans text-foreground pb-32 md:pb-12">
+    <PageShell>
       {profileStatus && !profileStatus.isComplete && (
         <CompleteProfileModal userId={user.id} missingFields={profileStatus.missing} />
       )}
+      {loading && <SomaLoader />}
 
-      <main className="max-w-6xl mx-auto space-y-6 md:space-y-8">
-        {loading && <DNALoader />}
-        
-        {/* 1. Date Header */}
-        <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground/80">
-                Today, {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-            </h1>
-        </div>
+      <PageHeader
+        eyebrow={
+          now
+            ? now.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
+            : "Today"
+        }
+        title={
+          <>
+            {now ? greeting(now.getHours()) : "Welcome back"}. <em>Here&apos;s today.</em>
+          </>
+        }
+      />
 
-
-        {/* RESTORE BANNER */}
+      <div className="space-y-3 md:space-y-4">
+        {/* Account-deletion notice */}
         {user?.scheduledForDeletion && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 ">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 bg-destructive/20 rounded-full flex items-center justify-center text-destructive">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
+          <div className="flex flex-col gap-4 rounded-3xl border border-destructive/30 bg-priority-high-bg p-5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" />
               <div>
-                <p className="font-bold text-destructive">Account Scheduled for Deletion</p>
-                <p className="text-sm text-foreground/80">
-                  You have until <span className="font-semibold">{new Date(user.scheduledForDeletion).toLocaleDateString()}</span> to restore your account.
+                <p className="font-medium text-destructive">Account scheduled for deletion</p>
+                <p className="mt-0.5 text-sm text-foreground/80">
+                  You have until{" "}
+                  <span className="font-medium">{new Date(user.scheduledForDeletion).toLocaleDateString()}</span> to
+                  restore it.
                 </p>
               </div>
             </div>
-            <Button onClick={() => setShowRestoreModal(true)} disabled={isRestoring} variant="destructive" className="w-full md:w-auto">
-              {isRestoring ? "Restoring..." : "Undo Deletion"}
+            <Button
+              onClick={() => setShowRestoreModal(true)}
+              disabled={isRestoring}
+              variant="destructive"
+              className="w-full md:w-auto"
+            >
+              {isRestoring ? "Restoring…" : "Undo deletion"}
             </Button>
           </div>
         )}
 
-        {/* 2. Quick Log (Top on Desktop) */}
-        <div className="hidden md:flex flex-col gap-2.5">
-            <QuickLog value={newLogText} onChange={setNewLogText} onLog={handleAddLog} isProcessing={isProcessing} />
-            
-            {/* Desktop AI Disclaimer */}
-            <div className="flex items-start gap-2 text-[11px] text-muted-foreground/50 italic px-2">
-                <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-70" />
-                <p>
-                    The values provided above are approximate estimations generated by AI and are not exact. The organization does not assume any responsibility for their absolute accuracy.
-                </p>
-            </div>
-        </div>
+        {/* 1 — Composer */}
+        <QuickLog value={newLogText} onChange={setNewLogText} onLog={handleAddLog} isProcessing={isProcessing} />
 
-        {/* 3. MIDDLE SECTION: Energy/Hydro (Left) & Tasks (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-            
-            {/* LEFT: Net Balance & Hydration */}
-            <div className="lg:col-span-7 space-y-6 flex flex-col">
-                
-                {/* HERO: Unified Nutrition & Energy Core */}
-                <div className="bg-card border border-border/60 rounded-[2rem] p-4 sm:p-6 md:p-8 shadow-sm flex flex-col gap-6 relative overflow-hidden group">
-                    
-                    {/* Background Ambient Glow for the whole card */}
-                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent opacity-50 pointer-events-none" />
+        {/* 2 — Energy (left) and today's plan (right) */}
+        <div className="grid gap-3 md:gap-4 lg:grid-cols-12">
+          <section className="panel flex flex-col gap-6 p-5 md:p-6 lg:col-span-7">
+            <div className="grid gap-8 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-6">
+              <NetBalanceCard inVal={summary.in} outVal={summary.out} goal={summary.goal} />
 
-                    {/* TOP: Calories & Balance Island */}
-                    <div className="relative grid grid-cols-2 md:grid-cols-3 items-center gap-6 sm:gap-4 bg-secondary/10 p-5 sm:p-6 rounded-3xl border border-border/40 shadow-inner z-10 justify-items-center">
-                        
-                        {/* Net Balance Center (Spans full width on Mobile, Middle on Desktop) */}
-                        <div className="col-span-2 md:col-span-1 md:order-2 w-full flex justify-center relative z-10">
-                            <NetBalanceCard inVal={summary.in} outVal={summary.out} goal={summary.goal} />
-                        </div>
-
-                        {/* Consumed Ring + Glow (Left side on mobile and desktop) */}
-                        <div className="col-span-1 md:order-1 flex flex-col items-center gap-3 relative w-full">
-                            <div className="absolute inset-0 bg-orange-500/20 blur-2xl rounded-full scale-110 opacity-40 mix-blend-screen pointer-events-none" />
-                            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest relative z-10">Consumed</span>
-                            <div className="relative z-10 drop-shadow-[0_0_12px_rgba(249,115,22,0.3)]">
-                                <EnergyRing 
-                                    value={summary.in} 
-                                    max={summary.goal} 
-                                    label="" 
-                                    color="hsl(24.6 95% 53.1%)" 
-                                    icon={<Cookie className="w-4 h-4 sm:w-5 sm:h-5"/>}
-                                />
-                            </div>
-                        </div>
-
-                        {/* Burned Ring + Glow (Right side on mobile and desktop) */}
-                        <div className="col-span-1 md:order-3 flex flex-col items-center gap-3 relative w-full">
-                            <div className="absolute inset-0 bg-red-500/20 blur-2xl rounded-full scale-110 opacity-40 mix-blend-screen pointer-events-none" />
-                            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest relative z-10">Burned</span>
-                            <div className="relative z-10 drop-shadow-[0_0_12px_rgba(239,68,68,0.3)]">
-                                <EnergyRing 
-                                    value={summary.out} 
-                                    max={summary.goal + 500} 
-                                    label="" 
-                                    color="#ef4444" 
-                                    icon={<Flame className="w-4 h-4 sm:w-5 sm:h-5"/>}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* BOTTOM: Vibrant Macro Tracker */}
-                    <div className="grid grid-cols-3 gap-3 md:gap-5 relative z-10">
-                        {/* Protein Glow Box */}
-                        <div className="relative overflow-hidden bg-blue-500/10 border border-blue-500/30 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col items-center justify-center text-blue-600 dark:text-blue-400 shadow-lg shadow-blue-500/10 transition-all hover:scale-[1.03] hover:shadow-blue-500/20">
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-500/20 via-transparent to-transparent opacity-60 pointer-events-none" />
-                            <span className="text-[9px] md:text-xs font-bold uppercase tracking-widest mb-1.5 opacity-80 relative z-10">Protein</span>
-                            <span className="text-2xl md:text-4xl font-black tabular-nums leading-none relative z-10 drop-shadow-sm">
-                                {Math.round(summary.protein)}<span className="text-xs md:text-sm font-semibold opacity-70 ml-0.5">g</span>
-                            </span>
-                        </div>
-
-                        {/* Carbs Glow Box */}
-                        <div className="relative overflow-hidden bg-emerald-500/10 border border-emerald-500/30 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-500/10 transition-all hover:scale-[1.03] hover:shadow-emerald-500/20">
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500/20 via-transparent to-transparent opacity-60 pointer-events-none" />
-                            <span className="text-[9px] md:text-xs font-bold uppercase tracking-widest mb-1.5 opacity-80 relative z-10">Carbs</span>
-                            <span className="text-2xl md:text-4xl font-black tabular-nums leading-none relative z-10 drop-shadow-sm">
-                                {Math.round(summary.carbs)}<span className="text-xs md:text-sm font-semibold opacity-70 ml-0.5">g</span>
-                            </span>
-                        </div>
-
-                        {/* Fats Glow Box */}
-                        <div className="relative overflow-hidden bg-amber-500/10 border border-amber-500/30 rounded-2xl md:rounded-3xl p-4 md:p-5 flex flex-col items-center justify-center text-amber-600 dark:text-amber-400 shadow-lg shadow-amber-500/10 transition-all hover:scale-[1.03] hover:shadow-amber-500/20">
-                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-amber-500/20 via-transparent to-transparent opacity-60 pointer-events-none" />
-                            <span className="text-[9px] md:text-xs font-bold uppercase tracking-widest mb-1.5 opacity-80 relative z-10">Fats</span>
-                            <span className="text-2xl md:text-4xl font-black tabular-nums leading-none relative z-10 drop-shadow-sm">
-                                {Math.round(summary.fats)}<span className="text-xs md:text-sm font-semibold opacity-70 ml-0.5">g</span>
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* 👇 NEW: AI Disclaimer (Mobile Only) tucked inside the card */}
-                    <div className="md:hidden mt-2 pt-4 border-t border-border/40 flex items-start gap-2 text-[10px] text-muted-foreground/50 italic relative z-10">
-                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 opacity-70" />
-                        <p className="leading-snug">
-                            The values provided above are approximate estimations generated by AI and are not exact. The organization does not assume any responsibility for their absolute accuracy.
-                        </p>
-                    </div>
-
+              <div className="flex items-start justify-around gap-4 sm:flex-col sm:justify-start sm:gap-5">
+                <div className="flex flex-col items-center gap-2.5">
+                  <EnergyRing
+                    value={summary.in}
+                    max={summary.goal}
+                    label="Consumed"
+                    color="var(--foreground)"
+                    icon={<Cookie />}
+                  />
+                  <span className="label-mono">Consumed</span>
                 </div>
-
-                <HydrationCard total={waterTotal} onAdd={handleAddWater} />
-                <StepTracker />
-            </div>
-
-            {/* RIGHT: Pending Tasks (Strict Fixed Height) */}
-            <div className="lg:col-span-5 flex flex-col h-[600px] overflow-hidden rounded-3xl bg-card border border-border/60 shadow-sm">
-                <div className="h-full overflow-y-auto pr-1 pb-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-border/50 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-border">
-                    <PendingTasksList tasks={pendingTasks} onToggle={toggleTask} onSubToggle={toggleSubtask} />
+                <div className="flex flex-col items-center gap-2.5">
+                  <EnergyRing
+                    value={summary.out}
+                    max={summary.goal + 500}
+                    label="Burned"
+                    color="var(--burn)"
+                    icon={<Flame />}
+                  />
+                  <span className="label-mono">Burned</span>
                 </div>
-            </div>
-        </div>
-
-        {/* 4. BOTTOM SECTION: Quote (25%) & Chart (75%) */}
-        <div className="flex flex-col gap-6">
-            <div className="w-full">
-                <QuoteBanner quote={quote} />
-            </div>
-
-            <div className="w-full">
-                <div className="bg-card border border-border/50 rounded-2xl p-4 shadow-sm">
-                    {/* The logs passed down here now natively contain macros for the chart to use */}
-                    <WeeklyChart logs={logs} tasks={allWeeklyTasks} />
-                </div>
-            </div>
-        </div>
-
-        {/* MOBILE STICKY LOG & DISCLAIMER */}
-        <div className="md:hidden flex flex-col gap-3">
-             <QuickLog value={newLogText} onChange={setNewLogText} onLog={handleAddLog} isProcessing={isProcessing} />
-             
-             {/* Mobile AI Disclaimer */}
-             <div className="flex items-start gap-2 text-[10px] text-muted-foreground/50 italic px-2 mb-4">
-                 <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5 opacity-70" />
-                 <p leading-tight>
-                     The values provided above are approximate estimations generated by AI and are not exact. The organization does not assume any responsibility for their absolute accuracy.
-                 </p>
-             </div>
-        </div>
-
-      </main>
-
-      {/* --- MODALS --- */}
-
-      {/* 👇 AI COACH FEEDBACK REPORT MODAL */}
-      {feedbackModal && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-              <div className="bg-card border border-primary/30 rounded-2xl shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 max-h-[90vh] overflow-y-auto overflow-x-hidden">
-                  
-                  <h3 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5 text-primary" /> Log Analysis
-                  </h3>
-                  
-                  <div className="space-y-4 mb-6">
-                      {/* Coach Feedback */}
-                      {(feedbackModal.aiFeedback || feedbackModal.parsedData?.ai_feedback) && (
-                          <div className="bg-primary/5 p-4 rounded-xl border border-primary/10">
-                              <p className="text-sm italic text-muted-foreground leading-relaxed">
-                                  "{feedbackModal.aiFeedback || feedbackModal.parsedData.ai_feedback}"
-                              </p>
-                          </div>
-                      )}
-
-                      {/* Next Step */}
-                      {feedbackModal.parsedData?.next_step && (
-                          <div className="bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20">
-                              <div className="font-bold text-emerald-600 dark:text-emerald-500 flex items-center gap-2 mb-1 text-sm uppercase tracking-wider">
-                                  <Target className="w-4 h-4 shrink-0" /> Next Step
-                              </div>
-                              <p className="text-sm font-medium text-foreground leading-snug">
-                                  {feedbackModal.parsedData.next_step}
-                              </p>
-                          </div>
-                      )}
-
-                      {/* Calories Summary */}
-                      <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-secondary/30 p-3 rounded-lg flex items-center justify-between border border-border/50">
-                              <span className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5"><Utensils className="w-3.5 h-3.5" /> In</span>
-                              <span className="font-bold text-orange-500">{feedbackModal.totalCaloriesIn} kcal</span>
-                          </div>
-                          <div className="bg-secondary/30 p-3 rounded-lg flex items-center justify-between border border-border/50">
-                              <span className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1.5"><Flame className="w-3.5 h-3.5" /> Out</span>
-                              <span className="font-bold text-red-500">{feedbackModal.totalCaloriesOut} kcal</span>
-                          </div>
-                      </div>
-
-                      {/* Foods Processed */}
-                      {feedbackModal.parsedData?.foods?.length > 0 && (
-                          <div>
-                              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">Items Tracked</h4>
-                              <div className="divide-y divide-border/50 border border-border/50 rounded-xl overflow-hidden bg-background">
-                                  {feedbackModal.parsedData.foods.map((food: any, i: number) => (
-                                      <div key={i} className="p-3 flex flex-col gap-1 text-sm">
-                                          <div className="flex justify-between items-start">
-                                              <span className="font-semibold">{food.name}</span>
-                                              <span className="font-bold text-orange-500">{food.calories} kcal</span>
-                                          </div>
-                                          <div className="flex gap-3 text-xs text-muted-foreground">
-                                              <span>Pro: <strong className="text-foreground">{food.protein}g</strong></span>
-                                              <span>Carbs: <strong className="text-foreground">{food.carbs}g</strong></span>
-                                              <span>Fat: <strong className="text-foreground">{food.fats}g</strong></span>
-                                          </div>
-                                      </div>
-                                  ))}
-                              </div>
-                          </div>
-                      )}
-                  </div>
-                  
-                  <div className="flex justify-end pt-4 border-t border-border/50">
-                      <Button onClick={() => setFeedbackModal(null)} className="px-8 font-bold w-full sm:w-auto">
-                          Done
-                      </Button>
-                  </div>
               </div>
+            </div>
+
+            {/* Macros: one split bar + three figures */}
+            <div className="rounded-3xl bg-surface p-4 md:p-5">
+              <div className="flex h-2 gap-0.5 overflow-hidden rounded-full bg-card" aria-hidden="true">
+                {macroTotal > 0 &&
+                  macros.map((m) => (
+                    <span
+                      key={m.key}
+                      className="h-full rounded-full transition-[width] duration-700"
+                      style={{ width: `${(m.value / macroTotal) * 100}%`, background: m.color }}
+                    />
+                  ))}
+              </div>
+              <dl className="mt-4 grid grid-cols-3 gap-3">
+                {macros.map((m) => (
+                  <div key={m.key}>
+                    <dt className="label-mono flex items-center gap-1.5">
+                      <span className="size-2 rounded-full" style={{ background: m.color }} />
+                      {m.label}
+                    </dt>
+                    <dd className="numeral mt-2 text-3xl md:text-4xl">
+                      {Math.round(m.value)}
+                      <span className="ml-0.5 text-sm font-normal tracking-normal text-muted-foreground">g</span>
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+
+            <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">
+              <Info className="mt-0.5 size-3.5 shrink-0" />
+              {AI_DISCLAIMER}
+            </p>
+          </section>
+
+          <div className="h-[520px] lg:col-span-5 lg:h-auto lg:min-h-[560px]">
+            <div className="h-full lg:relative">
+              <div className="h-full lg:absolute lg:inset-0">
+                <PendingTasksList tasks={pendingTasks} onToggle={toggleTask} onSubToggle={toggleSubtask} />
+              </div>
+            </div>
           </div>
+        </div>
+
+        {/* 3 — Water, steps, quote */}
+        <div className="grid gap-3 sm:grid-cols-2 md:gap-4 lg:grid-cols-3">
+          <HydrationCard total={waterTotal} onAdd={handleAddWater} goal={user?.waterGoal ?? 2500} />
+          <StepTracker />
+          <div className="sm:col-span-2 lg:col-span-1">
+            <QuoteBanner quote={quote} />
+          </div>
+        </div>
+
+        {/* 4 — Trends */}
+        <WeeklyChart logs={logs} tasks={allWeeklyTasks} />
+      </div>
+
+      {/* ---------- Dialogs ---------- */}
+
+      {/* AI analysis of the entry that was just logged */}
+      {feedbackModal && (
+        <Sheet wide onClose={() => setFeedbackModal(null)}>
+          <p className="eyebrow">Log analysis</p>
+          <h3 className="display mt-3 text-4xl">Logged.</h3>
+
+          <div className="mt-5 space-y-3">
+            {(feedbackModal.aiFeedback || feedbackModal.parsedData?.ai_feedback) && (
+              <p className="rounded-2xl bg-surface p-4 text-[15px] leading-relaxed">
+                {feedbackModal.aiFeedback || feedbackModal.parsedData.ai_feedback}
+              </p>
+            )}
+
+            {feedbackModal.parsedData?.next_step && (
+              <div className="rounded-2xl bg-lime p-4 text-lime-foreground">
+                <p className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em] opacity-70">
+                  <Target className="size-3.5" /> Next step
+                </p>
+                <p className="mt-1.5 text-[15px] font-medium leading-snug">{feedbackModal.parsedData.next_step}</p>
+              </div>
+            )}
+
+            <dl className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl border border-border p-4">
+                <dt className="label-mono">In</dt>
+                <dd className="numeral mt-2 text-2xl">
+                  {feedbackModal.totalCaloriesIn}
+                  <span className="ml-1 text-xs font-normal tracking-normal text-muted-foreground">kcal</span>
+                </dd>
+              </div>
+              <div className="rounded-2xl border border-border p-4">
+                <dt className="label-mono">Out</dt>
+                <dd className="numeral mt-2 text-2xl text-burn">
+                  {feedbackModal.totalCaloriesOut}
+                  <span className="ml-1 text-xs font-normal tracking-normal text-muted-foreground">kcal</span>
+                </dd>
+              </div>
+            </dl>
+
+            {feedbackModal.parsedData?.foods?.length > 0 && (
+              <div>
+                <p className="label-mono mb-2">Items tracked</p>
+                <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
+                  {feedbackModal.parsedData.foods.map((food: any, i: number) => (
+                    <li key={i} className="p-3.5 text-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-medium">{food.name}</span>
+                        <span className="shrink-0 tabular-nums">{food.calories} kcal</span>
+                      </div>
+                      <p className="mt-1 flex gap-3 text-xs text-muted-foreground">
+                        <span>P {food.protein}g</span>
+                        <span>C {food.carbs}g</span>
+                        <span>F {food.fats}g</span>
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          <Button onClick={() => setFeedbackModal(null)} size="lg" className="mt-6 w-full">
+            Done
+          </Button>
+        </Sheet>
       )}
 
       {simpleModal && (
-         <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="bg-card border border-border rounded-xl shadow-2xl w-full max-w-sm p-6 relative animate-in slide-in-from-bottom-8 md:zoom-in-95">
-                <button onClick={() => setSimpleModal(null)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"><X className="w-5 h-5" /></button>
-                <div className="flex items-start gap-4">
-                    <div className={`p-3 rounded-full shrink-0 ${simpleModal.isError ? 'bg-red-500/10 text-red-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
-                        {simpleModal.isError ? <AlertTriangle className="w-6 h-6"/> : <Check className="w-6 h-6"/>}
-                    </div>
-                    <div className="space-y-1 pt-1">
-                        <h3 className="text-lg font-bold text-foreground">{simpleModal.title}</h3>
-                        <p className="text-sm text-muted-foreground leading-relaxed">{simpleModal.msg}</p>
-                    </div>
-                </div>
-                <div className="mt-6 flex justify-end">
-                    <Button onClick={() => setSimpleModal(null)} variant={simpleModal.isError ? "destructive" : "default"} className="px-6">Okay</Button>
-                </div>
+        <Sheet onClose={() => setSimpleModal(null)}>
+          <button
+            onClick={() => setSimpleModal(null)}
+            aria-label="Close"
+            className="absolute right-4 top-4 grid size-9 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <X className="size-4" />
+          </button>
+          <div className="flex items-start gap-4 pr-8">
+            <span
+              className={`grid size-11 shrink-0 place-items-center rounded-full ${
+                simpleModal.isError ? "bg-priority-high-bg text-destructive" : "bg-lime text-lime-foreground"
+              }`}
+            >
+              {simpleModal.isError ? <AlertTriangle className="size-5" /> : <Check className="size-5" />}
+            </span>
+            <div>
+              <h3 className="text-lg font-medium tracking-[-0.02em]">{simpleModal.title}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{simpleModal.msg}</p>
             </div>
-         </div>
+          </div>
+          <Button
+            onClick={() => setSimpleModal(null)}
+            variant={simpleModal.isError ? "destructive" : "default"}
+            className="mt-6 w-full sm:ml-auto sm:flex sm:w-auto"
+          >
+            Okay
+          </Button>
+        </Sheet>
       )}
 
       {showRestoreModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-xl shadow-2xl max-w-sm w-full p-6 text-center space-y-6">
-             <div className="space-y-2">
-                <h3 className="text-xl font-bold text-foreground">Restore Account?</h3>
-                <p className="text-sm text-muted-foreground">This will cancel the deletion process.</p>
-             </div>
-             <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" onClick={() => setShowRestoreModal(false)}>Cancel</Button>
-                <Button onClick={handleRestoreAccount}>Yes, Restore</Button>
-             </div>
+        <Sheet onClose={() => setShowRestoreModal(false)}>
+          <h3 className="display text-3xl">Restore your account?</h3>
+          <p className="mt-2 text-sm text-muted-foreground">This cancels the deletion and keeps all your data.</p>
+          <div className="mt-6 grid grid-cols-2 gap-3">
+            <Button variant="outline" onClick={() => setShowRestoreModal(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRestoreAccount}>Yes, restore</Button>
           </div>
-        </div>
+        </Sheet>
       )}
-    </div>
+    </PageShell>
   );
 }

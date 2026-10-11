@@ -1,34 +1,49 @@
 "use client";
 
+import { useState } from "react";
+import { format, formatDistanceToNowStrict } from "date-fns";
+import { AlertTriangle, Check, ChevronDown, MoreVertical, Pencil, Timer, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useCountdown } from "@/hooks/use-countdown";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { format } from "date-fns";
-import { Calendar, Clock, AlertTriangle, Timer } from "lucide-react";
-import { MoreVertical, Trash2, Edit, Check, Square, CheckSquare, ChevronDown, ChevronUp } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { toggleDeadline, deleteDeadline, toggleSubtask } from "@/app/actions/deadlines";
-import { toast } from "sonner";
-import { useState } from "react";
 import { EditDeadlineDialog } from "@/components/deadlines/edit-deadline-dialog";
+import { cn } from "@/lib/utils";
 
-export function DeadlineCard({ data, onUpdate, isHistory }: any) {
+/**
+ * Splits the countdown string ("3d 14h 22m 10s") into number/unit pairs so the
+ * figures can be set large and the units small.
+ */
+function parseCountdown(value: string) {
+  return value
+    .split(" ")
+    .map((token) => /^(\d+)([a-z]+)$/.exec(token))
+    .filter((m): m is RegExpExecArray => Boolean(m))
+    .map((m) => ({ n: m[1], unit: m[2] }));
+}
+
+/**
+ * One deadline: title, live countdown, time-elapsed bar and subtask checklist.
+ * The card lays itself out from its own width (container query), so the same
+ * component serves the two-column grid and the full-width list.
+ *
+ * `featured` marks the single most urgent active deadline (lime panel).
+ */
+export function DeadlineCard({ data, onUpdate, isHistory, featured }: any) {
   const { timeLeft, isExpired } = useCountdown(data.targetDate);
   const [expanded, setExpanded] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-  
-  // Calculate Progress (Time Elapsed)
+
+  // Progress = share of the start → due window that has elapsed
   const start = new Date(data.startDate).getTime();
   const end = data.targetDate ? new Date(data.targetDate).getTime() : null;
   const now = new Date().getTime();
-  
+
   let progress = 0;
   if (end) {
     const totalDuration = end - start;
@@ -36,44 +51,32 @@ export function DeadlineCard({ data, onUpdate, isHistory }: any) {
     progress = Math.max(0, Math.min((elapsed / totalDuration) * 100, 100)); // Clamp between 0-100
   }
 
-  const isOverdue = !data.isCompleted && isExpired && data.targetDate;
+  const isDone = Boolean(data.isCompleted);
+  const isOverdue = !isDone && Boolean(data.targetDate) && (isExpired || (end !== null && end <= now));
+  const hoursLeft = end ? (end - now) / 36e5 : null;
+  const isSoon = !isDone && !isOverdue && end !== null && (progress > 75 || (hoursLeft !== null && hoursLeft < 48));
+  const isLime = Boolean(featured) && !isDone && !isOverdue;
 
-  // 👇 DYNAMIC THEME ENGINE: Changes color based on time elapsed
-  const getUrgencyTheme = () => {
-    if (data.isCompleted) return { 
-        bg: "bg-emerald-500", text: "text-emerald-500", border: "border-emerald-500/30", 
-        glow: "shadow-emerald-500/10", lightBg: "bg-emerald-500/5", gradient: "from-emerald-500/20 to-transparent" 
-    };
-    if (isOverdue) return { 
-        bg: "bg-red-600", text: "text-red-600", border: "border-red-600/50", 
-        glow: "shadow-red-600/20", lightBg: "bg-red-600/10", gradient: "from-red-600/20 to-red-600/5" 
-    };
-    if (progress > 90) return { 
-        bg: "bg-red-500", text: "text-red-500", border: "border-red-500/40", 
-        glow: "shadow-red-500/20", lightBg: "bg-red-500/10", gradient: "from-red-500/20 to-transparent" 
-    };
-    if (progress > 75) return { 
-        bg: "bg-orange-500", text: "text-orange-500", border: "border-orange-500/40", 
-        glow: "shadow-orange-500/20", lightBg: "bg-orange-500/10", gradient: "from-orange-500/20 to-transparent" 
-    };
-    if (progress > 50) return { 
-        bg: "bg-amber-500", text: "text-amber-500", border: "border-amber-500/40", 
-        glow: "shadow-amber-500/20", lightBg: "bg-amber-500/10", gradient: "from-amber-500/20 to-transparent" 
-    };
-    // Default (0-50% elapsed)
-    return { 
-        bg: "bg-blue-500", text: "text-blue-500", border: "border-blue-500/30", 
-        glow: "shadow-blue-500/10", lightBg: "bg-blue-500/5", gradient: "from-blue-500/20 to-transparent" 
-    };
-  };
+  const hasCountdown = Boolean(data.targetDate) && !isDone;
 
-  const theme = getUrgencyTheme();
+  const subtasks: any[] = data.subtasks ?? [];
+  const subDone = subtasks.filter((t) => t.isCompleted).length;
+
+  const sub = isLime ? "text-lime-foreground/70" : "text-muted-foreground";
+  const track = isLime ? "bg-lime-foreground/15" : "bg-surface";
+  const fill = isLime ? "bg-lime-foreground" : isSoon ? "bg-energy" : "bg-foreground";
+  const hairline = isLime ? "border-lime-foreground/15" : "border-border";
+  const ghostHover = isLime ? "hover:bg-lime-foreground/10" : "hover:bg-accent";
+
+  const parts = parseCountdown(timeLeft);
+  const bigParts = parts.slice(0, 2);
+  const restParts = parts.slice(2);
 
   // Actions
   const handleMainToggle = async () => {
     try {
         await toggleDeadline(data.id, !data.isCompleted);
-        toast.success(data.isCompleted ? "Marked as active" : "Deadline completed! 🎉");
+        toast.success(data.isCompleted ? "Marked as active" : "Deadline completed");
         onUpdate();
     } catch (e) { toast.error("Failed to update status"); }
   };
@@ -93,163 +96,263 @@ export function DeadlineCard({ data, onUpdate, isHistory }: any) {
      } catch (e) { toast.error("Failed to delete"); }
   };
 
+  const chip = "inline-flex h-6 items-center gap-1 rounded-full px-2.5 font-mono text-[10px] uppercase tracking-[0.08em]";
+
   return (
-    <Card className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg ${theme.border} ${theme.glow} bg-card`}>
-      
-      {/* Subtle Background Gradient */}
-      <div className={`absolute top-0 left-0 right-0 h-32 bg-gradient-to-b ${theme.gradient} opacity-50 pointer-events-none`} />
+    <article
+      data-history={isHistory ? "" : undefined}
+      className={cn(
+        "@container h-full p-5 md:p-6",
+        isLime && "panel-lime border border-transparent",
+        isDone && "rounded-[calc(var(--radius)+6px)] border border-border bg-transparent",
+        !isLime && !isDone && "panel",
+        isOverdue && "border-destructive/40"
+      )}
+    >
+      <div className={cn("grid gap-5", hasCountdown && "@2xl:grid-cols-[minmax(0,1fr)_minmax(0,19rem)] @2xl:gap-x-8")}>
+        {/* Title row */}
+        <header className="flex items-start gap-3">
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked={isDone}
+            aria-label={`Mark "${data.title}" ${isDone ? "active" : "complete"}`}
+            onClick={handleMainToggle}
+            className="-m-2 grid size-10 shrink-0 place-items-center rounded-full"
+          >
+            <span
+              className={cn(
+                "grid size-6 place-items-center rounded-full border transition-colors",
+                isDone
+                  ? "border-transparent bg-lime text-lime-foreground"
+                  : isLime
+                    ? "border-lime-foreground/45 hover:border-lime-foreground"
+                    : "border-input bg-card hover:border-foreground/50"
+              )}
+            >
+              {isDone && <Check className="size-3.5" strokeWidth={3} />}
+            </span>
+          </button>
 
-      <CardHeader className="pb-2 pt-5 relative z-10">
-        <div className="flex justify-between items-start gap-3">
-           
-           {/* LEFT: Title & Checkbox */}
-           <div className="space-y-1.5 flex-1">
-              <div className="flex items-start gap-3">
-                 <button onClick={handleMainToggle} className={`mt-0.5 shrink-0 transition-transform hover:scale-110 ${data.isCompleted ? 'text-emerald-500' : theme.text}`}>
-                    {data.isCompleted ? <CheckSquare className="w-6 h-6"/> : <Square className="w-6 h-6 opacity-60 hover:opacity-100"/>}
-                 </button>
-                 <div>
-                     <CardTitle className={`text-xl font-bold leading-tight ${data.isCompleted ? 'line-through text-muted-foreground opacity-70' : 'text-foreground'}`}>
-                        {data.title}
-                     </CardTitle>
-                     <div className="flex gap-2 mt-2">
-                        {isOverdue && <Badge variant="destructive" className="animate-pulse shadow-sm shadow-red-500/20">Overdue</Badge>}
-                        {!data.targetDate && <Badge variant="secondary" className="bg-secondary/50">Open Ended</Badge>}
-                        {data.isCompleted && <Badge className="bg-emerald-500 text-white hover:bg-emerald-600">Completed</Badge>}
-                     </div>
-                 </div>
+          <div className="min-w-0 flex-1">
+            <h3
+              className={cn(
+                "text-lg font-medium leading-snug tracking-[-0.02em] [overflow-wrap:anywhere]",
+                isDone && "text-muted-foreground line-through"
+              )}
+            >
+              {data.title}
+            </h3>
+            {(isOverdue || isSoon || isDone || !data.targetDate) && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {isOverdue && (
+                  <span className={cn(chip, "bg-priority-high-bg text-priority-high")}>
+                    <AlertTriangle className="size-3" /> Overdue
+                  </span>
+                )}
+                {isSoon && (
+                  <span
+                    className={cn(
+                      chip,
+                      isLime ? "bg-lime-foreground text-lime" : "bg-priority-medium-bg text-priority-medium"
+                    )}
+                  >
+                    Due soon
+                  </span>
+                )}
+                {!data.targetDate && !isDone && <span className={cn(chip, "bg-surface text-muted-foreground")}>Open-ended</span>}
+                {isDone && <span className={cn(chip, "bg-surface text-muted-foreground")}>Completed</span>}
               </div>
-           </div>
+            )}
+          </div>
 
-           {/* RIGHT: Dropdown Menu */}
-           <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                 <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 text-muted-foreground hover:bg-secondary/50">
-                    <MoreVertical className="w-4 h-4" />
-                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40 border-border/50 shadow-xl">
-                 <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="cursor-pointer">
-                    <Edit className="w-4 h-4 mr-2" /> Edit Deadline
-                 </DropdownMenuItem>
-                 <DropdownMenuItem onClick={handleDelete} className="text-red-500 focus:text-red-500 focus:bg-red-500/10 cursor-pointer">
-                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                 </DropdownMenuItem>
-              </DropdownMenuContent>
-           </DropdownMenu>
-        </div>
-      </CardHeader>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Deadline options"
+                className={cn(
+                  "-mr-2 -mt-2 grid size-10 shrink-0 place-items-center rounded-full transition-colors",
+                  sub,
+                  ghostHover
+                )}
+              >
+                <MoreVertical className="size-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44 rounded-2xl p-1.5 shadow-float">
+              <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="cursor-pointer rounded-xl px-3 py-2.5">
+                <Pencil /> Edit deadline
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleDelete}
+                variant="destructive"
+                className="cursor-pointer rounded-xl px-3 py-2.5"
+              >
+                <Trash2 /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </header>
 
-      <CardContent className="space-y-5 relative z-10">
-         
-         {/* THE VIBRANT COUNTDOWN DISPLAY */}
-         {data.targetDate && !data.isCompleted && (
-             <div className={`relative p-5 rounded-2xl border ${theme.border} ${theme.lightBg} flex flex-col items-center justify-center overflow-hidden shadow-inner`}>
-                 
-                 {/* Top Label */}
-                 <div className="flex items-center gap-1.5 text-xs uppercase tracking-widest font-bold mb-2 opacity-80" style={{ color: `var(--${theme.text.split('-')[1]}-500)` }}>
-                     {isOverdue ? <AlertTriangle className="w-4 h-4" /> : <Timer className="w-4 h-4" />}
-                     {isOverdue ? "Time Exceeded By" : "Time Remaining"}
-                 </div>
-                 
-                 {/* Massive Countdown Numbers */}
-                 <div className={`text-4xl md:text-5xl font-black tabular-nums tracking-tight mb-4 drop-shadow-sm ${theme.text}`}>
-                    {timeLeft || "00:00:00"}
-                 </div>
-                 
-                 {/* Visual Progress Bar Engine */}
-                 {!isOverdue && (
-                     <div className="w-full space-y-1.5">
-                         <div className="w-full h-3 bg-background/60 rounded-full overflow-hidden shadow-inner border border-border/20">
-                             <div 
-                                className={`h-full ${theme.bg} transition-all duration-1000 ease-out`} 
-                                style={{ width: `${progress}%` }} 
-                             />
-                         </div>
-                         <div className="flex justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                             <span>Time Elapsed: {progress.toFixed(1)}%</span>
-                             <span className={progress > 90 ? theme.text : ""}>{100 - Math.round(progress)}% Left</span>
-                         </div>
-                     </div>
-                 )}
-             </div>
-         )}
+        {/* Countdown */}
+        {hasCountdown && (
+          <div className="@2xl:col-start-2 @2xl:row-span-2 @2xl:row-start-1">
+            <div className={cn("@2xl:h-full @2xl:border-l @2xl:pl-8", hairline)}>
+              <p className={cn("flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.1em]", isOverdue ? "text-destructive" : sub)}>
+                {isOverdue ? <AlertTriangle className="size-3.5" /> : <Timer className="size-3.5" />}
+                {isOverdue ? "Overdue by" : "Time left"}
+              </p>
 
-         {/* Collapsible Subtasks Section */}
-         {data.subtasks?.length > 0 && (
-             <div className="rounded-xl border border-border/50 bg-secondary/5 overflow-hidden transition-all hover:border-border">
-                 <button 
-                    onClick={() => setExpanded(!expanded)}
-                    className="w-full flex items-center justify-between p-3.5 hover:bg-secondary/20 transition-colors"
-                 >
-                    <div className="flex flex-col items-start gap-1.5 w-full">
-                        <span className="font-semibold text-foreground text-sm flex items-center gap-2">
-                           Subtasks
-                           {data.subtasks.filter((t:any) => t.isCompleted).length === data.subtasks.length && (
-                               <Badge variant="outline" className="h-5 text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20">All Done</Badge>
-                           )}
-                        </span>
-                        <div className="flex items-center gap-3 w-full pr-4">
-                             <Progress 
-                                value={(data.subtasks.filter((t:any) => t.isCompleted).length / data.subtasks.length) * 100} 
-                                className="h-1.5 flex-1 bg-background/50" 
-                             />
-                             <span className="text-xs text-muted-foreground font-mono font-medium shrink-0">
-                                {data.subtasks.filter((t:any) => t.isCompleted).length} / {data.subtasks.length}
-                             </span>
-                        </div>
-                    </div>
-                    <div className="shrink-0 bg-background/50 p-1.5 rounded-md border border-border/50">
-                        {expanded ? <ChevronUp className="w-4 h-4 text-foreground"/> : <ChevronDown className="w-4 h-4 text-foreground"/>}
-                    </div>
-                 </button>
-
-                 {expanded && (
-                     <div className="p-2 space-y-0.5 bg-background/30 border-t border-border/30">
-                        {data.subtasks.map((task: any) => (
-                           <div 
-                             key={task.id} 
-                             onClick={(e) => {
-                                e.stopPropagation(); 
-                                handleSubtaskToggle(task.id, task.isCompleted);
-                             }}
-                             className="flex items-start gap-3 text-sm cursor-pointer hover:bg-card p-2.5 rounded-lg transition-all group border border-transparent hover:border-border/60 hover:shadow-sm"
-                           >
-                              <div className={`mt-0.5 w-4 h-4 rounded-[4px] border flex items-center justify-center transition-all shrink-0 ${task.isCompleted ? `${theme.bg} border-transparent shadow-sm` : 'border-muted-foreground/40 group-hover:border-primary/50'}`}>
-                                 {task.isCompleted && <Check className="w-3 h-3 text-white" />}
-                              </div>
-                              <span className={`flex-1 leading-tight ${task.isCompleted ? 'line-through text-muted-foreground opacity-60' : 'text-foreground/90 font-medium'}`}>
-                                 {task.title}
-                              </span>
-                           </div>
+              {isOverdue ? (
+                <p className="numeral mt-3 text-[2.75rem] text-destructive">
+                  {(() => {
+                    const [n, ...unit] = formatDistanceToNowStrict(new Date(data.targetDate)).split(" ");
+                    return (
+                      <>
+                        {n}
+                        <span className="ml-1.5 text-lg font-normal tracking-normal">{unit.join(" ")}</span>
+                      </>
+                    );
+                  })()}
+                </p>
+              ) : (
+                <div className="mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1" aria-live="off">
+                  <p className="numeral text-[2.75rem] @sm:text-[3.25rem]">
+                    {bigParts.length === 0
+                      ? "--"
+                      : bigParts.map((p, i) => (
+                          <span key={p.unit} className={i > 0 ? "ml-2.5" : undefined}>
+                            {p.n.padStart(2, "0")}
+                            <span className="ml-0.5 text-lg font-normal tracking-normal">{p.unit}</span>
+                          </span>
                         ))}
-                     </div>
-                 )}
-             </div>
-         )}
+                  </p>
+                  {restParts.length > 0 && (
+                    <p className={cn("font-mono text-[13px] tabular-nums", sub)}>
+                      {restParts.map((p) => `${p.n.padStart(2, "0")}${p.unit}`).join(" ")}
+                    </p>
+                  )}
+                </div>
+              )}
 
-         {/* Dates Footer */}
-         <div className="flex justify-between items-center text-xs font-medium text-muted-foreground pt-3 border-t border-border/40">
-             <div className="flex items-center gap-1.5 bg-secondary/30 px-2 py-1 rounded-md">
-                <Calendar className="w-3.5 h-3.5 opacity-70"/>
-                <span>{format(new Date(data.startDate), "MMM d, yyyy")}</span>
-             </div>
-             {data.targetDate && (
-                 <div className="flex items-center gap-1.5 bg-secondary/30 px-2 py-1 rounded-md">
-                    <Clock className="w-3.5 h-3.5 opacity-70"/>
-                    <span>{format(new Date(data.targetDate), "MMM d, h:mm a")}</span>
-                 </div>
-             )}
-         </div>
+              <div
+                className={cn("mt-4 h-1.5 overflow-hidden rounded-full", track)}
+                role="progressbar"
+                aria-label="Time elapsed"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(progress)}
+              >
+                <div
+                  className={cn("h-full rounded-full transition-[width] duration-1000 ease-out", isOverdue ? "bg-destructive" : fill)}
+                  style={{ width: `${isOverdue ? 100 : progress}%` }}
+                />
+              </div>
+              <div className={cn("mt-2 flex justify-between gap-3 text-xs tabular-nums", sub)}>
+                <span>{isOverdue ? "Time is up" : `${progress.toFixed(1)}% elapsed`}</span>
+                <span>{isOverdue ? format(new Date(data.targetDate), "MMM d, h:mm a") : `${100 - Math.round(progress)}% left`}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
-      </CardContent>
+        {/* Subtasks + dates */}
+        <div className="flex flex-col gap-4 @2xl:col-start-1">
+          {subtasks.length > 0 && (
+            <div className={cn("overflow-hidden rounded-2xl border", hairline)}>
+              <button
+                type="button"
+                onClick={() => setExpanded(!expanded)}
+                aria-expanded={expanded}
+                className={cn("flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left transition-colors", ghostHover)}
+              >
+                <span className="text-sm font-medium">
+                  {subDone === subtasks.length ? "All steps done" : "Steps"}
+                </span>
+                <span className="flex min-w-0 flex-1 items-center gap-1" aria-hidden="true">
+                  {subtasks.slice(0, 16).map((t) => (
+                    <span
+                      key={t.id}
+                      className={cn(
+                        "h-1.5 max-w-6 flex-1 rounded-full",
+                        t.isCompleted ? (isLime ? "bg-lime-foreground" : isDone ? "bg-muted-foreground/50" : "bg-foreground") : track
+                      )}
+                    />
+                  ))}
+                </span>
+                <span className={cn("shrink-0 font-mono text-xs tabular-nums", sub)}>
+                  {subDone}/{subtasks.length}
+                </span>
+                <ChevronDown className={cn("size-4 shrink-0 transition-transform duration-200", sub, expanded && "rotate-180")} />
+              </button>
 
-      <EditDeadlineDialog 
-         open={isEditOpen} 
-         onOpenChange={setIsEditOpen} 
-         data={data} 
-         onSave={onUpdate} 
+              {expanded && (
+                <ul className={cn("border-t py-1", hairline)}>
+                  {subtasks.map((task: any) => (
+                    <li key={task.id}>
+                      <button
+                        type="button"
+                        role="checkbox"
+                        aria-checked={task.isCompleted}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSubtaskToggle(task.id, task.isCompleted);
+                        }}
+                        className={cn("flex min-h-10 w-full items-center gap-3 px-3.5 py-2 text-left text-sm transition-colors", ghostHover)}
+                      >
+                        <span
+                          className={cn(
+                            "grid size-5 shrink-0 place-items-center rounded-full border transition-colors",
+                            task.isCompleted
+                              ? isLime
+                                ? "border-transparent bg-lime-foreground text-lime"
+                                : isDone
+                                  ? "border-transparent bg-surface text-muted-foreground"
+                                  : "border-transparent bg-lime text-lime-foreground"
+                              : isLime
+                                ? "border-lime-foreground/45"
+                                : "border-input bg-card"
+                          )}
+                        >
+                          {task.isCompleted && <Check className="size-3" strokeWidth={3} />}
+                        </span>
+                        <span className={cn("min-w-0 flex-1 leading-snug [overflow-wrap:anywhere]", task.isCompleted && cn("line-through", sub))}>
+                          {task.title}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          <dl className={cn("mt-auto flex flex-wrap gap-x-6 gap-y-2 text-[13px]", sub)}>
+            <div className="flex items-baseline gap-2">
+              <dt className={cn("font-mono text-[11px] uppercase tracking-[0.1em]", sub)}>Started</dt>
+              <dd className={cn("tabular-nums", !isDone && (isLime ? "text-lime-foreground" : "text-foreground"))}>
+                {format(new Date(data.startDate), "MMM d, yyyy")}
+              </dd>
+            </div>
+            {data.targetDate && (
+              <div className="flex items-baseline gap-2">
+                <dt className={cn("font-mono text-[11px] uppercase tracking-[0.1em]", sub)}>Due</dt>
+                <dd className={cn("tabular-nums", !isDone && (isLime ? "text-lime-foreground" : "text-foreground"))}>
+                  {format(new Date(data.targetDate), "MMM d, h:mm a")}
+                </dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      </div>
+
+      <EditDeadlineDialog
+         open={isEditOpen}
+         onOpenChange={setIsEditOpen}
+         data={data}
+         onSave={onUpdate}
       />
-    </Card>
+    </article>
   );
 }

@@ -1,34 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Wallpoet } from "next/font/google";
-import localFont from "next/font/local";
-import { Baskervville } from "next/font/google";
+import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 
 import { ThemeProvider } from "@/components/theme-provider"
 import { ClerkProvider } from '@clerk/nextjs';
-import { getSomaUser } from "@/lib/prisma"; // 👈 1. Server Import works here!
-import { MainLayoutClient } from "@/components/main-layout-client"; // 👈 2. Import the new Client Component
+import { getSomaUser } from "@/lib/prisma";
+import { MainLayoutClient } from "@/components/main-layout-client";
 import { Toaster } from "@/components/ui/sonner";
 
-const inter = Inter({ subsets: ["latin"] });
-
-const baskervville = Baskervville({
+// Type system (see globals.css → @theme): grotesk for reading, serif for
+// display, mono for labels. Exposed as CSS variables so Tailwind's
+// font-sans / font-display / font-mono utilities resolve to them.
+const geist = Geist({ subsets: ["latin"], variable: "--font-geist", display: "swap" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono", display: "swap" });
+const instrument = Instrument_Serif({
   weight: "400",
+  style: ["normal", "italic"],
   subsets: ["latin"],
-  style: "normal",
-  variable: "--font-baskervville", 
-});
-
-const wallpoet = Wallpoet({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-wallpoet", // 👈 Defines the variable name
-});
-
-const BBH_Hegarty = localFont({
-  src: "/fonts/BBH_Hegarty/BBHHegarty-Regular.ttf", // 👈 Make sure this path matches your file name!
-  variable: "--font-bbh-hegarty",  // 👈 The CSS variable name
-  weight: "400",
+  variable: "--font-instrument",
+  display: "swap",
 });
 
 // import type { Metadata } from "next";
@@ -102,7 +92,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export const viewport: Viewport = {
-  themeColor: "#0b1512",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f3f2ec" },
+    { media: "(prefers-color-scheme: dark)", color: "#10100e" },
+  ],
   width: "device-width",
   initialScale: 1,
   // maximumScale: 1,
@@ -118,8 +111,8 @@ export default async function RootLayout({
   const user = await getSomaUser();
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} ${baskervville.variable} ${BBH_Hegarty.variable} ${wallpoet.variable} antialiased`}>
+    <html lang="en" suppressHydrationWarning className={`${geist.variable} ${geistMono.variable} ${instrument.variable}`}>
+      <body className="font-sans antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

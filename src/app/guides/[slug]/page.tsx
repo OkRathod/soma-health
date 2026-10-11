@@ -1,18 +1,19 @@
 import { getGuide, guides } from "@/lib/guides";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Calendar, Clock, UserPlus } from "lucide-react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { Metadata } from "next";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { MarkReadButton } from "@/components/guides/mark-read-button";
 import { Button } from "@/components/ui/button";
+import { PageShell } from "@/components/layout/page";
 
 interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// 👇 1. UPDATED METADATA: Includes the Canonical URL
+// Metadata includes the canonical URL
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const guide = getGuide(slug);
@@ -46,7 +47,7 @@ export default async function GuidePage({ params }: Props) {
 
   if (!guide) return notFound();
 
-  // 👇 2. DYNAMIC SERVER RENDERING (Works perfectly without static params)
+  // Rendered dynamically on the server (no static params needed)
   const { userId } = await auth();
   let isRead = false;
 
@@ -61,72 +62,72 @@ export default async function GuidePage({ params }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-24 pb-20 px-6">
-      <article className="container mx-auto max-w-3xl">
-        
-        {/* Article Header (Visible to All) */}
-        <header className="mb-10 text-center">
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-6 leading-tight">
-            {guide.title}
-          </h1>
-          <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" /> {guide.date}
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4" /> {guide.readTime}
-            </div>
-          </div>
+    <PageShell width="narrow">
+      <article>
+        <Link
+          href="/guides"
+          className="-ml-2 inline-flex h-10 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" /> All guides
+        </Link>
+
+        {/* Article header (visible to all) */}
+        <header className="mb-8 mt-4 border-b border-border pb-8 md:mb-10 md:mt-6 md:pb-10">
+          <p className="eyebrow mb-4">Guide</p>
+          <h1 className="display text-[2.5rem] sm:text-5xl md:text-[3.5rem]">{guide.title}</h1>
+          <p className="label-mono mt-5">
+            {guide.date} <span className="mx-1 opacity-50">/</span> {guide.readTime}
+          </p>
         </header>
 
-        {/* Content (Visible to All) */}
-        <div 
+        {/* Content (visible to all) */}
+        <div
           className="
-            prose prose-lg dark:prose-invert max-w-none text-foreground
-            prose-headings:font-bold prose-headings:text-foreground prose-a:text-info prose-strong:text-foreground
-            prose-blockquote:border-l-foreground prose-blockquote:bg-secondary/20 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:not-italic prose-blockquote:rounded-r-lg
+            prose max-w-none md:prose-lg
+            prose-p:leading-relaxed prose-a:underline-offset-4 prose-a:decoration-foreground/30 hover:prose-a:decoration-foreground
+            prose-blockquote:font-display prose-blockquote:text-2xl prose-blockquote:font-normal prose-blockquote:not-italic prose-blockquote:leading-snug
+            prose-img:rounded-2xl
           "
-          dangerouslySetInnerHTML={{ __html: guide.content }} 
+          dangerouslySetInnerHTML={{ __html: guide.content }}
         />
 
-        {/* SMART FOOTER: Adapts to User vs Guest */}
-        <div className="mt-16 p-8 bg-secondary/30 border border-border rounded-2xl text-center">
-          
+        {/* Footer adapts to reader vs guest */}
+        <div className="mt-12 flex flex-col gap-5 rounded-3xl bg-surface p-6 sm:flex-row sm:items-center sm:justify-between md:mt-16 md:p-8">
           {userId ? (
-            /* === LOGGED IN VIEW === */
             <>
-                <h3 className="text-2xl font-bold mb-3">Finished Reading?</h3>
-                <p className="text-muted-foreground mb-6">Mark this protocol as complete.</p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <MarkReadButton slug={slug} isRead={isRead} />
-                    <Link href="/guides" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                        Back to Guides
-                    </Link>
-                </div>
+              <div>
+                <h3 className="font-display text-[1.75rem] leading-tight tracking-[-0.02em]">Finished reading?</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Mark this guide as complete.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <MarkReadButton slug={slug} isRead={isRead} />
+                <Button asChild variant="ghost">
+                  <Link href="/guides">Back to guides</Link>
+                </Button>
+              </div>
             </>
           ) : (
-            /* === GUEST VIEW === */
             <>
-                <h3 className="text-2xl font-bold mb-3">Want to save your progress?</h3>
-                <p className="text-muted-foreground mb-6">Create a free account to track completed protocols.</p>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <Button asChild className="gap-2 shadow-lg shadow-primary/20">
-                        <Link href="/sign-up">
-                            <UserPlus className="w-4 h-4" /> Create Free Account
-                        </Link>
-                    </Button>
-                    <Button asChild variant="ghost">
-                        <Link href="/guides">
-                            Back to Guides
-                        </Link>
-                    </Button>
-                </div>
+              <div>
+                <h3 className="font-display text-[1.75rem] leading-tight tracking-[-0.02em]">
+                  Want to save your progress?
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">Create a free account to track completed guides.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild>
+                  <Link href="/sign-up">
+                    Create free account <ArrowUpRight />
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost">
+                  <Link href="/guides">Back to guides</Link>
+                </Button>
+              </div>
             </>
           )}
-
         </div>
-
       </article>
-    </div>
+    </PageShell>
   );
 }

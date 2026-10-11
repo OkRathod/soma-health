@@ -95,108 +95,51 @@ GOOGLE SYNC LOGIC COMMENTED OUT END 👉 */
     toast.info("Switched to Manual Mode");
   };
 
-  if (loading) return <div className="h-32 bg-secondary/20 animate-pulse rounded-xl" />;
+  if (loading) return <div className="panel shimmer h-[262px]" />;
+
+  const goal = 10000;
+  const pct = Math.min((steps / goal) * 100, 100);
 
   return (
-    <div className="p-5 bg-card border border-border rounded-xl shadow-sm space-y-4 relative overflow-hidden">
-      
-      {/* Background Decor */}
-      <div className="absolute top-0 right-0 p-4 opacity-5">
-        <Footprints className="w-24 h-24" />
+    <section className="panel flex flex-col p-5 md:p-6">
+      <div className="flex items-center justify-between">
+        <p className="label-mono flex items-center gap-2">
+          <Footprints className="size-3.5 text-energy" /> Steps
+        </p>
+        <span className="font-mono text-[11px] text-muted-foreground">goal {goal.toLocaleString()}</span>
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between relative z-10">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-orange-500/10 rounded-lg">
-             <Footprints className="w-5 h-5 text-orange-500" />
-          </div>
-          <div>
-            <h3 className="font-bold text-foreground">Steps</h3>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
-                {/* {source === "GOOGLE" ? "Automated" : "Manual Entry"} */}
-                Manual Entry {/* 👈 Force Manual Label */}
-            </p>
-          </div>
-        </div>
-        
-        {/* Toggle Button (Already commented out by you) */}
-        {/* {source === "GOOGLE" ? (
-             <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleDisconnect}
-                className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-             >
-                <Link2Off className="w-3 h-3 mr-1" /> Disconnect
-             </Button>
-        ) : (
-            <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleSync}
-                disabled={syncing}
-                className="h-8 text-xs gap-1"
-            >
-                {syncing ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />}
-                Sync Google
-            </Button>
-        )} */}
+      <p className="numeral mt-5 text-5xl">{steps.toLocaleString()}</p>
+
+      <div className="mt-5 h-7 overflow-hidden rounded-md bg-surface" aria-hidden="true">
+        <div className="h-full rounded-md bg-energy transition-[width] duration-1000" style={{ width: `${pct}%` }} />
       </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 pt-2">
-         {/* 👇 GOOGLE MODE UI COMMENTED OUT 
-         {source === "GOOGLE" ? (
-             // === GOOGLE MODE (READ ONLY) ===
-             <div className="flex items-end justify-between">
-                 <div>
-                    <span className="text-3xl font-bold tracking-tight">{steps.toLocaleString()}</span>
-                    <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                        <Check className="w-3 h-3 text-green-500" /> Verified by Google Fit
-                    </p>
-                 </div>
-                 <Button variant="secondary" size="icon" onClick={handleSync} disabled={syncing} className="h-8 w-8">
-                    <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-                 </Button>
-             </div>
-         ) : ( 
-         */}
-             {/* === MANUAL MODE (EDITABLE) - ALWAYS RENDERED NOW === */}
-             <div className="flex gap-2">
-                 <div className="relative flex-1">
-                    <Input 
-                        type="number" 
-                        value={inputValue}
-                        onChange={(e) => setInputValue(e.target.value)}
-                        className="text-2xl font-bold h-12 pr-12"
-                        placeholder="0"
-                    />
-                    <span className="absolute right-3 top-4 text-xs text-muted-foreground pointer-events-none">
-                        steps
-                    </span>
-                 </div>
-                 <Button onClick={handleManualSave} className="h-12 w-12 shrink-0 bg-primary/30 text-primary hover:bg-primary/60">
-                    <Check className="w-5 h-5" />
-                 </Button>
-             </div>
-         {/* )} 👈 END COMMENT */}
-      </div>
-
-      {/* Progress Bar */}
-      <div className="space-y-1 relative z-10">
-        <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-            <div 
-                className="h-full bg-orange-500 transition-all duration-1000" 
-                style={{ width: `${Math.min((steps / 10000) * 100, 100)}%` }} 
-            />
-        </div>
-        <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>0</span>
-            <span>Goal: 10,000</span>
-        </div>
-      </div>
-
-    </div>
+      {/* Manual entry (Google Fit sync is parked — see commented logic above) */}
+      <form
+        className="mt-5 flex gap-2 md:mt-auto"
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleManualSave();
+        }}
+      >
+        <label htmlFor="steps-input" className="sr-only">
+          Steps today
+        </label>
+        <Input
+          id="steps-input"
+          type="number"
+          inputMode="numeric"
+          min={0}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          placeholder="Enter steps"
+          className="h-11 flex-1 rounded-full px-4 tabular-nums"
+        />
+        <Button type="submit" variant="outline" className="h-11 gap-1.5 px-4">
+          <Check className="size-4" /> Save
+        </Button>
+      </form>
+    </section>
   );
 }

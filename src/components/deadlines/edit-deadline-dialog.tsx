@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { updateDeadline } from "@/app/actions/deadlines";
 import { format } from "date-fns";
-import { Loader2, Edit, Plus, X, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
+import { deadlineSheetClass } from "@/components/deadlines/sheet";
 
 export function EditDeadlineDialog({ open, onOpenChange, data, onSave }: any) {
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,7 @@ export function EditDeadlineDialog({ open, onOpenChange, data, onSave }: any) {
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
 
-  // 👇 New Subtasks State
+  // Subtasks state
   const [subtasks, setSubtasks] = useState<{ id?: string, title: string }[]>([]);
   const [newSubtaskText, setNewSubtaskText] = useState("");
 
@@ -27,8 +28,8 @@ export function EditDeadlineDialog({ open, onOpenChange, data, onSave }: any) {
     if (open && data) {
         setTitle(data.title);
         setHasDeadline(!!data.targetDate);
-        
-        // 1. Fill Date/Time
+
+        // 1. Fill date and time
         if (data.targetDate) {
             const d = new Date(data.targetDate);
             setDate(format(d, "yyyy-MM-dd"));
@@ -38,17 +39,17 @@ export function EditDeadlineDialog({ open, onOpenChange, data, onSave }: any) {
             setTime("23:59");
         }
 
-        // 2. Fill Subtasks (Deep copy to avoid mutating props)
+        // 2. Fill subtasks (copied so props are never mutated)
         if (data.subtasks) {
             setSubtasks(data.subtasks.map((s: any) => ({ id: s.id, title: s.title })));
         }
     }
   }, [open, data]);
 
-  // --- Subtask Handlers ---
+  // --- Subtask handlers ---
   const addSubtask = () => {
       if (!newSubtaskText.trim()) return;
-      setSubtasks([...subtasks, { title: newSubtaskText.trim() }]); // No ID means "New"
+      setSubtasks([...subtasks, { title: newSubtaskText.trim() }]); // No id means "new"
       setNewSubtaskText("");
   };
 
@@ -73,13 +74,13 @@ export function EditDeadlineDialog({ open, onOpenChange, data, onSave }: any) {
         targetDateISO = new Date(`${date}T${time}`).toISOString();
       }
 
-      await updateDeadline(data.id, { 
-          title, 
+      await updateDeadline(data.id, {
+          title,
           targetDate: targetDateISO,
-          subtasks // 👈 Sending the updated list
+          subtasks // the full, edited list
       });
-      
-      toast.success("Deadline Updated");
+
+      toast.success("Deadline updated");
       onSave();
       onOpenChange(false);
     } catch (e) {
@@ -91,88 +92,106 @@ export function EditDeadlineDialog({ open, onOpenChange, data, onSave }: any) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit className="w-5 h-5 text-primary" /> Edit Deadline
+      <DialogContent className={deadlineSheetClass}>
+        <DialogHeader className="pr-8 text-left">
+          <p className="eyebrow">Edit deadline</p>
+          <DialogTitle className="display mt-1 text-[2rem] font-normal leading-none">
+            Adjust the <em>plan</em>
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Change the title, due date or steps of this deadline.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          
+        <div className="mt-6 space-y-5">
           {/* Title */}
           <div className="space-y-2">
-            <Label>Title</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+            <Label htmlFor={`edit-title-${data.id}`}>Title</Label>
+            <Input
+              id={`edit-title-${data.id}`}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="font-medium"
+            />
           </div>
 
-          {/* Date Picker */}
-          <div className="space-y-4 rounded-lg border border-border p-4 bg-muted/20">
-             <div className="flex items-center justify-between">
-                <Label>Set Deadline?</Label>
-                <Switch checked={hasDeadline} onCheckedChange={setHasDeadline} />
-             </div>
-             {hasDeadline && (
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="space-y-2">
-                      <Label className="text-xs">Date</Label>
-                      <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                   </div>
-                   <div className="space-y-2">
-                      <Label className="text-xs">Time</Label>
-                      <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-                   </div>
+          {/* Due date */}
+          <div className="rounded-2xl bg-surface p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="min-w-0">
+                <Label htmlFor={`edit-has-date-${data.id}`}>Set a due date</Label>
+                <p className="mt-1.5 text-[13px] text-muted-foreground">Turn off for open-ended goals.</p>
+              </div>
+              <Switch id={`edit-has-date-${data.id}`} checked={hasDeadline} onCheckedChange={setHasDeadline} />
+            </div>
+            {hasDeadline && (
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="min-w-0 space-y-1.5">
+                  <Label htmlFor={`edit-date-${data.id}`} className="label-mono">Date</Label>
+                  <Input id={`edit-date-${data.id}`} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
                 </div>
-             )}
+                <div className="min-w-0 space-y-1.5">
+                  <Label htmlFor={`edit-time-${data.id}`} className="label-mono">Time</Label>
+                  <Input id={`edit-time-${data.id}`} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Subtasks Section */}
-          <div className="space-y-3">
-             <Label>Subtasks</Label>
-             
-             {/* Existing List */}
-             <div className="space-y-2">
-                 {subtasks.map((task, i) => (
-                    <div key={i} className="flex gap-2">
-                        <Input 
-                            value={task.title} 
-                            onChange={(e) => handleSubtaskChange(i, e.target.value)}
-                            className="h-9"
-                        />
-                        <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-9 w-9 text-muted-foreground hover:text-destructive"
-                            onClick={() => removeSubtask(i)}
-                        >
-                            <Trash2 className="w-4 h-4"/>
-                        </Button>
-                    </div>
-                 ))}
-             </div>
+          {/* Subtasks */}
+          <div className="space-y-2">
+            <Label htmlFor={`edit-step-${data.id}`}>Steps</Label>
 
-             {/* Add New */}
-             <div className="flex gap-2 pt-2">
-                 <Input 
-                    placeholder="Add new subtask..." 
-                    value={newSubtaskText}
-                    onChange={(e) => setNewSubtaskText(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addSubtask()}
-                    className="h-9"
-                 />
-                 <Button type="button" size="sm" onClick={addSubtask} variant="secondary">
-                    <Plus className="w-4 h-4" />
-                 </Button>
-             </div>
+            {subtasks.length > 0 && (
+              <div className="space-y-2">
+                {subtasks.map((task, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input
+                      value={task.title}
+                      onChange={(e) => handleSubtaskChange(i, e.target.value)}
+                      aria-label={`Step ${i + 1}`}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-11 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeSubtask(i)}
+                      aria-label={`Remove step ${i + 1}`}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Input
+                id={`edit-step-${data.id}`}
+                placeholder="Add a step…"
+                value={newSubtaskText}
+                onChange={(e) => setNewSubtaskText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addSubtask()}
+              />
+              <Button
+                type="button"
+                size="icon"
+                onClick={addSubtask}
+                variant="secondary"
+                aria-label="Add step"
+                className="size-11"
+              >
+                <Plus />
+              </Button>
+            </div>
           </div>
-
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="mt-7 grid grid-cols-2 gap-3 sm:flex">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin"/> : "Save Changes"}
+            {loading ? <Loader2 className="animate-spin" /> : "Save changes"}
           </Button>
         </DialogFooter>
       </DialogContent>
